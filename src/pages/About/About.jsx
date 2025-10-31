@@ -1,58 +1,64 @@
 import { Users, Award, Globe, Shield, MapPin, Heart, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+// --- DATA ---
+
 const stats = [
+  // Updated Years Experience (2025 - 2015 = 10)
   { icon: Users, value: 15000, label: 'Happy Travelers', suffix: '+' },
-  { icon: Award, value: 12, label: 'Years Experience', suffix: '+' },
+  { icon: Award, value: 10, label: 'Years Experience', suffix: '+' },
   { icon: Globe, value: 250, label: 'Destinations', suffix: '+' },
   { icon: Shield, value: 98, label: 'Satisfaction Rate', suffix: '%' },
 ];
 
+// Kept placeholder team and values as no new data was provided, but these should be updated by you later.
 const team = [
   {
-    name: 'John Smith',
-    role: 'CEO & Founder',
-    image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400',
+    name: 'Poonam Sharma',
+    role: 'CEO & Founder (Est. 2015)',
+    image: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400', // Placeholder
   },
   {
-    name: 'Sarah Johnson',
+    name: 'Team Member',
     role: 'Head of Operations',
-    image: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400',
+    image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400', // Placeholder
   },
   {
-    name: 'Michael Chen',
+    name: 'Team Member',
     role: 'Tour Director',
-    image: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=400',
+    image: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=400', // Placeholder
   },
   {
-    name: 'Emily Rodriguez',
+    name: 'Team Member',
     role: 'Customer Relations',
-    image: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=400',
+    image: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=400', // Placeholder
   },
 ];
 
 const values = [
   {
     icon: Heart,
-    title: 'Passion for Travel',
-    description: 'We live and breathe travel, sharing our enthusiasm with every journey we craft.',
+    title: 'Personalized Service',
+    description: 'We focus on personalized services to ensure customer satisfaction, all under one roof.',
   },
   {
     icon: Shield,
-    title: 'Safety First',
-    description: 'Your security and wellbeing are our top priorities on every adventure.',
+    title: 'Reliable Travel',
+    description: 'Acting as your travel companion and investigator, we ensure safe and smooth journeys.',
   },
   {
     icon: Star,
-    title: 'Excellence',
-    description: 'We strive for perfection in every detail of your travel experience.',
+    title: 'Expert Knowledge',
+    description: 'Backed by 10+ years of experience in client servicing and travel logistics.',
   },
   {
     icon: MapPin,
     title: 'Local Expertise',
-    description: 'Deep connections with local guides ensure authentic, immersive experiences.',
+    description: 'Specializing in domestic tourism across all major regions of India and territories.',
   },
 ];
+
+// --- UTILITY COMPONENTS ---
 
 function CountUpAnimation({ end, duration = 2000, suffix = '' }) {
   const [count, setCount] = useState(0);
@@ -79,6 +85,8 @@ function CountUpAnimation({ end, duration = 2000, suffix = '' }) {
 
   return <span>{count.toLocaleString()}{suffix}</span>;
 }
+
+// --- MAIN COMPONENT: ABOUT PAGE ---
 
 export default function AboutPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -108,10 +116,11 @@ export default function AboutPage() {
 
         <div className={`relative z-10 h-full flex items-center justify-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="text-center text-white px-4">
+            {/* Updated Company Name */}
             <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-200">
-              About TravelWorld
+              About Holidays Planners
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-cyan-100">Creating unforgettable travel experiences since 2012</p>
+            <p className="text-xl md:text-2xl mb-8 text-cyan-100">Your trusted travel companion since 2015</p>
             <div className="w-24 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full" />
           </div>
         </div>
@@ -125,22 +134,25 @@ export default function AboutPage() {
       </div>
 
       <div className="container mx-auto px-4 py-20">
-        {/* Story Section */}
+        {/* Story Section - UPDATED CONTENT */}
         <div className={`max-w-4xl mx-auto mb-24 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
             Our Story
           </h2>
           <div className="space-y-6 text-gray-700 text-lg leading-relaxed">
             <p className="hover:text-gray-900 transition-colors duration-300">
-              Founded in 2012, TravelWorld began with a simple mission: to make world-class travel experiences accessible to everyone. What started as a small tour operator has grown into a leading travel company, trusted by thousands of travelers worldwide.
+              Holidays Planners, founded in 2015 by CEO Miss. Poonam Sharma and a team of seasoned professionals, is an online travel portal dedicated to being your complete travel companion and investigator. Based in Shimla, Himachal Pradesh, we offer comprehensive services across India, covering key destinations like Himachal Pradesh, J&K, Leh Ladakh, Goa, Kerala, Maharashtra, Delhi, Uttarakhand, and the Andaman & Nicobar Islands region.
             </p>
             <p className="hover:text-gray-900 transition-colors duration-300">
-              We believe that travel has the power to transform lives, broaden perspectives, and create lasting memories. Our team of experienced travel professionals works tirelessly to curate exceptional tours that combine adventure, culture, and comfort.
+              As a leading Indian Tour and Travel company, Holidays Planners serves as a one-stop shop for all your travel needs, offering comprehensive holiday packages, hotel bookings, and related services. We specialize in creating unique, affordable holiday experiences across India, focusing on personalized service and maximizing customer satisfaction under one professional roof.
+            </p>
+            <p className="hover:text-gray-900 transition-colors duration-300">
+              Our travel department simplifies your entire journey. We are resourceful enough to handle all bookings, from domestic and international airlines to visa assistance and foreign exchange. We serve as travel consultants, taking complete responsibility for the consumer’s needs through our strong network for hotels, car rentals, and packages.
             </p>
           </div>
         </div>
 
-        {/* Stats Section */}
+        {/* Stats Section - UPDATED DATA */}
         <div className={`grid grid-cols-2 md:grid-cols-4 gap-8 mb-24 transition-all duration-1000 delay-400 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           {stats.map((stat, index) => {
             const Icon = stat.icon;
@@ -162,10 +174,10 @@ export default function AboutPage() {
           })}
         </div>
 
-        {/* Values Section */}
+        {/* Values Section - UPDATED VALUES */}
         <div className="mb-24">
           <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
-            Our Values
+            Our Core Principles
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => {
@@ -218,7 +230,7 @@ export default function AboutPage() {
         {/* CTA Section */}
         <div className="relative overflow-hidden rounded-3xl shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 animate-gradient" 
-               style={{ backgroundSize: '200% 200%' }} />
+              style={{ backgroundSize: '200% 200%' }} />
           <div className="relative z-10 p-12 md:p-16 text-center text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Ready to Start Your Adventure?</h2>
             <p className="text-xl md:text-2xl mb-8 text-cyan-50">Join thousands of satisfied travelers and explore the world with us</p>

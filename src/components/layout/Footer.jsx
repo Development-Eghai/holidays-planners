@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Facebook, Instagram, Linkedin, Youtube, ChevronUp } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Twitter, ChevronUp } from 'lucide-react'; // Changed Youtube to Twitter
+
+// --- SUB-COMPONENTS ---
 
 const FooterColumn = ({ title, links, delay }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -61,8 +63,9 @@ const StickyWhatsApp = () => {
   }, []);
 
   return (
+    // Updated WhatsApp number
     <a
-      href="https://wa.me/919090403075"
+      href="https://wa.me/919816259997" 
       target="_blank"
       rel="noopener noreferrer"
       className={`fixed right-6 bottom-6 z-50 transition-all duration-500 transform ${
@@ -130,7 +133,10 @@ const ScrollToTop = () => {
   );
 };
 
+// --- MAIN COMPONENT: FOOTER ---
+
 export default function Footer() {
+  // Keeping the link structure generic as requested by original file structure
   const internationalTrips = [
     'Europe', 'Bali', 'Vietnam', 'Thailand', 'Kazakhstan', 
     'Singapore', 'Bhutan', 'Maldives', 'Dubai', 'Malaysia'
@@ -141,7 +147,7 @@ export default function Footer() {
     'Himachal Pradesh', 'Andaman', 'Rajasthan'
   ];
 
-  const wanderonSpecial = [
+  const hpSpecial = [ // Renamed column
     'Community Trips', 'Honeymoon Trips', 'Corporate Trips', 'Weekend Getaways'
   ];
 
@@ -176,9 +182,10 @@ export default function Footer() {
               links={indiaTrips}
               delay={100}
             />
+            {/* Updated column title */}
             <FooterColumn 
-              title="WanderOn Special" 
-              links={wanderonSpecial}
+              title="HP Special" 
+              links={hpSpecial}
               delay={200}
             />
             <FooterColumn 
@@ -191,71 +198,78 @@ export default function Footer() {
           {/* Divider */}
           <div className="border-t border-gray-800 mb-8"></div>
 
-          {/* Company Info */}
+          {/* Company Info - UPDATED COMPANY DETAILS */}
           <div className="text-center mb-8">
+            {/* Updated Company Name */}
             <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              WANDERON EXPERIENCES PVT LTD
+              HOLIDAYS PLANNERS
             </h2>
+            {/* Updated Address */}
             <p className="text-gray-400 text-sm mb-4">
-              3rd Floor, Building No-436, Phase IV, Udyog Vihar, Sector-18, Gurugram, Haryana-122015
+              <a href="https://maps.app.goo.gl/pkCAr39eBtwqskYs7">Kapil Niwas Bye Pass Road Chakkar Shimla, H.P.(171005)</a>
             </p>
+            
             <div className="flex flex-wrap justify-center items-center gap-4 md:gap-8 text-sm">
+              {/* Updated Email */}
               <a 
-                href="mailto:hello@wanderon.in" 
+                href="mailto:info@holidaysplanners.com" 
                 className="text-gray-400 hover:text-cyan-400 transition-colors duration-300"
               >
-                hello@wanderon.in
+                info@holidaysplanners.com
               </a>
+              {/* Updated Phone */}
               <a 
-                href="tel:+919090403075" 
+                href="tel:+919816259997" 
                 className="text-gray-400 hover:text-cyan-400 transition-colors duration-300"
               >
-                +91-9090403075
+                +91-98162-59997
               </a>
+              {/* Updated Website */}
               <a 
-                href="https://www.wanderon.in" 
+                href="https://www.holidaysplanners.com" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-cyan-400 transition-colors duration-300"
               >
-                www.wanderon.in
+                www.holidaysplanners.com
               </a>
             </div>
           </div>
 
-          {/* Social Icons */}
+          {/* Social Icons - UPDATED TWITTER LINK AND ICON */}
           <div className="flex justify-center gap-4">
             <SocialIcon 
               icon={Facebook} 
-              href="https://facebook.com" 
+              href="#" 
               delay={400}
               bgColor="bg-blue-600 hover:bg-blue-700"
             />
             <SocialIcon 
               icon={Instagram} 
-              href="https://instagram.com" 
+              href="#" 
               delay={500}
               bgColor="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600"
             />
             <SocialIcon 
               icon={Linkedin} 
-              href="https://linkedin.com" 
+              href="#" 
               delay={600}
               bgColor="bg-blue-700 hover:bg-blue-800"
             />
+            {/* Updated to Twitter/X link */}
             <SocialIcon 
-              icon={Youtube} 
-              href="https://youtube.com" 
+              icon={Twitter} 
+              href="https://x.com/Holidays_planne" 
               delay={700}
-              bgColor="bg-red-600 hover:bg-red-700"
+              bgColor="bg-gray-700 hover:bg-gray-800" // Generic gray/black for X/Twitter
             />
           </div>
         </div>
 
-        {/* Bottom Copyright */}
+        {/* Bottom Copyright - UPDATED COMPANY NAME */}
         <div className="border-t border-gray-800 py-4">
           <p className="text-center text-gray-500 text-sm">
-            © 2025 WanderOn Experiences Pvt Ltd. All rights reserved.
+            © 2025 Holidays Planners. All rights reserved.
           </p>
         </div>
       </footer>

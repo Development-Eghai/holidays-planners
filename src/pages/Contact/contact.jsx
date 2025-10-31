@@ -13,7 +13,8 @@ export default function ContactPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
-    alert('Message sent successfully!');
+    // NOTE: Removed alert() as per instructions. You can replace this with a proper toast/modal notification.
+    console.log('Message sent successfully!'); 
   };
 
   const handleChange = (e) => {
@@ -23,36 +24,51 @@ export default function ContactPage() {
     });
   };
 
+  // UPDATED CONTACT INFORMATION
   const contactInfo = [
     {
       icon: Phone,
-      title: 'Phone',
-      content: '+1 (234) 567-890',
-      subtitle: 'Mon-Fri: 9am-6pm',
-      color: 'from-blue-500 to-purple-500',
+      title: 'Phone Numbers',
+      // Combining all numbers into an array to be rendered as clickable links
+      content: [
+        { text: '0177-2831381 (Landline)', href: 'tel:+911772831381' },
+        { text: '+91-98162-59997 (Mobile)', href: 'tel:+919816259997' },
+        { text: '+91-94180-63381 (Mobile)', href: 'tel:+919418063381' },
+      ],
+      subtitle: 'Call us during working hours',
+      color: 'from-blue-600 to-cyan-500', 
       delay: '0'
     },
     {
       icon: Mail,
       title: 'Email',
-      content: 'info@travel.com',
+      // Making the email content a clickable link
+      content: [
+        { text: 'info@holidaysplanners.com', href: 'mailto:info@holidaysplanners.com' }
+      ],
       subtitle: "We'll respond within 24 hours",
-      color: 'from-purple-500 to-pink-500',
+      color: 'from-cyan-500 to-green-500',
       delay: '100'
     },
     {
       icon: MapPin,
-      title: 'Office',
-      content: '123 Travel Street',
-      subtitle: 'Adventure City, TC 12345',
+      title: 'Office Address',
+      // Making the address content a clickable link to Google Maps
+      content: [
+        { text: 'Kapil Niwas Bye Pass Road Chakkar', href: 'https://maps.app.goo.gl/pkCAr39eBtwqskYs7' }
+      ],
+      subtitle: 'Shimla, H.P. (171005)',
       color: 'from-pink-500 to-orange-500',
       delay: '200'
     },
     {
       icon: Clock,
       title: 'Working Hours',
-      content: 'Monday - Friday: 9:00 AM - 6:00 PM',
-      subtitle: 'Saturday: 10:00 AM - 4:00 PM',
+      content: [
+        { text: 'Monday - Friday: 9:00 AM - 6:00 PM', href: '#' },
+        { text: 'Saturday: 10:00 AM - 4:00 PM', href: '#' }
+      ],
+      subtitle: 'We are here for you',
       color: 'from-orange-500 to-red-500',
       delay: '300'
     }
@@ -69,7 +85,7 @@ export default function ContactPage() {
         
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 animate-fade-in">
-            Let's Connect
+            Contact Holidays Planners
           </h1>
           <p className="text-xl md:text-2xl opacity-90 animate-fade-in" style={{ animationDelay: '200ms' }}>
             Your dream adventure starts with a conversation
@@ -106,7 +122,18 @@ export default function ContactPage() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-1 text-gray-800">{item.title}</h3>
-                          <p className="text-gray-700 font-medium">{item.content}</p>
+                          {/* Mapped content to render clickable links */}
+                          {item.content.map((c, i) => (
+                            <a 
+                              key={i} 
+                              href={c.href} 
+                              className={`block text-gray-700 font-medium ${c.href !== '#' ? 'hover:text-indigo-600 transition-colors' : ''}`}
+                              target={item.title === 'Office Address' || item.title === 'Email' ? '_blank' : '_self'}
+                              rel={item.title === 'Office Address' ? 'noopener noreferrer' : undefined}
+                            >
+                              {c.text}
+                            </a>
+                          ))}
                           <p className="text-sm text-gray-500 mt-1">{item.subtitle}</p>
                         </div>
                       </div>
@@ -127,7 +154,7 @@ export default function ContactPage() {
                 </h2>
                 <p className="text-gray-600 mb-8">Fill out the form and we'll get back to you shortly</p>
                 
-                <div className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
                     <label className="block text-sm font-semibold mb-2 text-gray-700">Name</label>
                     <input 
@@ -159,7 +186,7 @@ export default function ContactPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="+1 (234) 567-890" 
+                      placeholder="Phone number" 
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors duration-300"
                     />
                   </div>
@@ -189,14 +216,14 @@ export default function ContactPage() {
                   </div>
                   
                   <button 
-                    onClick={handleSubmit}
+                    type="submit"
                     className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 animate-fade-in flex items-center justify-center gap-2"
                     style={{ animationDelay: '350ms' }}
                   >
                     <Send className="h-5 w-5" />
                     Send Message
                   </button>
-                </div>
+                </form>
               </div>
             </div>
           </div>
