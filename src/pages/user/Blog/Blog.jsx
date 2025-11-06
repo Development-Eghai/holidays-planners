@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import BlogListComponent from '../../components/blog/bloglist';
+import BlogListComponent from '../../../components/blog/bloglist';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Blog = () => {

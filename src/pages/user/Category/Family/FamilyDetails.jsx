@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import DestinationHero from '../../../components/trips/TripHero';
-import TripOverview from '../../../components/trips/TripOverview'; // Import TripOverview
-import FAQ from '../../../components/charts/FAQ';
-import Form from '../../../components/forms/LeadGeneration';
-import Banner from '../../../components/charts/PromotionalBanner';
-import Related from '../../../components/destinations/RelatedTrips';
-import Honeymoon from '../../../components/trips/CtripTab'
+import DestinationHero from '../../../../components/destinations/DestinationHero';
+import TripOverview from '../../../../components/trips/TripOverview'; // Import TripOverview
+import FAQ from '../../../../components/charts/FAQ';
+import Form from '../../../../components/forms/LeadGeneration';
+import Banner from '../../../../components/charts/PromotionalBanner';
+import Related from '../../../../components/destinations/RelatedTrips';
+import Honeymoon from '../../../../components/trips/CtripTab'
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Destinations = () => {

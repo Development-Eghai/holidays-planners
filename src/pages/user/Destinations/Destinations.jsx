@@ -1,27 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import DestinationHero from '../../../components/trips/TripHero';
-import TripOverview from '../../../components/trips/TripOverview'; // Import TripOverview
+import DestinationHero from '../../../components/destinations/DestinationHero';
+import DestinationOverview from '../../../components/destinations/DestinationOverview';
+import Blog from '../../../components/charts/BlogComponent';
 import FAQ from '../../../components/charts/FAQ';
 import Form from '../../../components/forms/LeadGeneration';
 import Banner from '../../../components/charts/PromotionalBanner';
 import Related from '../../../components/destinations/RelatedTrips';
-import Honeymoon from '../../../components/trips/CtripTab'
+import DestCategory from '../../../components/destinations/DestCategory';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Destinations = () => {
-  const [tripId, setTripId] = useState('jibhi');
+  const [destinationId, setDestinationId] = useState('jibhi');
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get tripId from URL query parameters
+    // Get destinationId from URL query parameters
     const params = new URLSearchParams(location.search);
-    const id = params.get('tripId');
+    const id = params.get('destinationId');
 
-    console.log('URL tripId:', id); // For debugging
+    console.log('URL destinationId:', id); // For debugging
 
     if (id) {
-      setTripId(id);
+      setDestinationId(id);
     }
   }, [location.search]);
 
@@ -29,9 +30,9 @@ const Destinations = () => {
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
-      const id = params.get('tripId');
+      const id = params.get('destinationId');
       if (id) {
-        setTripId(id);
+        setDestinationId(id);
       }
     };
 
@@ -41,9 +42,9 @@ const Destinations = () => {
 
   return (
     <div>
-      <DestinationHero tripId={tripId} />
-      <TripOverview tripId={tripId} /> {/* Pass tripId here */}
-        <Honeymoon tripId={tripId} />
+      <DestinationHero destinationId={destinationId} />
+      <DestinationOverview currentDestinationId={destinationId} />
+      <DestCategory currentDestinationId={destinationId} />
       <Related />
       <Banner />
       <Form />
