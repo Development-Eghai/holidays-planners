@@ -19,12 +19,7 @@ const FooterColumn = ({ title, links, delay }) => {
       <ul className="space-y-2">
         {links.map((link, index) => (
           <li key={index}>
-            <a 
-              href="#" 
-              className="text-gray-400 hover:text-cyan-400 transition-colors duration-300 text-sm inline-block hover:translate-x-2 transform transition-transform"
-            >
-              {link}
-            </a>
+            <a className="text-gray-400 hover:text-cyan-400 transition duration-300 text-sm inline-block hover:-translate-y-0.5">{link}</a>
           </li>
         ))}
       </ul>
