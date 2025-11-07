@@ -1,95 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapPin } from 'lucide-react';
 
-const departures = [
-  {
-    id: 1,
-    tripId: 'jibhi',
-    title: 'Jibhi & Tirthan Valley',
-    location: 'Himachal Pradesh',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    duration: '3 Days 2 Nights',
-    price: '7,000',
-    toursAvailable: '12 Tours Available'
-  },
-  {
-    id: 2,
-    tripId: 'kasol',
-    title: 'Kasol Kheerganga',
-    location: 'Himachal Pradesh',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    duration: '3 Days 2 Nights',
-    price: '6,500',
-    toursAvailable: '15 Tours Available'
-  },
-  {
-    id: 3,
-    tripId: 'chopta',
-    title: 'Chopta-Tungnath',
-    location: 'Uttarakhand',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-    duration: '3 Days 2 Nights',
-    price: '6,500',
-    toursAvailable: '10 Tours Available'
-  },
-  {
-    id: 4,
-    tripId: 'yulia',
-    title: 'Yulia Kanda Trek',
-    location: 'Himachal Pradesh',
-    image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&q=80',
-    duration: '3 Days 2 Nights',
-    price: '8,000',
-    toursAvailable: '8 Tours Available'
-  },
-  {
-    id: 5,
-    tripId: 'hampta',
-    title: 'Hampta Pass Trek',
-    location: 'Himachal Pradesh',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    duration: '5 Days 4 Nights',
-    price: '12,000',
-    toursAvailable: '14 Tours Available'
-  },
-  {
-    id: 6,
-    tripId: 'kedarkantha',
-    title: 'Kedarkantha Trek',
-    location: 'Uttarakhand',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-    duration: '6 Days 5 Nights',
-    price: '15,000',
-    toursAvailable: '9 Tours Available'
-  },
-  {
-    id: 7,
-    tripId: 'valley',
-    title: 'Valley of Flowers',
-    location: 'Uttarakhand',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    duration: '7 Days 6 Nights',
-    price: '18,000',
-    toursAvailable: '6 Tours Available'
-  },
-  {
-    id: 8,
-    tripId: 'triund',
-    title: 'Triund Trek',
-    location: 'Himachal Pradesh',
-    image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&q=80',
-    duration: '2 Days 1 Night',
-    price: '3,500',
-    toursAvailable: '20 Tours Available'
-  }
-];
+const API_URL = "https://api.yaadigo.com/secure/api";
+const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
+const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
+
+const getFullImageUrl = (path) => 
+    !path || typeof path !== "string" ? '' : 
+    path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
 
 export default function DestinationCards() {
+  const [departures, setDepartures] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
 
+  const fetchFixedDepartures = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        // Fetch all trips, assuming we would filter for fixed_departure later if needed
+        const response = await fetch(`${API_URL}/trips/`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const json = await response.json();
+        const fetchedList = json.data || [];
+        
+        // Filter or select up to 8 fixed departure trips
+        const fixedTrips = fetchedList.filter(t => t.pricing_model === 'fixed_departure' || t.fixed_departure?.length > 0).slice(0, 8);
+        
+        // If no explicit fixed trips, just use the first 8 general trips
+        const tripsToMap = fixedTrips.length > 0 ? fixedTrips : fetchedList.slice(0, 8);
+        
+        const standardizedTrips = tripsToMap.map(t => {
+            const price = t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price || 
+                          t.pricing?.customized?.final_price || 0;
+            const fixedDepartureCount = t.pricing?.fixed_departure?.length || 0;
+
+            return {
+                id: t._id || t.id,
+                tripId: t.slug || t._id || t.id,
+                title: t.title,
+                location: t.pickup_location || t.destination_type,
+                image: getFullImageUrl(t.hero_image || t.image),
+                duration: `${t.days || 1} Days ${t.nights || 0} Nights`,
+                price: price.toLocaleString(),
+                toursAvailable: `${t.trip_count || fixedDepartureCount || 1} Tours Available`
+            };
+        });
+
+        setDepartures(standardizedTrips);
+    } catch (error) {
+        console.error("Error fetching fixed departures:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFixedDepartures();
+  }, [fetchFixedDepartures]);
+
+
   const handleTripDetails = (tripId) => {
-    window.location.href = `/trips?tripId=${tripId}`;
+    // Assuming tripId is the slug or ID for navigation
+    window.location.href = `/trip-preview/${tripId}`; 
   };
+
+  if (isLoading) {
+    return (
+        <section className="py-16 text-center bg-gray-50">
+             <p className="text-gray-500">Loading fixed departure trips...</p>
+        </section>
+    );
+  }
 
   return (
     <section className="py-16 px-4 bg-gray-50">

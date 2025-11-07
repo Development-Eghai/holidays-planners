@@ -1,72 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Backpack, Bus, Plane, Mountain, PartyPopper, Briefcase } from 'lucide-react';
+import { Backpack, Bus, Plane, Mountain, PartyPopper, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const categories = [
-  {
-    name: 'Backpacking',
-    label: 'Trips',
-    slug: 'backpacking',
-    icon: Backpack,
-    color: 'bg-gradient-to-br from-orange-500 to-red-500',
-    shadowColor: 'shadow-orange-500/50',
-    hoverColor: 'group-hover:text-orange-600',
-  },
-  {
-    name: 'Weekend',
-    label: 'Getaways',
-    slug: 'weekend',
-    icon: Bus,
-    color: 'bg-gradient-to-br from-emerald-500 to-teal-500',
-    shadowColor: 'shadow-emerald-500/50',
-    hoverColor: 'group-hover:text-emerald-600',
-  },
-  {
-    name: 'International',
-    label: 'Trips',
-    slug: 'international',
-    icon: Plane,
-    color: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-    shadowColor: 'shadow-blue-500/50',
-    hoverColor: 'group-hover:text-blue-600',
-  },
-  {
-    name: 'Adventure',
-    label: 'Treks',
-    slug: 'adventure',
-    icon: Mountain,
-    color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    shadowColor: 'shadow-purple-500/50',
-    hoverColor: 'group-hover:text-purple-600',
-  },
-  {
-    name: 'Honeymoon',
-    label: 'Trips',
-    slug: 'honeymoon',
-    icon: PartyPopper,
-    color: 'bg-gradient-to-br from-rose-500 to-pink-600',
-    shadowColor: 'shadow-rose-500/50',
-    hoverColor: 'group-hover:text-rose-600',
-  },
-  {
-    name: 'Corporate',
-    label: 'Trips',
-    slug: 'corporate',
-    icon: Briefcase,
-    color: 'bg-gradient-to-br from-slate-600 to-gray-700',
-    shadowColor: 'shadow-slate-600/50',
-    hoverColor: 'group-hover:text-slate-600',
-  },
-];
+const API_URL = "https://api.yaadigo.com/secure/api";
+const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
+const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
+
+// Helper to construct the full image URL
+const getFullImageUrl = (path) => 
+    !path || typeof path !== "string" ? '' : 
+    path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
+
+// Helper to map slugs to Lucide Icons (as a fallback if image fetching fails)
+const iconMap = {
+    'backpacking': Backpack,
+    'weekend': Bus,
+    'international': Plane,
+    'adventure': Mountain,
+    'honeymoon': PartyPopper,
+    'corporate': Briefcase,
+};
+
+// Simple Color/Shadow mapping based on category names (retained for hover/fallback color)
+const styleMap = {
+    'backpacking': { color: 'bg-gradient-to-br from-orange-500 to-red-500', shadowColor: 'shadow-orange-500/50', hoverColor: 'group-hover:text-orange-600' },
+    'weekend': { color: 'bg-gradient-to-br from-emerald-500 to-teal-500', shadowColor: 'shadow-emerald-500/50', hoverColor: 'group-hover:text-emerald-600' },
+    'international': { color: 'bg-gradient-to-br from-blue-500 to-indigo-600', shadowColor: 'shadow-blue-500/50', hoverColor: 'group-hover:text-blue-600' },
+    'adventure': { color: 'bg-gradient-to-br from-purple-500 to-pink-500', shadowColor: 'shadow-purple-500/50', hoverColor: 'group-hover:text-purple-600' },
+    'honeymoon': { color: 'bg-gradient-to-br from-rose-500 to-pink-600', shadowColor: 'shadow-rose-500/50', hoverColor: 'group-hover:text-rose-600' },
+    'corporate': { color: 'bg-gradient-to-br from-slate-600 to-gray-700', shadowColor: 'shadow-slate-600/50', hoverColor: 'group-hover:text-slate-600' },
+};
+
 
 export default function CategoriesSection() {
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const navigate = useNavigate();
+  
+  const scrollRef = useRef(null);
+  const scrollStep = 200; // Pixels to scroll per click
+
+  // --- Carousel Navigation ---
+  const scrollCategories = (direction) => {
+      if (scrollRef.current) {
+          const currentScroll = scrollRef.current.scrollLeft;
+          const newScroll = direction === 'left' ? currentScroll - scrollStep : currentScroll + scrollStep;
+          scrollRef.current.scrollTo({
+              left: newScroll,
+              behavior: 'smooth'
+          });
+      }
+  };
+
+
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch(`${API_URL}/categories/`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const json = await response.json();
+        const fetchedCategories = json.data || [];
+        
+        const standardizedCategories = fetchedCategories.map((cat, index) => {
+            const slug = (cat.slug || cat.name?.toLowerCase().replace(/ /g, '-')).toLowerCase();
+            const style = styleMap[slug] || {};
+            
+            // --- IMAGE INTEGRATION FIX ---
+            const imageUrl = Array.isArray(cat.image) && cat.image.length > 0 
+                             ? getFullImageUrl(cat.image[0]) 
+                             : null;
+
+            return {
+                id: cat._id || cat.id || index,
+                name: cat.name,
+                label: cat.label || 'Trips', 
+                slug: slug,
+                imageUrl: imageUrl, // Store the fetched image URL
+                icon: iconMap[slug] || Backpack, // Icon for fallback
+                color: style.color || 'bg-gray-500',
+                shadowColor: style.shadowColor || 'shadow-gray-500/50',
+                hoverColor: style.hoverColor || 'group-hover:text-gray-600',
+            };
+        });
+
+        setCategories(standardizedCategories);
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
 
   const handleCategoryClick = (slug) => {
-    console.log(`Clicked category: ${slug}`);
     navigate(`/triplist?travelStyle=${slug}`);
   };
+
+  if (isLoading) {
+    return (
+        <section className="py-16 bg-white">
+            <div className="container mx-auto px-4 text-center">
+                <p className="text-gray-500">Loading categories...</p>
+            </div>
+        </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-white">
@@ -80,49 +126,89 @@ export default function CategoriesSection() {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 lg:gap-16 max-w-6xl mx-auto">
-          {categories.map((category, index) => {
-            const Icon = category.icon;
-            const isHovered = hoveredIndex === index;
+        {/* --- Dynamic Category Carousel Section --- */}
+        <div className="relative max-w-6xl mx-auto">
             
-            return (
-              <div
-                key={category.slug}
-                className="opacity-0 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
-              >
-                <div
-                  className="flex flex-col items-center gap-3 cursor-pointer group"
-                  onClick={() => handleCategoryClick(category.slug)}
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
+            {/* Scrollable Content Container */}
+            <div className="flex justify-center flex-wrap overflow-x-auto custom-scrollbar-hide">
+                <div 
+                    ref={scrollRef}
+                    className="flex gap-8 md:gap-12 lg:gap-16 justify-center overflow-x-auto custom-scrollbar-hide py-4 px-12"
+                    style={{ scrollBehavior: 'smooth' }}
                 >
-                  <div
-                    className={`w-24 h-24 md:w-28 md:h-28 rounded-full ${category.color} flex items-center justify-center shadow-lg transition-all duration-300 ease-out ${
-                      isHovered 
-                        ? `${category.shadowColor} shadow-2xl -translate-y-2 scale-110` 
-                        : ''
-                    }`}
-                  >
-                    <Icon className="h-10 w-10 md:h-12 md:w-12 text-white" strokeWidth={1.5} />
-                  </div>
-                  <div className="text-center">
-                    <p className={`font-semibold text-gray-800 text-base md:text-lg ${category.hoverColor} transition-all duration-200 ${
-                      isHovered ? 'scale-105' : ''
-                    }`}>
-                      {category.name}
-                    </p>
-                    <p className={`font-semibold text-gray-800 text-base md:text-lg ${category.hoverColor} transition-all duration-200 ${
-                      isHovered ? 'scale-105' : ''
-                    }`}>
-                      {category.label}
-                    </p>
-                  </div>
+                    {categories.map((category, index) => {
+                        const Icon = category.icon;
+                        const isHovered = hoveredIndex === index;
+                        
+                        return (
+                            <div
+                                key={category.slug}
+                                className="flex-shrink-0 opacity-0 animate-slide-up"
+                                style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+                            >
+                                <div
+                                    className="flex flex-col items-center gap-3 cursor-pointer group"
+                                    onClick={() => handleCategoryClick(category.slug)}
+                                    onMouseEnter={() => setHoveredIndex(index)}
+                                    onMouseLeave={() => setHoveredIndex(null)}
+                                >
+                                    {/* --- DYNAMIC IMAGE/ICON CONTAINER --- */}
+                                    <div
+                                        className={`w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out relative overflow-hidden ${
+                                            isHovered 
+                                                ? `${category.shadowColor} shadow-2xl -translate-y-2 scale-110` 
+                                                : ''
+                                        } ${!category.imageUrl ? category.color : ''}`}
+                                    >
+                                        {category.imageUrl ? (
+                                            // Render Image if URL is available
+                                            <img
+                                                src={category.imageUrl}
+                                                alt={category.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            // Fallback to Icon if no image
+                                            <Icon className="h-10 w-10 md:h-12 md:w-12 text-white" strokeWidth={1.5} />
+                                        )}
+                                    </div>
+                                    {/* --- End DYNAMIC IMAGE/ICON CONTAINER --- */}
+
+                                    <div className="text-center">
+                                        <p className={`font-semibold text-gray-800 text-base md:text-lg ${category.hoverColor} transition-all duration-200 ${
+                                            isHovered ? 'scale-105' : ''
+                                        }`}>
+                                            {category.name}
+                                        </p>
+                                        <p className={`font-semibold text-gray-800 text-base md:text-lg ${category.hoverColor} transition-all duration-200 ${
+                                            isHovered ? 'scale-105' : ''
+                                        }`}>
+                                            {category.label}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-              </div>
-            );
-          })}
+            </div>
+
+            {/* Navigation Arrows */}
+            <button
+                onClick={() => scrollCategories('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all duration-300 z-10 hidden md:block border border-gray-200"
+            >
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
+            </button>
+            <button
+                onClick={() => scrollCategories('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all duration-300 z-10 hidden md:block border border-gray-200"
+            >
+                <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+
         </div>
+        {/* --- End Dynamic Category Carousel Section --- */}
       </div>
 
       <style jsx>{`
@@ -154,6 +240,14 @@ export default function CategoriesSection() {
 
         .animate-slide-up {
           animation: slide-up 0.5s ease-out;
+        }
+        
+        .custom-scrollbar-hide {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        .custom-scrollbar-hide::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
       `}</style>
     </section>

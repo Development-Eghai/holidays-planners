@@ -22,7 +22,7 @@ const Home = () => {
       <LeadGeneration />
       <AboutUs />
       <ComanyHighlights />
-      <Testimonials />
+      {/* <Testimonials /> */}
     </div>
   );
 };

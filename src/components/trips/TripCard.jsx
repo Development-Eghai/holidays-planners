@@ -3,113 +3,109 @@ import { Link } from "react-router-dom";
 import { MapPin, Star } from "lucide-react";
 
 const TripCard = ({ trip, onSendQuery }) => {
-  // Ensure a trip object is present before rendering
-  if (!trip) return null;
+  // State for hover effect
+  const [isHovered, setIsHovered] = React.useState(false); 
 
-  // --- Data Extraction and Fallbacks ---
-  const tripSlug = trip.slug || `trip-${trip._id || trip.id}`;
-  const tripId = trip._id || trip.id;
-  const tripPath = `/trip-preview/${tripSlug}/${tripId}`;
+  if (!trip) return null;
 
-  // Flexible price extraction, checking customized price first, then fixed departure price
-  const finalPrice =
-    trip?.pricing?.customized?.final_price ||
-    trip?.pricing?.fixed_departure?.[0]?.price ||
-    "N/A";
+  // --- Data Extraction and Fallbacks ---
+  const tripSlug = trip.slug || `trip-${trip._id || trip.id}`;
+  const tripId = trip._id || trip.id;
+  const tripPath = `/trip-preview/${tripSlug}/${tripId}`;
 
-  const discount = trip?.pricing?.customized?.discount || 0;
+  // Flexible price extraction
+  const finalPrice =
+    trip?.pricing?.customized?.final_price ||
+    trip?.pricing?.fixed_departure?.[0]?.price ||
+    "N/A";
+  
+  // Duration Display
+  const durationText = `${trip.days} Days ${trip.nights} Nights`;
 
-  // --- Event Handler ---
-  const handleSendQuery = () => {
-    if (onSendQuery) {
-      // Execute the function passed from the parent component (e.g., to open a modal)
-      onSendQuery(trip);
-    } else {
-      console.log("Send Query clicked for trip:", trip.title);
-      // Fallback action if no onSendQuery prop is provided
-    }
-  };
+  // Location Display (using destination type or pickup location for the tag style)
+  const locationTag = trip.destination_type || trip.pickup_location;
+  
+  // Discount amount
+  const discount = trip?.pricing?.customized?.discount || 0;
 
-  // --- Component Structure ---
-  return (
-    <div
-      key={tripId}
-      className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-1"
-    >
-      {/* Hero Image Section */}
-      <div className="relative flex-shrink-0">
-        <img
-          src={trip.hero_image}
-          alt={trip.title}
-          className="w-full h-56 object-cover"
-          loading="lazy"
-        />
+  // --- Event Handler ---
+  const handleSendQuery = (e) => {
+    e.preventDefault(); 
+    if (onSendQuery) {
+      onSendQuery(trip);
+    } else {
+      console.log("Send Query clicked for trip:", trip.title);
+    }
+  };
 
-        {/* Bestseller Badge */}
-        {trip.is_bestseller && (
-          <div className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-            Bestseller
-          </div>
-        )}
+  // --- Component Structure (Updated Height and Title Clamp) ---
+  return (
+    <div
+      key={tripId}
+      className="cursor-pointer rounded-3xl overflow-hidden shadow-xl"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link to={tripPath}>
+        {/* HEIGHT INCREASED TO h-96 */}
+        <div className="relative h-96 transition-all duration-500 transform hover:shadow-2xl hover:-translate-y-2">
+          {/* Background Image with Hover Effect */}
+          <img
+            src={trip.hero_image}
+            alt={trip.title}
+            className={`w-full h-full object-cover transition-transform duration-700 ${
+              isHovered ? 'scale-110' : 'scale-100'
+            }`}
+            loading="lazy"
+          />
 
-        {/* Discount Badge */}
-        {discount > 0 && (
-          <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-            {discount}% Off
-          </div>
-        )}
-      </div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-      {/* Details Section */}
-      <div className="p-5 flex flex-col flex-grow">
-        <Link to={tripPath} className="hover:text-blue-600 transition-colors">
-          <h3 className="text-lg font-bold mb-1">{trip.title}</h3>
-        </Link>
+          {/* Top Content / Badges */}
+          <div className="absolute top-0 inset-x-0 flex justify-between p-4">
+            {/* Location Tag */}
+            {locationTag && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-gray-800">
+                <MapPin className="w-4 h-4" />
+                {locationTag}
+              </span>
+            )}
+            
+            {/* Discount Badge */}
+            {discount > 0 && (
+              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                ₹{discount} Off
+              </div>
+            )}
+          </div>
 
-        {/* Location */}
-        <div className="flex items-center text-sm text-gray-600 mb-2">
-          <MapPin className="w-4 h-4 mr-1" />
-          <span>{trip.pickup_location}</span>
-        </div>
 
-        {/* Rating */}
-        <div className="flex items-center text-yellow-500 mb-3">
-          <Star className="w-4 h-4 mr-1 fill-yellow-500" />
-          <span>{trip.rating || "4.5"}</span>
-        </div>
+          {/* Bottom Content (Title, Duration, Price) */}
+          <div className="absolute bottom-0 inset-x-0 p-6 flex flex-col justify-end">
+                {/* Trip Title - TEXT LIMIT APPLIED HERE */}
+            <h3 className="text-2xl font-bold text-white mb-1 leading-tight line-clamp-2">
+              {trip.title}
+            </h3>
+                {/* Duration */}
+            <p className="text-white/90 text-sm font-medium mb-2">
+              {durationText}
+            </p>
+                {/* Price */}
+            <p className="text-xl font-bold text-white">
+              ₹{finalPrice}{" "}
+              <span className="text-sm font-normal">per person</span>
+            </p>
+          </div>
 
-        {/* Duration */}
-        <p className="text-sm text-gray-500 mb-4">
-          {trip.days} Days {trip.nights} Nights
-        </p>
-
-        {/* Price and Buttons */}
-        <div className="mt-auto">
-          <p className="text-lg font-bold text-gray-900 mb-3">
-            ₹{finalPrice}{" "}
-            <span className="text-sm text-gray-500">per person</span>
-          </p>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <Link
-              to={tripPath}
-              className="flex-1 text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              View Details
-            </Link>
-
-            <button
-              onClick={handleSendQuery}
-              className="flex-1 text-center bg-cyan-600 text-white py-2 rounded-lg font-semibold hover:bg-cyan-700 transition-colors"
-            >
-              Send Query
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+          {/* Hover Border Effect */}
+          <div className={`absolute inset-0 border-4 border-blue-500 rounded-3xl transition-opacity duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`} />
+        </div>
+      </Link>
+    </div>
+  );
 };
 
 export default TripCard;

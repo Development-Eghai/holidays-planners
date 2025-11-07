@@ -1,153 +1,181 @@
-import React, { useState } from 'react';
-import { MapPin, TrendingUp, Calendar, Star, Clock, Award, Plane } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { MapPin, TrendingUp, Search, X } from 'lucide-react';
 
-const destinations = [
-  {
-    id: 'paris-france',
-    name: 'Paris',
-    country: 'France',
-    destinationId: 'paris-france',
-    image: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 28,
-    continent: 'Europe',
-    description: 'Experience the city of lights with its iconic landmarks, world-class museums, romantic streets, and exquisite French cuisine that captivates millions of visitors.',
-    rating: 4.9,
-    bestTime: 'April - October',
-    tours: [
-      { id: 1, name: 'Eiffel Tower & Seine Cruise', image: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 2, name: 'Louvre Museum Tour', image: 'https://images.pexels.com/photos/2675268/pexels-photo-2675268.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 3, name: 'Versailles Palace Day Trip', image: 'https://images.pexels.com/photos/2422259/pexels-photo-2422259.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'bali-indonesia',
-    name: 'Bali',
-    country: 'Indonesia',
-    destinationId: 'bali-indonesia',
-    image: 'https://images.pexels.com/photos/2474690/pexels-photo-2474690.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 34,
-    continent: 'Asia',
-    description: 'Immerse yourself in the magical island paradise with pristine beaches, ancient temples, lush rice terraces, and vibrant Balinese culture.',
-    rating: 4.8,
-    bestTime: 'April - October',
-    tours: [
-      { id: 4, name: 'Ubud Rice Terraces & Temples', image: 'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 5, name: 'Beach Hopping Adventure', image: 'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 6, name: 'Mount Batur Sunrise Trek', image: 'https://images.pexels.com/photos/2549018/pexels-photo-2549018.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'tokyo-japan',
-    name: 'Tokyo',
-    country: 'Japan',
-    destinationId: 'tokyo-japan',
-    image: 'https://images.pexels.com/photos/2506923/pexels-photo-2506923.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 22,
-    continent: 'Asia',
-    description: 'Discover the perfect harmony of ancient traditions and cutting-edge technology in this mesmerizing metropolis where the future meets the past.',
-    rating: 4.9,
-    bestTime: 'March - May',
-    tours: [
-      { id: 7, name: 'Tokyo City Highlights', image: 'https://images.pexels.com/photos/315191/pexels-photo-315191.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 8, name: 'Mount Fuji Day Trip', image: 'https://images.pexels.com/photos/1440476/pexels-photo-1440476.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 9, name: 'Traditional Tea Ceremony', image: 'https://images.pexels.com/photos/5538323/pexels-photo-5538323.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'dubai-uae',
-    name: 'Dubai',
-    country: 'UAE',
-    destinationId: 'dubai-uae',
-    image: 'https://images.pexels.com/photos/1470502/pexels-photo-1470502.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 19,
-    continent: 'Asia',
-    description: 'Step into a world of opulence and innovation where desert dreams become reality with iconic skyscrapers and extraordinary experiences.',
-    rating: 4.7,
-    bestTime: 'November - March',
-    tours: [
-      { id: 10, name: 'Burj Khalifa & Dubai Mall', image: 'https://images.pexels.com/photos/1470502/pexels-photo-1470502.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 11, name: 'Desert Safari Adventure', image: 'https://images.pexels.com/photos/2044434/pexels-photo-2044434.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'santorini-greece',
-    name: 'Santorini',
-    country: 'Greece',
-    destinationId: 'santorini-greece',
-    image: 'https://images.pexels.com/photos/1010657/pexels-photo-1010657.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 16,
-    continent: 'Europe',
-    description: 'Discover the enchanting beauty of whitewashed villages, stunning caldera views, and legendary sunsets that paint the sky in golden hues.',
-    rating: 4.9,
-    bestTime: 'April - October',
-    tours: [
-      { id: 12, name: 'Sunset Catamaran Cruise', image: 'https://images.pexels.com/photos/1285625/pexels-photo-1285625.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 13, name: 'Wine Tasting Tour', image: 'https://images.pexels.com/photos/1407846/pexels-photo-1407846.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'new-york-usa',
-    name: 'New York',
-    country: 'USA',
-    destinationId: 'new-york-usa',
-    image: 'https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 31,
-    continent: 'North America',
-    description: 'Experience the pulse of the city that never sleeps with world-class museums, Broadway shows, and iconic landmarks at every corner.',
-    rating: 4.8,
-    bestTime: 'April - June',
-    tours: [
-      { id: 14, name: 'Manhattan Walking Tour', image: 'https://images.pexels.com/photos/378570/pexels-photo-378570.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 15, name: 'Statue of Liberty Tour', image: 'https://images.pexels.com/photos/64271/queen-of-liberty-statue-of-liberty-new-york-liberty-statue-64271.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'rome-italy',
-    name: 'Rome',
-    country: 'Italy',
-    destinationId: 'rome-italy',
-    image: 'https://images.pexels.com/photos/2064827/pexels-photo-2064827.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 25,
-    continent: 'Europe',
-    description: 'Walk through history in the Eternal City with ancient ruins, Renaissance art, and authentic Italian cuisine at every corner.',
-    rating: 4.8,
-    bestTime: 'April - June',
-    tours: [
-      { id: 16, name: 'Colosseum & Roman Forum', image: 'https://images.pexels.com/photos/2064827/pexels-photo-2064827.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 17, name: 'Vatican Museums Tour', image: 'https://images.pexels.com/photos/208315/pexels-photo-208315.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-  {
-    id: 'sydney-australia',
-    name: 'Sydney',
-    country: 'Australia',
-    destinationId: 'sydney-australia',
-    image: 'https://images.pexels.com/photos/995765/pexels-photo-995765.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    tourCount: 18,
-    continent: 'Oceania',
-    description: 'Experience Australia\'s harbor city with its iconic Opera House, beautiful beaches, and laid-back lifestyle under the southern sun.',
-    rating: 4.7,
-    bestTime: 'September - November',
-    tours: [
-      { id: 18, name: 'Sydney Opera House Tour', image: 'https://images.pexels.com/photos/995765/pexels-photo-995765.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 19, name: 'Bondi Beach & Coastal Walk', image: 'https://images.pexels.com/photos/327430/pexels-photo-327430.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ]
-  },
-];
+const API_URL = "https://api.yaadigo.com/secure/api";
+const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
+const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
+
+// Helper to construct the full image URL
+const getFullImageUrl = (path) => {
+  if (!path || typeof path !== "string") return '';
+  return path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
+};
+
+// Helper to create URL slug from name
+const createSlug = (name) => {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
+// --- Destination Card Component ---
+const DestinationCard = ({ dest, onClick, index }) => {
+  // eslint-disable-next-line no-unused-vars
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      onClick={() => onClick(dest.destinationId, dest.name)}
+      // Removed style={{ opacity: 0 }}. The animation handles the initial state.
+      className={`group relative h-96 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer animate-scale-in delay-${index * 100}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <img
+        src={dest.image}
+        alt={dest.name}
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+      
+      {/* Location Badge */}
+      <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full">
+        <MapPin className="h-4 w-4 text-white" />
+        <span className="text-white text-sm font-medium">{dest.country}</span>
+      </div>
+
+      {/* Text Content */}
+      <div className="absolute bottom-0 left-0 right-0 p-6">
+        <h3 className="text-3xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
+          {dest.name}
+        </h3>
+        <p className="text-white/90 font-medium">{dest.tourCount} Tours Available</p>
+      </div>
+
+      {/* Hover Border Effect */}
+      <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-400 transition-colors duration-300 rounded-2xl pointer-events-none" />
+    </div>
+  );
+};
 
 const DestinationList = () => {
-  const [selectedDestination, setSelectedDestination] = useState('paris-france');
-  const [hoveredTour, setHoveredTour] = useState(null);
+  const [allDestinations, setAllDestinations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleDestinationClick = (destinationId) => {
-    const url = `/destinfo?destinationId=${destinationId}`;
-    window.location.href = url;
+  // --- Data Fetching ---
+  const fetchAllDestinations = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/destinations/`, {
+        headers: { "x-api-key": API_KEY }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const json = await response.json();
+      const fetchedList = json.data || [];
+      
+      const standardizedList = fetchedList.map(d => {
+        
+        let totalTrips = 0;
+        // Calculate trip count defensively
+        if (Array.isArray(d.custom_packages)) {
+          d.custom_packages.forEach(pkg => {
+            if (Array.isArray(pkg.trips)) {
+              totalTrips += pkg.trips.length;
+            } else if (Array.isArray(pkg.trip_ids)) {
+                totalTrips += pkg.trip_ids.length;
+            }
+          });
+        } else if (Array.isArray(d.popular_trips)) {
+              totalTrips += d.popular_trips.length;
+        }
+        
+        // Get image defensively
+        let imageUrl = '';
+        if (Array.isArray(d.hero_banner_images) && d.hero_banner_images.length > 0) {
+          imageUrl = getFullImageUrl(d.hero_banner_images[0]);
+        } else if (d.hero_image) {
+          imageUrl = getFullImageUrl(d.hero_image);
+        } else if (Array.isArray(d.images) && d.images.length > 0) {
+          imageUrl = getFullImageUrl(d.images[0]);
+        }
+        
+        return {
+          id: d._id || d.id,
+          name: d.title || d.name,
+          country: d.destination_type || 'Domestic',
+          destinationId: d._id || d.id,
+          image: imageUrl,
+          tourCount: totalTrips,
+          rating: d.rating || 4.7,
+          continent: d.continent || d.destination_type,
+        };
+      });
+      
+      setAllDestinations(standardizedList);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching all destinations:", err);
+      setError(err.message);
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Effects
+  useEffect(() => {
+    fetchAllDestinations();
+  }, [fetchAllDestinations]);
+
+  const handleDestinationClick = (destinationId, destinationName) => {
+    const slug = createSlug(destinationName);
+    // Note: In a real app, use a router like React Router DOM for navigation
+    window.location.href = `/destination/${slug}/${destinationId}`; 
   };
+  
+  // --- Filtering ---
+  const filteredDestinations = useMemo(() => {
+    if (!searchTerm) return allDestinations;
 
-  const destination = destinations.find(d => d.id === selectedDestination);
+    return allDestinations.filter(dest => 
+        (dest.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (dest.country || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allDestinations, searchTerm]);
+
+  // --- RENDER LOGIC ---
+
+  // Error State
+  if (error && allDestinations.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+          <div className="text-red-600 text-xl font-semibold mb-2">Error</div>
+          <div className="text-gray-700">Error loading destinations: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial Loading State
+  if (isLoading && allDestinations.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+          <div className="text-xl font-semibold text-gray-700">Loading destinations...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
+      {/* ⚠️ Injecting necessary CSS for animations ⚠️ */}
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(30px); }
@@ -159,6 +187,7 @@ const DestinationList = () => {
         }
         .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
         .animate-scale-in { animation: scaleIn 0.6s ease-out forwards; }
+        .delay-0 { animation-delay: 0s; }
         .delay-100 { animation-delay: 0.1s; }
         .delay-200 { animation-delay: 0.2s; }
         .delay-300 { animation-delay: 0.3s; }
@@ -166,140 +195,62 @@ const DestinationList = () => {
         .delay-500 { animation-delay: 0.5s; }
         .delay-600 { animation-delay: 0.6s; }
         .delay-700 { animation-delay: 0.7s; }
+        .delay-800 { animation-delay: 0.8s; }
       `}</style>
 
       <div className="container mx-auto px-4 py-12">
-        {/* Select Button */}
-        <div className="flex justify-end mb-8">
-          <select 
-            value={selectedDestination}
-            onChange={(e) => setSelectedDestination(e.target.value)}
-            className="px-6 py-2.5 rounded-lg bg-white text-gray-900 font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
-          >
-            {destinations.map((dest) => (
-              <option key={dest.id} value={dest.id}>
-                {dest.name}, {dest.country}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-12 text-center animate-fade-in-up">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <TrendingUp className="h-6 w-6 text-blue-600" />
-            <h2 className="text-3xl font-bold text-gray-900">Popular Destinations</h2>
+        {/* 1. Header (Popular Destinations) - APPEARS FIRST */}
+        <div className="mb-10 text-center animate-fade-in-up">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <TrendingUp className="h-8 w-8 text-blue-600" />
+            <h2 className="text-4xl font-extrabold text-gray-900">Popular Destinations</h2>
           </div>
-          <p className="text-gray-600 text-lg">Discover amazing places around the world</p>
+          <p className="text-gray-600 text-xl">Discover amazing places around the world</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {destinations.map((dest, index) => (
-            <div
-              key={dest.id}
-              onClick={() => handleDestinationClick(dest.destinationId)}
-              className={`group relative h-96 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer animate-scale-in delay-${index * 100}`}
-              style={{ opacity: 0 }}
-            >
-              <img
-                src={dest.image}
-                alt={dest.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        {/* 2. Search Bar - APPEARS SECOND */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <div className="relative">
+            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search destinations by name or country..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full py-4 pl-14 pr-14 rounded-2xl text-gray-900 text-lg font-medium shadow-xl border-2 border-blue-100 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-5 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* 3. Destination Grid - APPEARS THIRD */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredDestinations.length > 0 ? (
+            filteredDestinations.map((dest, index) => (
+              <DestinationCard
+                key={dest.id}
+                dest={dest}
+                onClick={handleDestinationClick}
+                index={index}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-              
-              <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full">
-                <MapPin className="h-4 w-4 text-white" />
-                <span className="text-white text-sm font-medium">{dest.country}</span>
+            ))
+          ) : (
+            <div className="col-span-4 text-center py-20">
+              <div className="max-w-md mx-auto">
+                <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No destinations found</h3>
+                <p className="text-gray-600 text-lg">Try searching with different keywords</p>
               </div>
-
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3 className="text-3xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
-                  {dest.name}, {dest.country}
-                </h3>
-                <p className="text-white/90 font-medium">{dest.tourCount} Tours Available</p>
-              </div>
-
-              <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-400 transition-colors duration-300 rounded-2xl pointer-events-none" />
             </div>
-          ))}
+          )}
         </div>
-
-        {/* Selected Destination Details */}
-        {destination && (
-          <div className="animate-fade-in-up delay-400" style={{ opacity: 0 }}>
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-3xl p-8 md:p-12 mb-12">
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-4">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                    <span className="text-blue-600 font-semibold">{destination.country}, {destination.continent}</span>
-                  </div>
-                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    {destination.name}
-                  </h2>
-                  <p className="text-gray-700 text-lg mb-6 leading-relaxed">
-                    {destination.description}
-                  </p>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm">
-                      <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-bold text-gray-900">{destination.rating}</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      <span className="text-gray-900 font-medium">{destination.tourCount} Tours</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                      <span className="text-gray-900 font-medium">{destination.bestTime}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full md:w-1/2">
-                  <img
-                    src={destination.image}
-                    alt={destination.name}
-                    className="w-full h-80 object-cover rounded-2xl shadow-xl"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Tours Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-8">
-                <Award className="h-6 w-6 text-blue-600" />
-                <h3 className="text-3xl font-bold text-gray-900">Popular Tours in {destination.name}</h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {destination.tours.map((tour, index) => (
-                  <div
-                    key={tour.id}
-                    className={`group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 animate-scale-in delay-${(index + 5) * 100}`}
-                    style={{ opacity: 0 }}
-                    onMouseEnter={() => setHoveredTour(tour.id)}
-                    onMouseLeave={() => setHoveredTour(null)}
-                  >
-                    <div className="relative h-64 overflow-hidden">
-                      <img 
-                        src={tour.image} 
-                        alt={tour.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                    </div>
-
-                    <div className="p-6">
-                      <h4 className="text-xl text-center font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300 min-h-14 flex items-center justify-center">
-                        {tour.name}
-                      </h4>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,80 +1,78 @@
-import { useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { MapPin, Loader2 } from 'lucide-react';
 
-const destinations = [
-  {
-    id: 1,
-    destinationId: 'paris-france',
-    title: 'Paris, France',
-    country: 'France',
-    tours: 28,
-    image: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 2,
-    destinationId: 'bali-indonesia',
-    title: 'Bali, Indonesia',
-    country: 'Indonesia',
-    tours: 34,
-    image: 'https://images.pexels.com/photos/2474690/pexels-photo-2474690.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 3,
-    destinationId: 'tokyo-japan',
-    title: 'Tokyo, Japan',
-    country: 'Japan',
-    tours: 22,
-    image: 'https://images.pexels.com/photos/2506923/pexels-photo-2506923.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 4,
-    destinationId: 'dubai-uae',
-    title: 'Dubai, UAE',
-    country: 'UAE',
-    tours: 19,
-    image: 'https://images.pexels.com/photos/1470502/pexels-photo-1470502.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 5,
-    destinationId: 'santorini-greece',
-    title: 'Santorini, Greece',
-    country: 'Greece',
-    tours: 25,
-    image: 'https://images.pexels.com/photos/1010657/pexels-photo-1010657.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 6,
-    destinationId: 'new-york-usa',
-    title: 'New York, USA',
-    country: 'USA',
-    tours: 31,
-    image: 'https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 7,
-    destinationId: 'rome-italy',
-    title: 'Rome, Italy',
-    country: 'Italy',
-    tours: 27,
-    image: 'https://images.pexels.com/photos/2064827/pexels-photo-2064827.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-  {
-    id: 8,
-    destinationId: 'sydney-australia',
-    title: 'Sydney, Australia',
-    country: 'Australia',
-    tours: 23,
-    image: 'https://images.pexels.com/photos/995765/pexels-photo-995765.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  },
-];
+const API_URL = "https://api.yaadigo.com/secure/api";
+const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
+const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
+
+const getFullImageUrl = (path) => 
+    !path || typeof path !== "string" ? '' : 
+    path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
 
 export default function CustomizedDestinationsSection() {
+  const [destinations, setDestinations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
 
+  const fetchDestinations = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch(`${API_URL}/destinations/`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const json = await response.json();
+        const fetchedList = json.data || [];
+        
+        const standardizedList = fetchedList.map(d => {
+            // Extract first hero banner image from array
+            const heroImage = d.hero_banner_images?.[0] || d.image || d.hero_image || d.images?.[0]?.path || '';
+            
+            return {
+                id: d._id || d.id,
+                destinationId: d._id || d.id,
+                title: d.name || d.title || 'Unknown Destination',
+                country: d.destination_type || 'Global',
+                tours: d.tour_count || Math.floor(Math.random() * 20) + 10,
+                image: getFullImageUrl(heroImage),
+            };
+        });
+
+        setDestinations(standardizedList.slice(0, 8)); // Limit to 8 for the grid
+    } catch (error) {
+        console.error("Error fetching destinations for customized section:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDestinations();
+  }, [fetchDestinations]);
+
   const handleDestinationDetails = (destinationId) => {
-    // Navigate to destination info page with destinationId as query parameter
     window.location.href = `/destinfo?destinationId=${destinationId}`;
   };
+
+  if (isLoading) {
+    return (
+        <section className="py-16 text-center bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex justify-center items-center space-x-2">
+                <Loader2 className="h-6 w-6 text-blue-500 animate-spin" />
+                <p className="text-lg text-gray-500 font-medium">Loading customized destinations...</p>
+            </div>
+        </section>
+    );
+  }
+
+  if (destinations.length === 0 && !isLoading) {
+    return (
+        <section className="py-16 text-center bg-gradient-to-b from-gray-50 to-white">
+            <p className="text-gray-500">No destinations found. Please check API status.</p>
+        </section>
+    );
+  }
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-gray-50 to-white">
@@ -159,7 +157,7 @@ export default function CustomizedDestinationsSection() {
         </div>
       </div>
 
-      <style>{`
+      <style jsx>{`
         @keyframes fade-in-down {
           from {
             opacity: 0;
