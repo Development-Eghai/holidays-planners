@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom"; // Import Navigate for redirection
 
 // Layout Components
 import Header from "./components/layout/Header";
@@ -21,12 +21,14 @@ import Terms from "./pages/user/Terms/Terms";
 import Privacy from "./pages/user/Privacy/Privacy";
 import CategoryDetails from "./pages/user/Category/CategoryPreview";
 
-// --- ADMIN PAGES ---
+// --- ADMIN PAGES & PROTECTED ROUTE COMPONENT ---
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import PrivateRoute from "./pages/admin/components/PrivateRoute"; // Assuming you place PrivateRoute inside admin/components
 
 export default function App() {
   // Hide Header & Footer for Admin pages
+  // Note: For a true admin app, this logic often moves into a dedicated AdminLayout.
   const isAdminRoute = window.location.pathname.startsWith("/admin");
 
   return (
@@ -46,11 +48,7 @@ export default function App() {
 
           {/* DESTINATIONS */}
           <Route path="/destinations" element={<DestinationList />} />
-
-          {/* ✅ NEW Dynamic route for destination details */}
           <Route path="/destination/:slug/:id" element={<Destinations />} />
-
-          {/* Keep old route (query-based) for backward compatibility */}
           <Route path="/destinfo" element={<Destinations />} />
 
           {/* CATEGORY ROUTES */}
@@ -58,7 +56,6 @@ export default function App() {
           <Route path="/destinfo/office" element={<Office />} />
           <Route path="/destinfo/family" element={<Family />} />
           <Route path="/category/:slug/:id" element={<CategoryDetails />} />
-
 
           {/* BLOG & STATIC PAGES */}
           <Route path="/blog" element={<Blog />} />
@@ -68,8 +65,19 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
 
           {/* --- ADMIN ROUTES --- */}
+          
+          {/* 1. Admin Login Page (Publicly accessible) */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+          
+          {/* 2. Base /admin path redirects directly to the login for clarity */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+
+          {/* 3. Protected Dashboard Routes: All routes under this wrapper require login */}
+          <Route element={<PrivateRoute />}>
+            {/* The AdminDashboard component handles all nested routes like /overview, /users, etc. */}
+            <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+          </Route>
+          
         </Routes>
       </main>
 
