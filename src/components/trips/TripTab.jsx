@@ -1,18 +1,37 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  CheckCircle,
-  XCircle,
-  MapPin,
-  Calendar,
-  Star,
-  ArrowRight,
-  Send,
-  CreditCard,
+  CheckCircle,
+  XCircle,
+  MapPin,
+  Calendar,
+  Star,
+  ArrowRight,
+  Send,
+  CreditCard,
+  FileText, 
+  DollarSign, 
 } from "lucide-react";
 
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const BASE_URL = "https://api.yaadigo.com/secure/api/trips/";
+
+/**
+ * Parses a string field (like inclusions, exclusions, or highlights) by comma, newline, 
+ * and semicolon, removing existing bullet points (•) and cleaning up residual characters.
+ */
+const parseListField = (fieldString) => {
+    if (!fieldString) return [];
+    
+    // Replace newlines and semi-colons with commas for splitting, then remove existing bullets.
+    let cleanedString = fieldString.replace(/[\n;]/g, ',');
+    cleanedString = cleanedString.replace(/•\s*/g, '');
+
+    return cleanedString
+        .split(',')
+        .map(item => item.trim()) 
+        .filter(item => item.length > 0);
+};
 
 export default function TripTab({ tripId }) {
   const [tripData, setTripData] = useState(null);
@@ -58,6 +77,16 @@ export default function TripTab({ tripId }) {
     return (
       <div className="text-center py-20 text-gray-500">Loading trip...</div>
     );
+    
+  // --- Pre-process Data ---
+  const highlightsArray = parseListField(tripData.highlights);
+  // Pre-process policies for the Other Info tab
+  const policies = [
+      { title: "General Terms", content: tripData.terms, icon: FileText, color: "blue" },
+      { title: "Cancellation Policy", content: tripData.privacy_policy, icon: XCircle, color: "red" }, 
+      { title: "Payment Terms", content: tripData.payment_terms, icon: CreditCard, color: "green" },
+  ].filter(p => p.content);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4">
@@ -122,41 +151,41 @@ export default function TripTab({ tripId }) {
                     {/* Overview */}
                     <div className="text-gray-700 leading-relaxed space-y-4 animate-fade-in">
                       <p className="text-lg">
-                        {showFullOverview
+                        {showFullOverview || (tripData.overview?.length || 0) <= 400
                           ? tripData.overview
                           : `${tripData.overview?.slice(0, 400)}...`}
                       </p>
-                      <button
-                        onClick={() => setShowFullOverview(!showFullOverview)}
-                        className="inline-flex items-center gap-2 text-cyan-600 font-semibold hover:text-cyan-700 transition-all duration-300 hover:gap-3 group"
-                      >
-                        {showFullOverview ? "Read Less" : "Read More"}
-                        <span className="group-hover:translate-x-1 transition-transform">
-                          {showFullOverview ? "←" : "→"}
-                        </span>
-                      </button>
+                      {(tripData.overview?.length || 0) > 400 && (
+                          <button
+                            onClick={() => setShowFullOverview(!showFullOverview)}
+                            className="inline-flex items-center gap-2 text-cyan-600 font-semibold hover:text-cyan-700 transition-all duration-300 hover:gap-3 group"
+                          >
+                            {showFullOverview ? "Read Less" : "Read More"}
+                            <span className="group-hover:translate-x-1 transition-transform">
+                              {showFullOverview ? "←" : "→"}
+                            </span>
+                          </button>
+                      )}
                     </div>
 
-                    {/* Highlights */}
-                    {tripData.highlights && (
+                    {/* Highlights (FIXED to show multiple stars) */}
+                    {highlightsArray.length > 0 && (
                       <div className="mt-8">
                         <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                           <Star className="w-6 h-6 text-yellow-500" />
                           Trip Highlights
                         </h3>
                         <ul className="grid md:grid-cols-2 gap-3">
-                          {tripData.highlights
-                            .split("\n")
-                            .filter((h) => h.trim() !== "")
-                            .map((highlight, index) => (
-                              <li
-                                key={index}
-                                className="flex items-start gap-2 text-gray-700 bg-yellow-50 rounded-lg px-3 py-2 border border-yellow-100 hover:shadow-md transition-all"
-                              >
-                                <Star className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-1" />
-                                <span>{highlight.replace("•", "").trim()}</span>
-                              </li>
-                            ))}
+                          {highlightsArray.map((highlight, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 text-gray-700 bg-yellow-50 rounded-lg px-3 py-2 border border-yellow-100 hover:shadow-md transition-all animate-scale-in"
+                              style={{animationDelay: `${index * 0.05}s`}}
+                            >
+                              <Star className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-1" fill="currentColor" />
+                              <span>{highlight.trim()}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     )}
@@ -195,7 +224,7 @@ export default function TripTab({ tripId }) {
                                   {item.title}
                                 </h3>
                               </div>
-                              <p className="text-gray-700 leading-relaxed mt-3">
+                              <p className="text-gray-700 leading-relaxed mt-3 whitespace-pre-line">
                                 {item.description}
                               </p>
                             </div>
@@ -220,15 +249,14 @@ export default function TripTab({ tripId }) {
                       </h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                      {tripData.inclusions
-                        ?.split(",")
+                      {parseListField(tripData.inclusions)
                         .map((item, index) => (
                           <div
                             key={index}
                             className="flex items-start gap-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl hover:shadow-lg transition-all duration-300 border border-green-100 hover:border-green-300 animate-scale-in group"
                           >
                             <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-gray-800 leading-relaxed font-medium">
+                            <span className="text-gray-800 leading-relaxed font-medium whitespace-pre-line">
                               {item.trim()}
                             </span>
                           </div>
@@ -247,15 +275,14 @@ export default function TripTab({ tripId }) {
                       </h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                      {tripData.exclusions
-                        ?.split(",")
+                      {parseListField(tripData.exclusions)
                         .map((item, index) => (
                           <div
                             key={index}
                             className="flex items-start gap-4 p-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl hover:shadow-lg transition-all duration-300 border border-red-100 hover:border-red-300 animate-scale-in group"
                           >
                             <XCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-gray-800 leading-relaxed font-medium">
+                            <span className="text-gray-800 leading-relaxed font-medium whitespace-pre-line">
                               {item.trim()}
                             </span>
                           </div>
@@ -266,18 +293,36 @@ export default function TripTab({ tripId }) {
 
                 {/* ---------------- OTHER INFO ---------------- */}
                 {activeTab === "other" && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <div className="flex items-start gap-4 animate-slide-in-left">
                       <div className="h-10 w-1.5 bg-gradient-to-b from-cyan-600 to-blue-600 rounded-full"></div>
                       <h2 className="text-3xl font-bold text-gray-900">
-                        Important Information
+                        Important Policies & Terms
                       </h2>
                     </div>
-                    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 border-l-4 border-blue-600 rounded-r-2xl p-8 shadow-lg animate-fade-in-up">
-                      <p className="text-gray-800 leading-relaxed text-lg relative z-10">
-                        {tripData.terms || "No additional info available."}
-                      </p>
-                    </div>
+                    
+                    {policies.map((policy, index) => {
+                        // Dynamic Icon and color setup based on policy type
+                        const Icon = policy.icon;
+                        let iconColor = policy.color === 'blue' ? 'text-blue-600' : 
+                                        policy.color === 'green' ? 'text-green-600' : 'text-red-600';
+                        
+                        return (
+                            <div 
+                                key={index} 
+                                className={`relative overflow-hidden bg-white border-l-4 border-l-${policy.color}-600 rounded-r-xl p-6 shadow-md animate-fade-in-up`}
+                                style={{animationDelay: `${index * 0.15}s`}}
+                            >
+                                <div className="flex items-center gap-3 mb-3">
+                                    <Icon className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
+                                    <h3 className="text-xl font-bold text-gray-900">{policy.title}</h3>
+                                </div>
+                                <p className="text-gray-700 leading-relaxed text-base whitespace-pre-line">
+                                    {policy.content}
+                                </p>
+                            </div>
+                        );
+                    })}
                   </div>
                 )}
               </div>
@@ -355,6 +400,54 @@ export default function TripTab({ tripId }) {
           </div>
         </div>
       </div>
+      <style jsx>{`
+        /* --- Animation Keyframes --- */
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-in-left {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slide-in-right {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slide-down {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes expand {
+          from { width: 0; }
+          to { width: 100%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes scale-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* --- Animation Classes --- */
+        .animate-fade-in-up { animation: fade-in-up 0.5s ease-out backwards; }
+        .animate-slide-in-left { animation: slide-in-left 0.5s ease-out backwards; }
+        .animate-slide-in-right { animation: slide-in-right 0.5s ease-out backwards; }
+        .animate-slide-down { animation: slide-down 0.5s ease-out backwards; }
+        .animate-expand { animation: expand 0.3s ease-out; }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-gradient-shift { animation: gradient-shift 10s ease-in-out infinite; background-size: 200% 200%; }
+        .animate-scale-in { animation: scale-in 0.4s ease-out backwards; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
