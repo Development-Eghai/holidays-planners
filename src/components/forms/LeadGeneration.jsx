@@ -38,8 +38,8 @@ export default function AdventureCTA() {
 
   const handleNumberChange = (name, delta) => {
     setFormData(prev => ({
-      ...prev,
-      [name]: Math.max(0, prev[name] + delta)
+      // Ensure adults is at least 1, others at least 0 (corrected logic for 'adults' compared to original file)
+      [name]: Math.max(name === 'adults' ? 1 : 0, prev[name] + delta)
     }));
   };
 
@@ -128,14 +128,16 @@ export default function AdventureCTA() {
         {isPlanTripOpen && (
           <>
             <motion.div 
-              className="fixed inset-0 bg-black/60 z-50" 
+              // Updated z-index to z-[100000]
+              className="fixed inset-0 bg-black/60 z-[100000]" 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }} 
               onClick={() => setIsPlanTripOpen(false)} 
             />
             
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+            {/* Updated z-index to z-[100001] */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-2 sm:p-4">
               <motion.div 
                 className="bg-white w-full h-[96vh] sm:h-auto sm:rounded-2xl shadow-2xl sm:w-full sm:max-w-5xl relative sm:max-h-[92vh] overflow-hidden flex flex-col"
                 initial={{ opacity: 0, scale: 0.95 }} 

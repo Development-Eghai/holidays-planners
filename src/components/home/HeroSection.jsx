@@ -159,9 +159,9 @@ export default function HeroSection() {
   const totalResults =
     filteredResults.destinations.length + filteredResults.trips.length;
 
-  return (
+    return (
     <section
-      className="relative z-[1000] h-[600px] md:h-[700px] flex items-center justify-center overflow-visible"
+      className="relative z-[1] h-[600px] md:h-[700px] flex items-center justify-center overflow-visible"
       style={{
         fontFamily: 'Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif',
       }}
@@ -265,7 +265,8 @@ export default function HeroSection() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl max-h-96 overflow-y-auto z-[9999]"
+                // Updated z-index to z-[9998]
+                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl max-h-96 overflow-y-auto z-[9998]"
               >
                 {/* Destinations */}
                 {filteredResults.destinations.length > 0 && (
@@ -341,7 +342,8 @@ export default function HeroSection() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl p-6 text-center z-[9999]"
+                  // Updated z-index to z-[9998]
+                  className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl p-6 text-center z-[9998]"
                 >
                   <p className="text-gray-500">
                     No destinations or trips found for "{searchQuery}"

@@ -27,8 +27,9 @@ const WhatsAppIcon = () => (
 );
 
 const SuccessToast = ({ message, onClose }) => (
+  // Updated z-index to z-[100002]
   <motion.div
-    className="fixed bottom-6 right-6 p-4 bg-green-600 text-white rounded-lg shadow-xl z-[100] flex items-center gap-3"
+    className="fixed bottom-6 right-6 p-4 bg-green-600 text-white rounded-lg shadow-xl z-[100002] flex items-center gap-3"
     initial={{ opacity: 0, y: 50 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 50 }}
@@ -148,7 +149,8 @@ export default function Header() {
         2. MAIN HEADER (Logo, Navigation, Actions - Full Width)
         ============================================================
       */}
-      <motion.header className="sticky top-0 z-50 bg-white shadow-md w-full" initial={{ y: -100 }} animate={{ y: 0 }}>
+      {/* Updated z-index to z-[9999] */}
+      <motion.header className="sticky top-0 z-[9999] bg-white shadow-md w-full" initial={{ y: -100 }} animate={{ y: 0 }}>
         {/* Replaced container mx-auto px-4 with w-full and added padding internally */}
         <div className="w-full px-4">
           <div className="flex items-center justify-between h-20 max-w-7xl mx-auto"> {/* Added max-w-7xl for internal content constraint */}
@@ -185,7 +187,8 @@ export default function Header() {
                 <AnimatePresence>
                   {openDropdown === 'pages' && (
                     <motion.div 
-                      className="absolute top-full left-0 w-48 bg-white shadow-xl rounded-lg py-2 border z-50" 
+                      // Updated z-index to z-10000
+                      className="absolute top-full left-0 w-48 bg-white shadow-xl rounded-lg py-2 border z-[10000]" 
                       initial={{ opacity: 0, y: -8 }} 
                       animate={{ opacity: 1, y: 0 }} 
                       exit={{ opacity: 0, y: -8 }} 
@@ -264,16 +267,17 @@ export default function Header() {
       <AnimatePresence>
         {isPlanTripOpen && (
           <>
-            {/* Modal Backdrop */}
+            {/* Modal Backdrop - Updated z-index to z-100000 */}
             <motion.div 
-              className="fixed inset-0 bg-black/60 z-50" 
+              className="fixed inset-0 bg-black/60 z-[100000]" 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }} 
               onClick={() => setIsPlanTripOpen(false)} 
             />
             
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+            {/* Modal Content - Updated z-index to z-100001 */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-2 sm:p-4">
               <motion.div 
                 className="bg-white w-full h-[96vh] sm:h-auto sm:rounded-2xl shadow-2xl sm:w-full sm:max-w-5xl relative sm:max-h-[92vh] overflow-hidden flex flex-col"
                 initial={{ opacity: 0, scale: 0.95 }} 
@@ -466,10 +470,10 @@ export default function Header() {
       <AnimatePresence>
         {isSearchOpen && (
           <>
-            {/* Search Modal Backdrop */}
-            <motion.div className="fixed inset-0 bg-black/50 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSearchOpen(false)} />
-            {/* Search Content */}
-            <motion.div className="fixed inset-x-0 top-0 z-50 flex justify-center pt-20" initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}>
+            {/* Search Modal Backdrop - Updated z-index to z-99998 */}
+            <motion.div className="fixed inset-0 bg-black/50 z-[99998]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSearchOpen(false)} />
+            {/* Search Content - Updated z-index to z-99999 */}
+            <motion.div className="fixed inset-x-0 top-0 z-[99999] flex justify-center pt-20" initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}>
               <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
