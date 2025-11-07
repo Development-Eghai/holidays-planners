@@ -26,6 +26,20 @@ export default function CustomizedDestinationsSection() {
         const fetchedList = json.data || [];
         
         const standardizedList = fetchedList.map(d => {
+            // Calculate trip count from API data (same logic as DestinationList)
+            let totalTrips = 0;
+            if (Array.isArray(d.custom_packages)) {
+                d.custom_packages.forEach(pkg => {
+                    if (Array.isArray(pkg.trips)) {
+                        totalTrips += pkg.trips.length;
+                    } else if (Array.isArray(pkg.trip_ids)) {
+                        totalTrips += pkg.trip_ids.length;
+                    }
+                });
+            } else if (Array.isArray(d.popular_trips)) {
+                totalTrips += d.popular_trips.length;
+            }
+            
             // Extract first hero banner image from array
             const heroImage = d.hero_banner_images?.[0] || d.image || d.hero_image || d.images?.[0]?.path || '';
             
@@ -34,7 +48,7 @@ export default function CustomizedDestinationsSection() {
                 destinationId: d._id || d.id,
                 title: d.name || d.title || 'Unknown Destination',
                 country: d.destination_type || 'Global',
-                tours: d.tour_count || Math.floor(Math.random() * 20) + 10,
+                tours: totalTrips,
                 image: getFullImageUrl(heroImage),
             };
         });
