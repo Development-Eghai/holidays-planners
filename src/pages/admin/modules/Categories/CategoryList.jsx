@@ -13,7 +13,7 @@ const errorMsg = console.error;
 const successMsg = console.log;
 
 // ⚠️ ACTION REQUIRED: Update this constant with your correct public-facing website URL
-const PUBLIC_DOMAIN = "http://localhost:5173"; 
+const PUBLIC_DOMAIN = "https://holidaysplanners.com"; 
 
 // --- Alert Component ---
 const Alert = ({ message, type, onClose }) => {

@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Note: Assuming this component lives in a path like 'components/destinations/DestinationOverview.jsx'
-// and is receiving the fetched data via props.
 import { Share2, Facebook, Twitter, Linkedin, Link2, X } from 'lucide-react';
 
 /**
@@ -8,9 +6,10 @@ import { Share2, Facebook, Twitter, Linkedin, Link2, X } from 'lucide-react';
  * It expects to receive the full destination data object fetched from the API.
  */
 export default function DestinationDetails({ destinationData }) {
-    const [expanded, setExpanded] = useState(false);
     const [showShareOptions, setShowShareOptions] = useState(false);
     const [currentDestination, setCurrentDestination] = useState(null);
+    const [showFullOverview, setShowFullOverview] = useState(false);
+    const [showAllGuidelines, setShowAllGuidelines] = useState(false);
 
     // --- Data Mapping Effect ---
     useEffect(() => {
@@ -18,24 +17,16 @@ export default function DestinationDetails({ destinationData }) {
             // Map the dynamic API fields to the required structure
             const apiData = destinationData.data || destinationData;
             
-            // For the title and descriptions, we combine API fields for a better display.
-            // Using title and overview for the description content.
             const mappedData = {
                 title: apiData.title || 'About Destination',
-                // Using subtitle for a short description if available, otherwise use the start of the overview
-                shortDescription: apiData.subtitle || apiData.overview?.slice(0, 150) + '...' || 'No short description available.',
-                fullDescription: apiData.overview || 'No detailed description available.',
+                overview: apiData.overview || 'No overview available.',
+                travelGuidelines: apiData.travel_guidelines || '',
             };
             setCurrentDestination(mappedData);
-            setExpanded(false);
         }
     }, [destinationData]);
 
     const destination = currentDestination;
-
-    const toggleViewMore = () => {
-        setExpanded(!expanded);
-    };
 
     const handleShare = (platform) => {
         const url = window.location.href;
@@ -45,8 +36,6 @@ export default function DestinationDetails({ destinationData }) {
             facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
             twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
             linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-            // Note: WhatsApp and Telegram are often handled via navigator.share for better mobile support
-            // Placeholder:
             whatsapp: `https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`,
         };
 
@@ -87,12 +76,8 @@ export default function DestinationDetails({ destinationData }) {
     ];
 
     if (!destination) {
-        return null; // Don't render if data hasn't been mapped yet
+        return null;
     }
-
-    // Determine if the full description is long enough to require a "Read More" button
-    const requiresExpandButton = (destination.fullDescription?.length || 0) > 200;
-
 
     return (
         <>
@@ -139,7 +124,7 @@ export default function DestinationDetails({ destinationData }) {
             </div>
 
             <section className="py-20 px-4 bg-white">
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     <div className="opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
                         {/* Title Section */}
                         <div className="mb-12 opacity-0 animate-slide-down text-center" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
@@ -149,52 +134,95 @@ export default function DestinationDetails({ destinationData }) {
                             <div className="h-1.5 w-24 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full mx-auto"></div>
                         </div>
 
-                        {/* Content Cards */}
-                        <div className="space-y-8 opacity-0 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
-                            {/* Short Description Card */}
-                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-8 border-l-4 border-blue-600 shadow-md hover:shadow-lg transition-shadow duration-300">
-                                <p className="text-gray-800 text-lg leading-relaxed font-medium">
-                                    {destination.shortDescription}
-                                </p>
-                            </div>
-
-                            {/* Full Description - Collapsible */}
-                            <div
-                                className="overflow-hidden transition-all duration-700 ease-in-out"
-                                style={{
-                                    maxHeight: expanded ? '500px' : '0px',
-                                    opacity: expanded ? 1 : 0,
-                                    marginTop: expanded ? '32px' : '0px'
-                                }}
-                            >
-                                <div className="bg-white rounded-2xl p-8 border-2 border-blue-200 shadow-md">
-                                    <p className="text-gray-700 text-lg leading-relaxed">
-                                        {destination.fullDescription}
-                                    </p>
+                        {/* Single Blue Container with All Content */}
+                        <div className="opacity-0 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-10 md:p-12 border-l-4 border-blue-600 shadow-md hover:shadow-lg transition-shadow duration-300 space-y-8">
+                                {/* Overview */}
+                                <div>
+                                    <h3 className="text-2xl font-semibold text-blue-900 mb-4">
+                                        Overview
+                                    </h3>
+                                    <div className="relative">
+                                        <div 
+                                            className={`text-gray-800 text-lg leading-relaxed whitespace-pre-line ${!showFullOverview && destination.overview.length > 400 ? 'line-clamp-4' : ''}`}
+                                            dangerouslySetInnerHTML={{ 
+                                                __html: destination.overview.replace(/\n/g, '<br/>') 
+                                            }}
+                                        />
+                                        {destination.overview.length > 400 && (
+                                            <button
+                                                onClick={() => setShowFullOverview(!showFullOverview)}
+                                                className="mt-3 text-blue-600 hover:text-blue-800 font-medium text-base transition-colors duration-200 flex items-center gap-1"
+                                            >
+                                                {showFullOverview ? 'View Less' : 'View More'}
+                                                <svg 
+                                                    className={`w-4 h-4 transition-transform duration-300 ${showFullOverview ? 'rotate-180' : ''}`}
+                                                    fill="none" 
+                                                    stroke="currentColor" 
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* View More Button */}
-                            {requiresExpandButton && (
-                                <div className="flex justify-center pt-4">
-                                    <button
-                                        onClick={toggleViewMore}
-                                        className="inline-flex items-center justify-center gap-2 px-8 py-3 text-blue-600 font-semibold bg-blue-50 border-2 border-blue-300 rounded-full hover:bg-blue-100 hover:border-blue-500 transition-all duration-300 group"
-                                    >
-                                        <span>
-                                            {expanded ? 'Read Less' : 'Read More'}
-                                        </span>
-                                        <svg 
-                                            className={`w-5 h-5 transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`}
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            )}
+                                {/* Travel Guidelines - Only show if available */}
+                                {destination.travelGuidelines && (() => {
+                                    const allPoints = destination.travelGuidelines
+                                        .split('.')
+                                        .filter(point => point.trim().length > 0);
+                                    const pointsToShow = showAllGuidelines ? allPoints : allPoints.slice(0, 3);
+                                    const hasMorePoints = allPoints.length > 3;
+
+                                    return (
+                                        <div className="pt-6 border-t-2 border-blue-200">
+                                            <h3 className="text-2xl font-semibold text-blue-900 mb-5">
+                                                Travel Guidelines
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {pointsToShow.map((point, index) => (
+                                                    <div key={index} className="flex items-start gap-3">
+                                                        <svg 
+                                                            className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" 
+                                                            fill="none" 
+                                                            stroke="currentColor" 
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path 
+                                                                strokeLinecap="round" 
+                                                                strokeLinejoin="round" 
+                                                                strokeWidth={2} 
+                                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                                            />
+                                                        </svg>
+                                                        <p className="text-gray-800 text-lg leading-relaxed flex-1">
+                                                            {point.trim()}.
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {hasMorePoints && (
+                                                <button
+                                                    onClick={() => setShowAllGuidelines(!showAllGuidelines)}
+                                                    className="mt-5 text-blue-600 hover:text-blue-800 font-medium text-base transition-colors duration-200 flex items-center gap-1"
+                                                >
+                                                    {showAllGuidelines ? 'View Less' : `View More (${allPoints.length - 3} more)`}
+                                                    <svg 
+                                                        className={`w-4 h-4 transition-transform duration-300 ${showAllGuidelines ? 'rotate-180' : ''}`}
+                                                        fill="none" 
+                                                        stroke="currentColor" 
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -208,6 +236,13 @@ export default function DestinationDetails({ destinationData }) {
                 .animate-fade-in { animation: fade-in 0.6s ease-out; }
                 .animate-slide-down { animation: slide-down 0.6s ease-out; }
                 .animate-slide-up { animation: slide-up 0.6s ease-out; }
+                
+                .line-clamp-4 {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 4;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
             `}</style>
         </>
     );
