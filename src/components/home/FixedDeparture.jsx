@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TripCard from "../../components/trips/TripCard"; // Import the new component
+import TripCard from "../../components/trips/TripCard"; 
 
 const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
@@ -10,14 +10,56 @@ const getFullImageUrl = (path) =>
     !path || typeof path !== "string" ? '' :
     path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
 
+const standardizeTripData = (t) => {
+    // Determine the relevant price and discount based on the pricing model
+    const isFixed = t.pricing_model === 'fixed_departure' || t.fixed_departure?.length > 0;
+    
+    // Fallback logic for price determination
+    const finalPrice = isFixed 
+        ? t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price || 0
+        : t.pricing?.customized?.final_price || 0;
+        
+    const discount = isFixed
+        ? t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.discount || 0
+        : t.pricing?.customized?.discount || 0;
+
+    return {
+        ...t, // Spread all properties
+        id: t._id || t.id,
+        _id: t._id, 
+        slug: t.slug,
+        title: t.title,
+        hero_image: getFullImageUrl(t.hero_image || t.image),
+        days: t.days || 1,
+        nights: t.nights || 0,
+        pricing: {
+            ...t.pricing,
+            customized: {
+                ...t.pricing?.customized,
+                final_price: finalPrice.toLocaleString(), // Format for display
+                discount: discount // Pass raw discount amount
+            },
+            // Ensure fixed_departure pricing is formatted if it exists
+            fixed_departure: t.pricing?.fixed_departure?.map(fd => ({
+                ...fd,
+                costingPackages: fd.costingPackages?.map(cp => ({
+                    ...cp,
+                    final_price: cp.final_price.toLocaleString() // Format the final price
+                })) || []
+            })) || []
+        }
+    };
+};
+
 export default function DestinationCards() {
     const navigate = useNavigate();
 
-    const [departures, setDepartures] = useState([]);
+    // 1. Two distinct states for different trip types
+    const [fixedDepartures, setFixedDepartures] = useState([]);
+    const [customizedPackages, setCustomizedPackages] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    // Removed hoveredCard state as the logic is now inside TripCard
 
-    const fetchFixedDepartures = useCallback(async () => {
+    const fetchTrips = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await fetch(`${API_URL}/trips/`, {
@@ -28,64 +70,37 @@ export default function DestinationCards() {
             const json = await response.json();
             const fetchedList = json.data || [];
 
-            const fixedTrips = fetchedList.filter(t => t.pricing_model === 'fixed_departure' || t.fixed_departure?.length > 0).slice(0, 8);
-            const tripsToMap = fixedTrips.length > 0 ? fixedTrips : fetchedList.slice(0, 8);
+            // Filter and standardize the data
+            const fixedTrips = [];
+            const customizedTrips = [];
 
-            const standardizedTrips = tripsToMap.map(t => {
-                // Ensure price and discount are numbers before formatting
-                const finalPrice = t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price ||
-                                   t.pricing?.customized?.final_price || 0;
-                const discount = t.pricing?.customized?.discount || 0;
+            fetchedList.slice(0, 16).forEach(t => { // Fetch up to 16 to get 8 of each, if possible
+                const standardizedTrip = standardizeTripData(t);
+
+                // Logic to separate the trips
+                const isFixedDeparture = t.pricing_model === 'fixed_departure' || t.fixed_departure?.length > 0;
                 
-                // Return the object in a structure that mostly aligns with the fetched API data
-                // The TripCard component will handle final display formatting and logic.
-                return {
-                    ...t, // Spread all properties for TripCard to use
-                    id: t._id || t.id,
-                    _id: t._id, // Keep both for safety
-                    slug: t.slug,
-                    title: t.title,
-                    pickup_location: t.pickup_location,
-                    destination_type: t.destination_type,
-                    hero_image: getFullImageUrl(t.hero_image || t.image),
-                    days: t.days || 1,
-                    nights: t.nights || 0,
-                    // Re-calculate pricing structure to be robust for TripCard
-                    pricing: {
-                        ...t.pricing,
-                        customized: {
-                            ...t.pricing?.customized,
-                            final_price: finalPrice.toLocaleString(), // Format price for display
-                            discount: discount // Pass raw discount amount
-                        },
-                        // Simplified fixed_departure for TripCard
-                        fixed_departure: t.pricing?.fixed_departure?.map(fd => ({
-                            ...fd,
-                            price: finalPrice.toLocaleString() // Ensure price is formatted
-                        }))
-                    }
-                };
+                if (isFixedDeparture) {
+                    fixedTrips.push(standardizedTrip);
+                } else {
+                    customizedTrips.push(standardizedTrip);
+                }
             });
 
-            setDepartures(standardizedTrips);
+            // Set the two states, capping at 8 items for each section
+            setFixedDepartures(fixedTrips.slice(0, 8));
+            setCustomizedPackages(customizedTrips.slice(0, 8));
+
         } catch (error) {
-            console.error("Error fetching fixed departures:", error);
+            console.error("Error fetching trips:", error);
         } finally {
             setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchFixedDepartures();
-    }, [fetchFixedDepartures]);
-
-    // Removed handleTripDetails as navigation is handled by Link in TripCard
-    // The previous logic was:
-    // const handleTripDetails = (tripSlug, tripId) => {
-    //     const tripPath = `/trip-preview/${tripSlug}/${tripId}`;
-    //     navigate(tripPath);
-    //     window.scrollTo(0, 0);
-    // };
+        fetchTrips();
+    }, [fetchTrips]);
 
     const handleViewAllTrips = () => {
         navigate('/triplist');
@@ -95,43 +110,75 @@ export default function DestinationCards() {
     if (isLoading) {
         return (
             <section className="py-16 text-center bg-gray-50">
-                <p className="text-gray-500">Loading fixed departure trips...</p>
+                <p className="text-gray-500">Loading inspiring trips...</p>
             </section>
         );
     }
 
-    // No action needed for onSendQuery for this component's current use case
     const onSendQuery = (trip) => {
         console.log(`Query requested for: ${trip.title}`);
         // Implement your actual query/form logic here
     };
 
-    return (
-        <section className="py-16 px-4 bg-gray-50">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
-                        Trips That Inspire
-                    </h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                        Join our upcoming group adventures with confirmed departure dates
-                    </p>
-                </div>
-
-                {/* Cards Grid */}
+    // Helper component for rendering a trip section
+    const TripSection = ({ title, description, trips, onSendQuery }) => (
+        <>
+            <div className="text-center mb-10 mt-16 first:mt-0">
+                <h3 className="text-3xl md:text-4xl font-semibold mb-2 text-gray-800">
+                    {title}
+                </h3>
+                <p className="text-gray-500 max-w-2xl mx-auto text-md">
+                    {description}
+                </p>
+            </div>
+            {trips.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {departures.map((departure) => (
+                    {trips.map((trip) => (
                         <TripCard 
-                            key={departure.id} 
-                            trip={departure} 
-                            // onSendQuery={onSendQuery} // Optional: include if you add a query button
+                            key={trip.id} 
+                            trip={trip} 
+                            // onSendQuery={onSendQuery} 
                         />
                     ))}
                 </div>
+            ) : (
+                <p className="text-center text-gray-500">No {title.toLowerCase()} currently available.</p>
+            )}
+            <hr className="my-16 border-gray-200" />
+        </>
+    );
 
+    return (
+        <section className="py-16 px-4 bg-gray-50">
+            <div className="max-w-7xl mx-auto">
+                {/* Main Header */}
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+                        Trips That Inspire ✨
+                    </h2>
+                    <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+                        Explore our curated fixed departures and flexible customized packages.
+                    </p>
+                </div>
+
+                {/* --- Fixed Departure Section --- */}
+                <TripSection
+                    title="Fixed Departures"
+                    description="Join our upcoming group adventures with confirmed departure dates."
+                    trips={fixedDepartures}
+                    onSendQuery={onSendQuery}
+                />
+                
+                {/* --- Customized Packages Section --- */}
+                <TripSection
+                    title="Customized Packages"
+                    description="Tailor your dream trip with a flexible itinerary and private dates."
+                    trips={customizedPackages}
+                    onSendQuery={onSendQuery}
+                />
+                
                 {/* View All Button */}
-                <div className="text-center mt-12">
+                <div className="text-center mt-6">
                     <button 
                         className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl"
                         onClick={handleViewAllTrips}
