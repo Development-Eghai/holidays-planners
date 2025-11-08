@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Backpack, Bus, Plane, Mountain, PartyPopper, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// NOTE: These variables are assumed to be defined globally or imported elsewhere in a real application,
+// but are kept here for completeness based on the original code's context.
 const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
@@ -36,6 +38,7 @@ export default function CategoriesSection() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  // Assumes a React Router context is available, allowing navigation.
   const navigate = useNavigate();
   
   const scrollRef = useRef(null);
@@ -69,10 +72,10 @@ export default function CategoriesSection() {
             const slug = (cat.slug || cat.name?.toLowerCase().replace(/ /g, '-')).toLowerCase();
             const style = styleMap[slug] || {};
             
-            // --- IMAGE INTEGRATION FIX ---
+            // --- IMAGE INTEGRATION ---
             const imageUrl = Array.isArray(cat.image) && cat.image.length > 0 
-                             ? getFullImageUrl(cat.image[0]) 
-                             : null;
+                            ? getFullImageUrl(cat.image[0]) 
+                            : null;
 
             return {
                 id: cat._id || cat.id || index,
@@ -100,8 +103,13 @@ export default function CategoriesSection() {
   }, [fetchCategories]);
 
 
-  const handleCategoryClick = (slug) => {
-    navigate(`/triplist?travelStyle=${slug}`);
+  // --- UPDATED NAVIGATION HANDLER WITH SCROLL TO TOP ---
+  const handleCategoryClick = (slug, id) => {
+    // Scroll to top immediately before navigation
+    window.scrollTo(0, 0);
+    // Navigates to the new URL format: /category/:slug/:id
+    // This assumes the React Router is configured to handle this path.
+    navigate(`/category/${slug}/${id}`);
   };
 
   if (isLoading) {
@@ -148,7 +156,8 @@ export default function CategoriesSection() {
                             >
                                 <div
                                     className="flex flex-col items-center gap-3 cursor-pointer group"
-                                    onClick={() => handleCategoryClick(category.slug)}
+                                    // --- UPDATED CALL SITE ---
+                                    onClick={() => handleCategoryClick(category.slug, category.id)}
                                     onMouseEnter={() => setHoveredIndex(index)}
                                     onMouseLeave={() => setHoveredIndex(null)}
                                 >
@@ -158,7 +167,7 @@ export default function CategoriesSection() {
                                             isHovered 
                                                 ? `${category.shadowColor} shadow-2xl -translate-y-2 scale-110` 
                                                 : ''
-                                        } ${!category.imageUrl ? category.color : ''}`}
+                                            } ${!category.imageUrl ? category.color : ''}`}
                                     >
                                         {category.imageUrl ? (
                                             // Render Image if URL is available

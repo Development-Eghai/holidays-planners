@@ -16,7 +16,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 /* ===========================
-   CONFIG
+    CONFIG
 =========================== */
 const SECURE_BASE = "https://api.yaadigo.com/secure/api/";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
@@ -26,7 +26,7 @@ const AFTER_CREATE_REDIRECT = "/admin/dashboard/trip-management/list";
 const AFTER_UPDATE_REDIRECT = "/admin/dashboard/trip-management/list";
 
 /* ===========================
-   COMPONENT
+    COMPONENT
 =========================== */
 export default function TripCreate() {
   const navigate = useNavigate();
@@ -45,10 +45,10 @@ export default function TripCreate() {
   const [faqs, setFaqs] = useState([]);
   const [faqInput, setFaqInput] = useState({ question: "", answer: "" });
 
-  // chip inputs
-  const [highlightsInput, setHighlightsInput] = useState("");
-  const [inclusionsInput, setInclusionsInput] = useState("");
-  const [exclusionsInput, setExclusionsInput] = useState("");
+  // New state for multi-line textareas (Highlights, Inclusions, Exclusions)
+  const [highlightsText, setHighlightsText] = useState("");
+  const [inclusionsText, setInclusionsText] = useState("");
+  const [exclusionsText, setExclusionsText] = useState("");
 
   // pricing packages (fixed)
   const [fixedPackage, setFixedPackage] = useState([
@@ -127,10 +127,10 @@ export default function TripCreate() {
       },
     },
 
-    // Details
-    highlights: [],
-    inclusions: [],
-    exclusions: [],
+    // Details (Changed to strings to hold the multi-line text)
+    highlights: "", // Changed to string
+    inclusions: "", // Changed to string
+    exclusions: "", // Changed to string
 
     // Policies
     terms: "",
@@ -247,15 +247,8 @@ export default function TripCreate() {
     }));
   };
 
-  const removeItem = (field, index) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
-    }));
-  };
-
   /* ===========================
-     UPLOAD HANDLERS (FIXED)
+      UPLOAD HANDLERS (FIXED)
   =========================== */
 
   // Hero image upload + preview + remove
@@ -344,7 +337,7 @@ export default function TripCreate() {
     }));
 
   /* ===========================
-     PRICING HELPERS
+      PRICING HELPERS
   =========================== */
   const addFixedPackage = () =>
     setFixedPackage((p) => [
@@ -411,7 +404,7 @@ export default function TripCreate() {
     });
 
   /* ===========================
-     FETCHES
+      FETCHES
   =========================== */
   const getCategories = async () => {
     try {
@@ -445,10 +438,15 @@ export default function TripCreate() {
       if (res?.data?.success === true) {
         const tripData = res.data.data;
 
-        // normalize arrays
-        const highlightsArray = tripData.highlights ? tripData.highlights.split("; ") : [];
-        const inclusionsArray = tripData.inclusions ? tripData.inclusions.split("; ") : [];
-        const exclusionsArray = tripData.exclusions ? tripData.exclusions.split("; ") : [];
+        // Convert semicolon-separated strings back to line-break format for textareas
+        const convertToLineBreaks = (text) => {
+          if (!text) return "";
+          return text.split("; ").join("\n");
+        };
+        
+        setHighlightsText(convertToLineBreaks(tripData.highlights));
+        setInclusionsText(convertToLineBreaks(tripData.inclusions));
+        setExclusionsText(convertToLineBreaks(tripData.exclusions));
 
         const itineraryDays =
           tripData.itinerary?.map((day, index) => ({
@@ -484,9 +482,10 @@ export default function TripCreate() {
           nights: tripData.nights || "",
           hero_image: tripData.hero_image || null,
           gallery_images: tripData.gallery_images || [],
-          highlights: highlightsArray,
-          inclusions: inclusionsArray,
-          exclusions: exclusionsArray,
+          // Keep these as strings for the submission structure
+          highlights: tripData.highlights || "",
+          inclusions: tripData.inclusions || "",
+          exclusions: tripData.exclusions || "",
           terms: tripData.terms || "",
           privacy_policy: tripData.privacy_policy || "",
           payment_terms: tripData.payment_terms || "",
@@ -559,9 +558,17 @@ export default function TripCreate() {
   }, [id]);
 
   /* ===========================
-     SUBMISSION
+      SUBMISSION
   =========================== */
   const prepareSubmissionData = () => {
+    
+    // Convert new textareas (separated by new lines) into the required semicolon-space format
+    const formatDetailString = (text) => 
+        text.split('\n')
+            .map(item => item.trim())
+            .filter(item => item.length > 0)
+            .join('; ');
+
     return {
       title: formData.title,
       overview: formData.overview,
@@ -579,10 +586,10 @@ export default function TripCreate() {
       slug: id ? formData.slug : (formData.title || "").toLowerCase().trim().replace(/\s+/g, "-"),
       pricing_model: formData.pricing_model,
 
-      // details
-      highlights: formData.highlights.join("; "),
-      inclusions: formData.inclusions.join("; "),
-      exclusions: formData.exclusions.join("; "),
+      // details - USING NEW FORMATTING LOGIC
+      highlights: formatDetailString(highlightsText), // Use the content from the new state
+      inclusions: formatDetailString(inclusionsText), // Use the content from the new state
+      exclusions: formatDetailString(exclusionsText), // Use the content from the new state
       faqs: faqs,
       terms: formData.terms,
       privacy_policy: formData.privacy_policy,
@@ -687,7 +694,7 @@ export default function TripCreate() {
   };
 
   /* ===========================
-     RENDER SECTIONS
+      RENDER SECTIONS
   =========================== */
   const renderBasic = () => (
     <div className="container">
@@ -1414,134 +1421,98 @@ export default function TripCreate() {
     </div>
   );
 
+  // RENDER DETAILS - WITH BULLET POINT PREVIEWS
   const renderDetails = () => (
     <div className="form-container details">
-      <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px" }}>
-        <div style={{ border: "1px solid black", width: "100%", padding: "20px" }} className="form-container">
-          <h3>Trip Highlight</h3>
-          <label>Add Trip Highlight</label>
-          <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-            <input
-              type="text"
-              placeholder="TajMahal"
-              value={highlightsInput}
-              onChange={(e) => setHighlightsInput(e.target.value)}
-              style={{ flexGrow: 1 }}
-            />
-            <button
-              onClick={() => {
-                if (highlightsInput.trim()) {
-                  setFormData((p) => ({ ...p, highlights: [...p.highlights, highlightsInput.trim()] }));
-                  setHighlightsInput("");
-                }
-              }}
-            >
-              +
-            </button>
-          </div>
-          <div>
-            {formData.highlights.map((highlight, index) => (
-              <div
-                key={index}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}
-              >
-                <span>{highlight}</span>
-                <button onClick={() => removeItem("highlights", index)}>×</button>
-              </div>
-            ))}
-          </div>
+      <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px", flexWrap: "wrap" }}>
+        
+        {/* TRIP HIGHLIGHT */}
+        <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
+          <h3 className="fs-5 fw-bold">Trip Highlight</h3>
+          <label className="form-label">Enter highlights (one per line)</label>
+          <textarea
+            rows={6}
+            className="form-control"
+            placeholder="E.g.,&#10;Visit Taj Mahal&#10;Explore local markets&#10;Sunset boat ride"
+            value={highlightsText}
+            onChange={(e) => setHighlightsText(e.target.value)}
+          />
+          <small className="text-muted d-block mt-1">Each line will be saved as a separate highlight item.</small>
         </div>
 
-        <div style={{ border: "1px solid black", width: "100%", padding: "20px" }} className="form-container">
-          <h3>Inclusions</h3>
-          <label>Add Inclusions</label>
-          <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-            <input
-              type="text"
-              placeholder="4 Nights"
-              value={inclusionsInput}
-              onChange={(e) => setInclusionsInput(e.target.value)}
-              style={{ flexGrow: 1 }}
-            />
-            <button
-              onClick={() => {
-                if (inclusionsInput.trim()) {
-                  setFormData((p) => ({ ...p, inclusions: [...p.inclusions, inclusionsInput.trim()] }));
-                  setInclusionsInput("");
-                }
-              }}
-            >
-              +
-            </button>
-          </div>
-          <div>
-            {formData.inclusions.map((inclusion, index) => (
-              <div
-                key={index}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}
-              >
-                <span>{inclusion}</span>
-                <button onClick={() => removeItem("inclusions", index)}>×</button>
-              </div>
-            ))}
-          </div>
+        {/* INCLUSIONS */}
+        <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
+          <h3 className="fs-5 fw-bold">Inclusions</h3>
+          <label className="form-label">Enter inclusions (one per line)</label>
+          <textarea
+            rows={6}
+            className="form-control"
+            placeholder="E.g.,&#10;4 Nights Accommodation&#10;Daily Breakfast and Dinner&#10;Airport Transfers"
+            value={inclusionsText}
+            onChange={(e) => setInclusionsText(e.target.value)}
+          />
+          <small className="text-muted d-block mt-1">Each line will be saved as a separate inclusion item.</small>
+          
+          {/* {inclusionsText && (
+            <div className="mt-3 p-3" style={{ background: "#f8f9fa", borderRadius: "6px" }}>
+              <strong className="d-block mb-2">Preview:</strong>
+              <ul style={{ marginBottom: 0, paddingLeft: "20px" }}>
+                {inclusionsText.split('\n').filter(item => item.trim()).map((item, idx) => (
+                  <li key={idx}>{item.trim()}</li>
+                ))}
+              </ul>
+            </div>
+          )} */}
         </div>
       </div>
-
-      <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px" }}>
-        <div style={{ border: "1px solid black", width: "100%", padding: "20px" }} className="form-container">
-          <h3>Exclusions</h3>
-          <label>Add Exclusions</label>
-          <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-            <input
-              type="text"
-              placeholder="Personal expenses"
-              value={exclusionsInput}
-              onChange={(e) => setExclusionsInput(e.target.value)}
-              style={{ flexGrow: 1 }}
-            />
-            <button
-              onClick={() => {
-                if (exclusionsInput.trim()) {
-                  setFormData((p) => ({ ...p, exclusions: [...p.exclusions, exclusionsInput.trim()] }));
-                  setExclusionsInput("");
-                }
-              }}
-            >
-              +
-            </button>
-          </div>
-          <div>
-            {formData.exclusions.map((exclusion, index) => (
-              <div
-                key={index}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}
-              >
-                <span>{exclusion}</span>
-                <button onClick={() => removeItem("exclusions", index)}>×</button>
-              </div>
-            ))}
-          </div>
+      
+      <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px", flexWrap: "wrap" }}>
+        {/* EXCLUSIONS */}
+        <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
+          <h3 className="fs-5 fw-bold">Exclusions</h3>
+          <label className="form-label">Enter exclusions (one per line)</label>
+          <textarea
+            rows={6}
+            className="form-control"
+            placeholder="E.g.,&#10;Airfare/Visa charges&#10;Personal expenses&#10;Travel insurance"
+            value={exclusionsText}
+            onChange={(e) => setExclusionsText(e.target.value)}
+          />
+          <small className="text-muted d-block mt-1">Each line will be saved as a separate exclusion item.</small>
+          
+          {/* {exclusionsText && (
+            <div className="mt-3 p-3" style={{ background: "#f8f9fa", borderRadius: "6px" }}>
+              <strong className="d-block mb-2">Preview:</strong>
+              <ul style={{ marginBottom: 0, paddingLeft: "20px" }}>
+                {exclusionsText.split('\n').filter(item => item.trim()).map((item, idx) => (
+                  <li key={idx}>{item.trim()}</li>
+                ))}
+              </ul>
+            </div>
+          )} */}
         </div>
 
-        <div style={{ border: "1px solid black", width: "100%", padding: "20px" }} className="form-container">
-          <h3>FAQ (Optional)</h3>
+        {/* FAQ (Optional) */}
+        <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
+          <h3 className="fs-5 fw-bold">FAQ (Optional)</h3>
+          <label className="form-label">Add FAQ</label>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "10px" }}>
             <input
               type="text"
+              className="form-control"
               placeholder="Enter FAQ question"
               value={faqInput?.question}
               onChange={(e) => setFaqInput({ ...faqInput, question: e.target.value })}
-              style={{ width: "100%" }}
             />
             <input
               type="text"
+              className="form-control"
               placeholder="Enter FAQ answer"
               value={faqInput?.answer}
               onChange={(e) => setFaqInput({ ...faqInput, answer: e.target.value })}
-              style={{ width: "100%" }}
             />
             <button
+                className="btn btn-primary"
               onClick={() => {
                 if (faqInput?.question?.trim() && faqInput?.answer?.trim()) {
                   setFaqs((prev) => [...prev, faqInput]);
@@ -1556,41 +1527,37 @@ export default function TripCreate() {
           </div>
 
           <div>
-            {faqs.length > 0 &&
-              faqs.map((faq, index) =>
-                faq.question && faq.answer ? (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "8px",
-                      borderBottom: "1px solid #ccc",
-                      paddingBottom: "5px",
-                    }}
-                  >
-                    <div>
-                      <strong>Q:</strong> {faq.question}
-                      <br />
-                      <strong>A:</strong> {faq.answer}
-                    </div>
-                    <button
-                      style={{
-                        color: "white",
-                        background: "red",
-                        border: "none",
-                        padding: "5px 10px",
-                        cursor: "pointer",
-                        borderRadius: "4px",
-                      }}
-                      onClick={() => setFaqs((prev) => prev.filter((_, i) => i !== index))}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ) : null
-              )}
+            {faqs.length > 0 && (
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {faqs.map((faq, index) =>
+                        faq.question && faq.answer ? (
+                            <div
+                                key={index}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start",
+                                    marginBottom: "8px",
+                                    borderBottom: "1px solid #eee",
+                                    paddingBottom: "5px",
+                                }}
+                            >
+                                <div style={{ flexGrow: 1, marginRight: '10px' }}>
+                                    <strong>Q:</strong> {faq.question}
+                                    <br />
+                                    <strong>A:</strong> {faq.answer}
+                                </div>
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => setFaqs((prev) => prev.filter((_, i) => i !== index))}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        ) : null
+                    )}
+                </div>
+            )}
           </div>
         </div>
       </div>
@@ -1651,7 +1618,7 @@ export default function TripCreate() {
   };
 
   /* ===========================
-     VIEW
+      VIEW
   =========================== */
   return (
     <div className="tour-container">

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TripCard from "../../components/trips/TripCard"; // Import the new component
 
 const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
 
-const getFullImageUrl = (path) => 
-    !path || typeof path !== "string" ? '' : 
+const getFullImageUrl = (path) =>
+    !path || typeof path !== "string" ? '' :
     path.startsWith("http") ? path : `${IMAGE_BASE_URL}${path}`;
 
 export default function DestinationCards() {
@@ -15,7 +15,7 @@ export default function DestinationCards() {
 
     const [departures, setDepartures] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [hoveredCard, setHoveredCard] = useState(null);
+    // Removed hoveredCard state as the logic is now inside TripCard
 
     const fetchFixedDepartures = useCallback(async () => {
         setIsLoading(true);
@@ -24,27 +24,46 @@ export default function DestinationCards() {
                 headers: { "x-api-key": API_KEY }
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
+
             const json = await response.json();
             const fetchedList = json.data || [];
-            
+
             const fixedTrips = fetchedList.filter(t => t.pricing_model === 'fixed_departure' || t.fixed_departure?.length > 0).slice(0, 8);
             const tripsToMap = fixedTrips.length > 0 ? fixedTrips : fetchedList.slice(0, 8);
-            
-            const standardizedTrips = tripsToMap.map(t => {
-                const price = t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price || 
-                              t.pricing?.customized?.final_price || 0;
-                const fixedDepartureCount = t.pricing?.fixed_departure?.length || 0;
 
+            const standardizedTrips = tripsToMap.map(t => {
+                // Ensure price and discount are numbers before formatting
+                const finalPrice = t.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price ||
+                                   t.pricing?.customized?.final_price || 0;
+                const discount = t.pricing?.customized?.discount || 0;
+                
+                // Return the object in a structure that mostly aligns with the fetched API data
+                // The TripCard component will handle final display formatting and logic.
                 return {
-                    id: t._id || t.id, 
-                    tripSlug: t.slug,
+                    ...t, // Spread all properties for TripCard to use
+                    id: t._id || t.id,
+                    _id: t._id, // Keep both for safety
+                    slug: t.slug,
                     title: t.title,
-                    location: t.pickup_location || t.destination_type,
-                    image: getFullImageUrl(t.hero_image || t.image),
-                    duration: `${t.days || 1} Days ${t.nights || 0} Nights`,
-                    price: price.toLocaleString(),
-                    toursAvailable: `${t.trip_count || fixedDepartureCount || 1} Tours Available`
+                    pickup_location: t.pickup_location,
+                    destination_type: t.destination_type,
+                    hero_image: getFullImageUrl(t.hero_image || t.image),
+                    days: t.days || 1,
+                    nights: t.nights || 0,
+                    // Re-calculate pricing structure to be robust for TripCard
+                    pricing: {
+                        ...t.pricing,
+                        customized: {
+                            ...t.pricing?.customized,
+                            final_price: finalPrice.toLocaleString(), // Format price for display
+                            discount: discount // Pass raw discount amount
+                        },
+                        // Simplified fixed_departure for TripCard
+                        fixed_departure: t.pricing?.fixed_departure?.map(fd => ({
+                            ...fd,
+                            price: finalPrice.toLocaleString() // Ensure price is formatted
+                        }))
+                    }
                 };
             });
 
@@ -60,11 +79,13 @@ export default function DestinationCards() {
         fetchFixedDepartures();
     }, [fetchFixedDepartures]);
 
-    const handleTripDetails = (tripSlug, tripId) => {
-        const tripPath = `/trip-preview/${tripSlug}/${tripId}`;
-        navigate(tripPath);
-        window.scrollTo(0, 0);
-    };
+    // Removed handleTripDetails as navigation is handled by Link in TripCard
+    // The previous logic was:
+    // const handleTripDetails = (tripSlug, tripId) => {
+    //     const tripPath = `/trip-preview/${tripSlug}/${tripId}`;
+    //     navigate(tripPath);
+    //     window.scrollTo(0, 0);
+    // };
 
     const handleViewAllTrips = () => {
         navigate('/triplist');
@@ -78,6 +99,12 @@ export default function DestinationCards() {
             </section>
         );
     }
+
+    // No action needed for onSendQuery for this component's current use case
+    const onSendQuery = (trip) => {
+        console.log(`Query requested for: ${trip.title}`);
+        // Implement your actual query/form logic here
+    };
 
     return (
         <section className="py-16 px-4 bg-gray-50">
@@ -95,60 +122,11 @@ export default function DestinationCards() {
                 {/* Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {departures.map((departure) => (
-                        <div
-                            key={departure.id}
-                            className="group cursor-pointer"
-                            onMouseEnter={() => setHoveredCard(departure.id)}
-                            onMouseLeave={() => setHoveredCard(null)}
-                            onClick={() => handleTripDetails(departure.tripSlug, departure.id)}
-                        >
-                            <div className="relative h-96 rounded-3xl overflow-hidden shadow-lg transition-all duration-500 hover:shadow-2xl">
-                                {/* Background Image */}
-                                <img
-                                    src={departure.image}
-                                    alt={departure.title}
-                                    className={`w-full h-full object-cover transition-transform duration-700 ${
-                                        hoveredCard === departure.id ? 'scale-110' : 'scale-100'
-                                    }`}
-                                />
-                                
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-                                {/* Location Badge */}
-                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-                                    <MapPin className="w-4 h-4 text-gray-700" />
-                                    <span className="text-sm font-medium text-gray-700">{departure.location}</span>
-                                </div>
-
-                                {/* Content */}
-                                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                                    <h3 className="text-2xl font-bold mb-3 leading-tight">
-                                        {departure.title}
-                                    </h3>
-                                    
-                                    <p className="text-white/90 mb-4 text-sm font-medium">
-                                        {departure.toursAvailable}
-                                    </p>
-
-                                    {/* Trip Details */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-white/80">{departure.duration}</span>
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-3xl font-bold">₹{departure.price}</span>
-                                            <span className="text-white/80 text-sm">per person</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Hover Effect Border */}
-                                <div className={`absolute inset-0 border-4 border-blue-500 rounded-3xl transition-opacity duration-300 pointer-events-none ${
-                                    hoveredCard === departure.id ? 'opacity-100' : 'opacity-0'
-                                }`} />
-                            </div>
-                        </div>
+                        <TripCard 
+                            key={departure.id} 
+                            trip={departure} 
+                            // onSendQuery={onSendQuery} // Optional: include if you add a query button
+                        />
                     ))}
                 </div>
 
