@@ -15,42 +15,29 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
-/* ===========================
-    CONFIG
-=========================== */
 const SECURE_BASE = "https://api.yaadigo.com/secure/api/";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
-
-// ✅ Updated redirect routes as requested
 const AFTER_CREATE_REDIRECT = "/admin/dashboard/trip-management/list";
 const AFTER_UPDATE_REDIRECT = "/admin/dashboard/trip-management/list";
 
-/* ===========================
-    COMPONENT
-=========================== */
 export default function TripCreate() {
   const navigate = useNavigate();
-  const { id } = useParams(); // when present => Edit mode
+  const { id } = useParams();
 
   const [activeStep, setActiveStep] = useState("basic");
   const [openDay, setOpenDay] = useState(null);
   const [selectedPricing, setSelectedPricing] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [openPackageIndex, setOpenPackageIndex] = useState(0);
 
-  // lists
   const [categoryList, setCategoryList] = useState([]);
   const [destinationList, setDestinationList] = useState([]);
-
-  // FAQ local state
   const [faqs, setFaqs] = useState([]);
   const [faqInput, setFaqInput] = useState({ question: "", answer: "" });
-
-  // New state for multi-line textareas (Highlights, Inclusions, Exclusions)
   const [highlightsText, setHighlightsText] = useState("");
   const [inclusionsText, setInclusionsText] = useState("");
   const [exclusionsText, setExclusionsText] = useState("");
 
-  // pricing packages (fixed)
   const [fixedPackage, setFixedPackage] = useState([
     {
       from_date: "",
@@ -66,24 +53,19 @@ export default function TripCreate() {
     },
   ]);
 
-  // main form
   const [formData, setFormData] = useState({
-    // Basic Info
     title: "",
     slug: "",
     overview: "",
     destination_id: "",
     destination_type: "",
-    // categories are MULTI-SELECT (strings)
     category_id: [],
     themes: [],
     hotel_category: "",
-    pickup_location: "", // TEXT
-    drop_location: "",   // TEXT
+    pickup_location: "",
+    drop_location: "",
     days: "",
     nights: "",
-
-    // Itinerary
     itineraryDays: [
       {
         id: 1,
@@ -95,29 +77,12 @@ export default function TripCreate() {
         meal_plan: [],
       },
     ],
-
-    // Media
     hero_image: null,
     gallery_images: [],
-
-    // Pricing
     pricing_model: "",
     pricing: {
       pricing_model: "",
-      fixed_departure: [
-        {
-          from_date: "",
-          to_date: "",
-          available_slots: "",
-          title: "",
-          description: "",
-          base_price: "",
-          discount: "",
-          final_price: "",
-          booking_amount: "",
-          gst_percentage: "",
-        },
-      ],
+      fixed_departure: [],
       customized: {
         pricing_type: "",
         base_price: "",
@@ -126,13 +91,9 @@ export default function TripCreate() {
         gst_percentage: "",
       },
     },
-
-    // Details (Changed to strings to hold the multi-line text)
-    highlights: "", // Changed to string
-    inclusions: "", // Changed to string
-    exclusions: "", // Changed to string
-
-    // Policies
+    highlights: "",
+    inclusions: "",
+    exclusions: "",
     terms: "",
     privacy_policy: "",
     payment_terms: "",
@@ -151,7 +112,6 @@ export default function TripCreate() {
     []
   );
 
-  // ---------- helpers ----------
   const currentIndex = steps.findIndex((s) => s.id === activeStep);
   const progress = ((currentIndex + 1) / steps.length) * 100 + "%";
 
@@ -247,16 +207,11 @@ export default function TripCreate() {
     }));
   };
 
-  /* ===========================
-      UPLOAD HANDLERS (FIXED)
-  =========================== */
-
-  // Hero image upload + preview + remove
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const okTypes = ["jpeg", "png", "jpg", "webp"]; // keep only image types for preview safety
+    const okTypes = ["jpeg", "png", "jpg", "webp"];
     const ext = file.name.split(".").pop().toLowerCase();
     if (!okTypes.includes(ext)) {
       toast.error("Only JPG, JPEG, PNG or WEBP allowed");
@@ -285,12 +240,11 @@ export default function TripCreate() {
     }
   };
 
-  // Gallery multi-upload + append + preview + remove
   const handleMultipleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const okTypes = ["jpeg", "png", "jpg", "webp"]; // consistent with preview
+    const okTypes = ["jpeg", "png", "jpg", "webp"];
     for (const f of files) {
       const ext = f.name.split(".").pop().toLowerCase();
       if (!okTypes.includes(ext)) {
@@ -336,10 +290,7 @@ export default function TripCreate() {
       gallery_images: prev.gallery_images.filter((_, i) => i !== index),
     }));
 
-  /* ===========================
-      PRICING HELPERS
-  =========================== */
-  const addFixedPackage = () =>
+  const addFixedPackage = () => {
     setFixedPackage((p) => [
       ...p,
       {
@@ -355,10 +306,17 @@ export default function TripCreate() {
         gst_percentage: "",
       },
     ]);
+    setOpenPackageIndex(fixedPackage.length);
+  };
 
   const deleteFixedPackage = (indexToRemove) => {
     if (indexToRemove === 0) return;
     setFixedPackage((p) => p.filter((_, i) => i !== indexToRemove));
+    if (openPackageIndex === indexToRemove) {
+      setOpenPackageIndex(0);
+    } else if (openPackageIndex > indexToRemove) {
+      setOpenPackageIndex(openPackageIndex - 1);
+    }
   };
 
   const updateFixedPackage = (index, key, value) => {
@@ -380,7 +338,6 @@ export default function TripCreate() {
 
   const handleCustomPricingChange = (field, value) =>
     setFormData((prev) => {
-      // recalc final price automatically
       const customized = {
         ...prev.pricing.customized,
         [field]: value,
@@ -403,9 +360,6 @@ export default function TripCreate() {
       };
     });
 
-  /* ===========================
-      FETCHES
-  =========================== */
   const getCategories = async () => {
     try {
       const res = await axios.get(`${SECURE_BASE}categories/`, {
@@ -438,7 +392,6 @@ export default function TripCreate() {
       if (res?.data?.success === true) {
         const tripData = res.data.data;
 
-        // Convert semicolon-separated strings back to line-break format for textareas
         const convertToLineBreaks = (text) => {
           if (!text) return "";
           return text.split("; ").join("\n");
@@ -459,7 +412,6 @@ export default function TripCreate() {
             meal_plan: day.meal_plan || [],
           })) || [];
 
-        // category_id must be array of strings
         const categoryId = tripData.category_id
           ? Array.isArray(tripData.category_id)
             ? tripData.category_id.map(String)
@@ -482,7 +434,6 @@ export default function TripCreate() {
           nights: tripData.nights || "",
           hero_image: tripData.hero_image || null,
           gallery_images: tripData.gallery_images || [],
-          // Keep these as strings for the submission structure
           highlights: tripData.highlights || "",
           inclusions: tripData.inclusions || "",
           exclusions: tripData.exclusions || "",
@@ -544,25 +495,17 @@ export default function TripCreate() {
   }, []);
 
   useEffect(() => {
-    // set default pricing model on create
     if (!id && !formData.pricing_model) {
       handleInputChange("pricing_model", "custom");
       setSelectedPricing("custom");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
     if (id) getSpecificTrip(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  /* ===========================
-      SUBMISSION
-  =========================== */
   const prepareSubmissionData = () => {
-    
-    // Convert new textareas (separated by new lines) into the required semicolon-space format
     const formatDetailString = (text) => 
         text.split('\n')
             .map(item => item.trim())
@@ -574,7 +517,6 @@ export default function TripCreate() {
       overview: formData.overview,
       destination_id: formData.destination_id ? parseInt(formData.destination_id) : null,
       destination_type: formData.destination_type,
-      // NOTE: category_id is an array of STRINGS
       category_id: formData.category_id,
       themes: formData.themes,
       hotel_category: parseInt(formData.hotel_category) || 0,
@@ -585,21 +527,15 @@ export default function TripCreate() {
       meta_tags: `${formData.title}${formData.themes.length ? ", " + formData.themes.join(", ") : ""}`,
       slug: id ? formData.slug : (formData.title || "").toLowerCase().trim().replace(/\s+/g, "-"),
       pricing_model: formData.pricing_model,
-
-      // details - USING NEW FORMATTING LOGIC
-      highlights: formatDetailString(highlightsText), // Use the content from the new state
-      inclusions: formatDetailString(inclusionsText), // Use the content from the new state
-      exclusions: formatDetailString(exclusionsText), // Use the content from the new state
+      highlights: formatDetailString(highlightsText),
+      inclusions: formatDetailString(inclusionsText),
+      exclusions: formatDetailString(exclusionsText),
       faqs: faqs,
       terms: formData.terms,
       privacy_policy: formData.privacy_policy,
       payment_terms: formData.payment_terms,
-
-      // media
       gallery_images: formData.gallery_images,
       hero_image: formData.hero_image,
-
-      // itinerary
       itinerary: formData.itineraryDays.map((day) => ({
         day_number: day.day_number,
         title: day.title,
@@ -609,8 +545,6 @@ export default function TripCreate() {
         hotel_name: day.hotel_name,
         meal_plan: day.meal_plan,
       })),
-
-      // pricing
       pricing: {
         pricing_model:
           formData?.pricing_model === "fixed" ? "fixed_departure" : "customized",
@@ -639,8 +573,6 @@ export default function TripCreate() {
           },
         }),
       },
-
-      // policies
       policies: [
         ...(formData.terms ? [{ title: "Terms and Conditions", content: formData.terms }] : []),
         ...(formData.privacy_policy ? [{ title: "Privacy Policy", content: formData.privacy_policy }] : []),
@@ -693,9 +625,6 @@ export default function TripCreate() {
     }
   };
 
-  /* ===========================
-      RENDER SECTIONS
-  =========================== */
   const renderBasic = () => (
     <div className="container">
       <h3 className="mb-4 fw-bold fs-5">Trip Details</h3>
@@ -997,7 +926,6 @@ export default function TripCreate() {
         <p>Upload images and videos for your trip package</p>
       </div>
       <div style={{ display: "flex", justifyContent: "space-around", gap: 24, flexWrap: "wrap" }}>
-        {/* HERO IMAGE */}
         <div className="media-section" style={{ flex: 1, minWidth: "380px" }}>
           <div className="section-title">
             📷 Hero Image / Thumbnail <span className="required">*</span>
@@ -1054,7 +982,6 @@ export default function TripCreate() {
           </div>
         </div>
 
-        {/* GALLERY */}
         <div className="media-section" style={{ flex: 1, minWidth: "380px" }}>
           <div className="section-title">
             🖼️ Image Gallery <span className="required">*</span>
@@ -1205,142 +1132,137 @@ export default function TripCreate() {
 
       {selectedPricing === "fixed" && (
         <>
-          <div className="mt-3 destination-faq">
-            <div className="accordion" id="accordionExample">
-              {fixedPackage.map((trip, index) => (
-                <div className="mt-4" key={`pkg-${index}`}>
-                  <div className="accordion-item">
-                    <h2 className="accordion-header d-flex align-items-center justify-content-between">
+          <div className="mt-3">
+            {fixedPackage.map((trip, index) => (
+              <div className="mb-4" key={`pkg-${index}`} style={{ border: "1px solid #ddd", borderRadius: "8px", overflow: "hidden" }}>
+                <div style={{ background: "#f8f9fa", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <button
+                    className="fw-bold"
+                    type="button"
+                    style={{ background: "none", border: "none", cursor: "pointer", flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: "8px" }}
+                    onClick={() => setOpenPackageIndex(openPackageIndex === index ? -1 : index)}
+                  >
+                    Available Slots {index + 1}
+                    {openPackageIndex === index ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                  <div className="d-flex gap-2">
+                    <button className="btn btn-sm btn-success" onClick={addFixedPackage}>
+                      Add
+                    </button>
+                    {index !== 0 && (
                       <button
-                        className="accordion-button flex-grow-1 fw-bold"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target={`#collapse${index}`}
-                        aria-expanded="true"
-                        aria-controls={`collapse${index}`}
+                        className="btn btn-sm btn-danger"
+                        onClick={() => deleteFixedPackage(index)}
                       >
-                        Available Slots {index + 1}
+                        Delete
                       </button>
-                      <div className="ms-3 d-flex gap-2">
-                        <button className={`destination-faq-add ${index === 0 && "me-3"}`} onClick={addFixedPackage}>
-                          Add
-                        </button>
-                        {index !== 0 && (
-                          <button
-                            className="destination-faq-add faq-delete me-3"
-                            onClick={() => deleteFixedPackage(index)}
-                          >
-                            Delete
-                          </button>
-                        )}
+                    )}
+                  </div>
+                </div>
+
+                {openPackageIndex === index && (
+                  <div style={{ padding: "16px", background: "#fff" }}>
+                    <div className="row mb-3">
+                      <div className="col-md-4">
+                        <label className="form-label">From Date *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={trip?.from_date}
+                          onChange={(e) => updateFixedPackage(index, "from_date", e.target.value)}
+                        />
                       </div>
-                    </h2>
+                      <div className="col-md-4">
+                        <label className="form-label">To Date *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={trip?.to_date}
+                          onChange={(e) => updateFixedPackage(index, "to_date", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Available Slots *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="Enter available slots"
+                          value={trip?.available_slots}
+                          onChange={(e) => updateFixedPackage(index, "available_slots", e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                    <div id={`collapse${index}`} className="accordion-collapse collapse show" data-bs-parent="#accordionExample">
-                      <div className="accordion-body">
-                        <div className="row mb-3">
-                          <div className="col-md-4">
-                            <label className="form-label">From Date *</label>
-                            <input
-                              type="date"
-                              className="form-control"
-                              value={trip?.from_date}
-                              onChange={(e) => updateFixedPackage(index, "from_date", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-4">
-                            <label className="form-label">To Date *</label>
-                            <input
-                              type="date"
-                              className="form-control"
-                              value={trip?.to_date}
-                              onChange={(e) => updateFixedPackage(index, "to_date", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-4">
-                            <label className="form-label">Available Slots *</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              placeholder="Enter available slots"
-                              value={trip?.available_slots}
-                              onChange={(e) => updateFixedPackage(index, "available_slots", e.target.value)}
-                            />
-                          </div>
-                        </div>
+                    <h6 className="fw-bold mb-4 mt-5">Costing Packages</h6>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Package Title *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="e.g. Triple Occupancy"
+                          value={trip?.title}
+                          onChange={(e) => updateFixedPackage(index, "title", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Base Price (₹) *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="Enter base price"
+                          value={trip?.base_price}
+                          onChange={(e) => updateFixedPackage(index, "base_price", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Discount (₹)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="Enter discount price"
+                          value={trip?.discount}
+                          onChange={(e) => updateFixedPackage(index, "discount", e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                        <h6 className="fw-bold mb-4 mt-5">Costing Packages</h6>
-                        <div className="row mb-3">
-                          <div className="col-md-6">
-                            <label className="form-label">Package Title *</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="e.g. Triple Occupancy"
-                              value={trip?.title}
-                              onChange={(e) => updateFixedPackage(index, "title", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-3">
-                            <label className="form-label">Base Price (₹) *</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              placeholder="Enter base price"
-                              value={trip?.base_price}
-                              onChange={(e) => updateFixedPackage(index, "base_price", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-3">
-                            <label className="form-label">Discount (₹)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              placeholder="Enter discount price"
-                              value={trip?.discount}
-                              onChange={(e) => updateFixedPackage(index, "discount", e.target.value)}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="row mb-3">
-                          <div className="col-md-4">
-                            <label className="form-label">Booking Amount (₹)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              value={trip?.booking_amount}
-                              placeholder="Enter booking amount"
-                              onChange={(e) => updateFixedPackage(index, "booking_amount", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-4">
-                            <label className="form-label">GST Percentage (%)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              value={trip?.gst_percentage}
-                              placeholder="Enter GST percentage"
-                              onChange={(e) => updateFixedPackage(index, "gst_percentage", e.target.value)}
-                            />
-                          </div>
-                          <div className="col-md-4">
-                            <label className="form-label">Final Price (₹)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              readOnly
-                              value={trip?.final_price}
-                              placeholder="Auto-calculated"
-                            />
-                          </div>
-                        </div>
+                    <div className="row mb-3">
+                      <div className="col-md-4">
+                        <label className="form-label">Booking Amount (₹)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={trip?.booking_amount}
+                          placeholder="Enter booking amount"
+                          onChange={(e) => updateFixedPackage(index, "booking_amount", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">GST Percentage (%)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={trip?.gst_percentage}
+                          placeholder="Enter GST percentage"
+                          onChange={(e) => updateFixedPackage(index, "gst_percentage", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Final Price (₹)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          readOnly
+                          value={trip?.final_price}
+                          placeholder="Auto-calculated"
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -1421,12 +1343,10 @@ export default function TripCreate() {
     </div>
   );
 
-  // RENDER DETAILS - WITH BULLET POINT PREVIEWS
   const renderDetails = () => (
     <div className="form-container details">
       <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px", flexWrap: "wrap" }}>
         
-        {/* TRIP HIGHLIGHT */}
         <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
           <h3 className="fs-5 fw-bold">Trip Highlight</h3>
           <label className="form-label">Enter highlights (one per line)</label>
@@ -1440,7 +1360,6 @@ export default function TripCreate() {
           <small className="text-muted d-block mt-1">Each line will be saved as a separate highlight item.</small>
         </div>
 
-        {/* INCLUSIONS */}
         <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
           <h3 className="fs-5 fw-bold">Inclusions</h3>
           <label className="form-label">Enter inclusions (one per line)</label>
@@ -1452,22 +1371,10 @@ export default function TripCreate() {
             onChange={(e) => setInclusionsText(e.target.value)}
           />
           <small className="text-muted d-block mt-1">Each line will be saved as a separate inclusion item.</small>
-          
-          {/* {inclusionsText && (
-            <div className="mt-3 p-3" style={{ background: "#f8f9fa", borderRadius: "6px" }}>
-              <strong className="d-block mb-2">Preview:</strong>
-              <ul style={{ marginBottom: 0, paddingLeft: "20px" }}>
-                {inclusionsText.split('\n').filter(item => item.trim()).map((item, idx) => (
-                  <li key={idx}>{item.trim()}</li>
-                ))}
-              </ul>
-            </div>
-          )} */}
         </div>
       </div>
       
       <div style={{ display: "flex", justifyContent: "space-around", margin: "20px", gap: "20px", flexWrap: "wrap" }}>
-        {/* EXCLUSIONS */}
         <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
           <h3 className="fs-5 fw-bold">Exclusions</h3>
           <label className="form-label">Enter exclusions (one per line)</label>
@@ -1479,20 +1386,8 @@ export default function TripCreate() {
             onChange={(e) => setExclusionsText(e.target.value)}
           />
           <small className="text-muted d-block mt-1">Each line will be saved as a separate exclusion item.</small>
-          
-          {/* {exclusionsText && (
-            <div className="mt-3 p-3" style={{ background: "#f8f9fa", borderRadius: "6px" }}>
-              <strong className="d-block mb-2">Preview:</strong>
-              <ul style={{ marginBottom: 0, paddingLeft: "20px" }}>
-                {exclusionsText.split('\n').filter(item => item.trim()).map((item, idx) => (
-                  <li key={idx}>{item.trim()}</li>
-                ))}
-              </ul>
-            </div>
-          )} */}
         </div>
 
-        {/* FAQ (Optional) */}
         <div style={{ border: "1px solid #ccc", width: "100%", maxWidth: "45%", padding: "20px", borderRadius: "8px" }} className="form-container">
           <h3 className="fs-5 fw-bold">FAQ (Optional)</h3>
           <label className="form-label">Add FAQ</label>
@@ -1512,7 +1407,7 @@ export default function TripCreate() {
               onChange={(e) => setFaqInput({ ...faqInput, answer: e.target.value })}
             />
             <button
-                className="btn btn-primary"
+              className="btn btn-primary"
               onClick={() => {
                 if (faqInput?.question?.trim() && faqInput?.answer?.trim()) {
                   setFaqs((prev) => [...prev, faqInput]);
@@ -1528,35 +1423,35 @@ export default function TripCreate() {
 
           <div>
             {faqs.length > 0 && (
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {faqs.map((faq, index) =>
-                        faq.question && faq.answer ? (
-                            <div
-                                key={index}
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "flex-start",
-                                    marginBottom: "8px",
-                                    borderBottom: "1px solid #eee",
-                                    paddingBottom: "5px",
-                                }}
-                            >
-                                <div style={{ flexGrow: 1, marginRight: '10px' }}>
-                                    <strong>Q:</strong> {faq.question}
-                                    <br />
-                                    <strong>A:</strong> {faq.answer}
-                                </div>
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => setFaqs((prev) => prev.filter((_, i) => i !== index))}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        ) : null
-                    )}
-                </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {faqs.map((faq, index) =>
+                  faq.question && faq.answer ? (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: "8px",
+                        borderBottom: "1px solid #eee",
+                        paddingBottom: "5px",
+                      }}
+                    >
+                      <div style={{ flexGrow: 1, marginRight: '10px' }}>
+                        <strong>Q:</strong> {faq.question}
+                        <br />
+                        <strong>A:</strong> {faq.answer}
+                      </div>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => setFaqs((prev) => prev.filter((_, i) => i !== index))}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : null
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -1617,9 +1512,6 @@ export default function TripCreate() {
     }
   };
 
-  /* ===========================
-      VIEW
-  =========================== */
   return (
     <div className="tour-container">
       <ToastContainer position="top-right" autoClose={3000} />
