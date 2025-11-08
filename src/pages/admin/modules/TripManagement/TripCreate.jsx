@@ -465,18 +465,20 @@ export default function TripCreate() {
         );
 
         if (tripData.pricing?.fixed_departure) {
+          // Flatten the server's response for editing purposes
           setFixedPackage(
             tripData.pricing.fixed_departure.map((pkg) => ({
               from_date: pkg.from_date?.split("T")[0] || "",
               to_date: pkg.to_date?.split("T")[0] || "",
               available_slots: pkg.available_slots || "",
-              title: pkg.title || "",
-              description: pkg.description || "",
-              base_price: pkg.base_price || "",
-              discount: pkg.discount || "",
-              final_price: pkg.final_price || "",
-              booking_amount: pkg.booking_amount || "",
-              gst_percentage: pkg.gst_percentage || "",
+              // ASSUME: Server sends costing info inside costingPackages[0]
+              title: pkg.costingPackages?.[0]?.title || pkg.title || "",
+              description: pkg.costingPackages?.[0]?.description || pkg.description || "",
+              base_price: pkg.costingPackages?.[0]?.base_price || pkg.base_price || "",
+              discount: pkg.costingPackages?.[0]?.discount || pkg.discount || "",
+              final_price: pkg.costingPackages?.[0]?.final_price || pkg.final_price || "",
+              booking_amount: pkg.costingPackages?.[0]?.booking_amount || pkg.booking_amount || "",
+              gst_percentage: pkg.costingPackages?.[0]?.gst_percentage || pkg.gst_percentage || "",
             }))
           );
         }
@@ -549,18 +551,26 @@ export default function TripCreate() {
         pricing_model:
           formData?.pricing_model === "fixed" ? "fixed_departure" : "customized",
         ...(formData.pricing_model === "fixed" && {
-          fixed_departure: fixedPackage.map((item) => ({
-            from_date: item.from_date ? `${item.from_date}T00:00:00` : null,
-            to_date: item.to_date ? `${item.to_date}T00:00:00` : null,
-            available_slots: item.available_slots ? parseInt(item.available_slots) : 0,
-            title: item.title || "",
-            description: item.description || "",
-            base_price: item.base_price ? parseFloat(item.base_price) : 0,
-            discount: item.discount ? parseFloat(item.discount) : 0,
-            final_price: item.final_price ? parseFloat(item.final_price) : 0,
-            booking_amount: item.booking_amount ? parseFloat(item.booking_amount) : 0,
-            gst_percentage: item.gst_percentage ? parseFloat(item.gst_percentage) : 0,
-          })),
+          fixed_departure: fixedPackage
+            // 🐛 FIX: Filter out completely empty packages to prevent datetime_type error
+            .filter(item => item.from_date || item.to_date || item.base_price)
+            .map((item) => ({
+              from_date: item.from_date ? `${item.from_date}T00:00:00` : null,
+              to_date: item.to_date ? `${item.to_date}T00:00:00` : null,
+              available_slots: item.available_slots ? parseInt(item.available_slots) : 0,
+              // 🐛 FIX: Wrap costing details in a costingPackages array to satisfy schema
+              costingPackages: [
+                {
+                  title: item.title || "",
+                  description: item.description || "",
+                  base_price: item.base_price ? parseFloat(item.base_price) : 0,
+                  discount: item.discount ? parseFloat(item.discount) : 0,
+                  final_price: item.final_price ? parseFloat(item.final_price) : 0,
+                  booking_amount: item.booking_amount ? parseFloat(item.booking_amount) : 0,
+                  gst_percentage: item.gst_percentage ? parseFloat(item.gst_percentage) : 0,
+                }
+              ]
+            })),
         }),
         ...(formData.pricing_model === "custom" && {
           customized: {
