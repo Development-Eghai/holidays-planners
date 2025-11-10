@@ -411,11 +411,11 @@ Children Ages: ${childAgesList}`;
       {showEnquiryModal && (
         <>
           <div
-            className="fixed inset-0 bg-gray-900 bg-opacity-80 z-[60] flex items-center justify-center p-4 transition-opacity duration-300"
+            className="fixed inset-0 bg-gray-900 bg-opacity-80 z-[100000] flex items-center justify-center p-4 transition-opacity duration-300"
             onClick={() => setShowEnquiryModal(false)}
           ></div>
 
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 overflow-y-auto">
             <div
               className="w-full max-w-xl bg-white shadow-2xl rounded-2xl p-5 md:p-6 border border-gray-100 relative transform scale-100 transition-transform duration-300 max-h-[98vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
@@ -594,11 +594,11 @@ Children Ages: ${childAgesList}`;
           {showBookingModal && (
             <>
               <div
-                className="fixed inset-0 bg-black/70 backdrop-blur-md z-[60] animate-backdrop-fade-in"
+                className="fixed inset-0 bg-black/70 backdrop-blur-mdz-[100000] animate-backdrop-fade-in"
                 onClick={() => setShowBookingModal(false)}
               ></div>
 
-              <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+              <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4">
                 <div className="relative w-full max-w-5xl animate-modal-pop-in">
                   <button
                     onClick={() => setShowBookingModal(false)}
