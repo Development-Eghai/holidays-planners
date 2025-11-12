@@ -16,32 +16,36 @@ import {
   Plus,
   Minus,
   X,
+  Loader2,
 } from "lucide-react";
 
-// The API Key and BASE_URL are used for fetching the trip details
-const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
-const BASE_URL = "https://api.yaadigo.com/secure/api/trips/";
+// --- API CONFIGURATION (AUTO-FILLED) ---
+const API_CONFIG = {
+  // Global Key
+  API_KEY: "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ",
+  // Domain Name (sent in payload for both forms)
+  DOMAIN_NAME: "https://www.holidaysplanners.com",
 
-/**
- * Parses a string field (like inclusions, exclusions, or highlights) by newline
- * and semicolon ONLY, preserving full stops, commas, and abbreviations like "e.g." and "i.e."
- * Removes existing bullet points (•) and cleans up the text.
- */
+  // Endpoints
+  ENQUIRY_ENDPOINT: "https://api.yaadigo.com/secure/api/enquires/",
+  BOOKING_ENDPOINT: "https://api.yaadigo.com/secure/api/booking_request/",
+  TRIP_DETAIL_BASE_URL: "https://api.yaadigo.com/secure/api/trips/",
+};
+
+const ENQUIRY_ENDPOINT = API_CONFIG.ENQUIRY_ENDPOINT;
+const BOOKING_ENDPOINT = API_CONFIG.BOOKING_ENDPOINT;
+
+// --- UTILITY FUNCTIONS (Unchanged) ---
+
 const parseListField = (fieldString) => {
     if (!fieldString) return [];
-
-    // Remove existing bullet points first
     let cleanedString = fieldString.replace(/•\s*/g, '');
-
-    // Split ONLY by newlines and semicolons
-    // This preserves periods, commas, and abbreviations like "e.g.", "i.e."
     return cleanedString
         .split(/[\n;]/)
         .map(item => item.trim())
         .filter(item => item.length > 0);
 };
 
-// Helper to format date to a readable string (e.g., Mar 15, 2025)
 const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -54,14 +58,16 @@ export default function TripTab({ tripId }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showFullOverview, setShowFullOverview] = useState(false);
 
-  // --- START: New States for Quick Booking/Enquiry Modals ---
+  // --- START: Modal States ---
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // Used for Booking form success screen
 
   // Booking form states
   const [formData, setFormData] = useState({
     departureDate: '',
-    sharingOption: 'double', // Will default to the first available package title
+    sharingOption: 'double', 
     adults: 1,
     children: 0,
     fullName: '',
@@ -69,6 +75,8 @@ export default function TripTab({ tripId }) {
     phone: '',
     captcha: ''
   });
+  const [errors, setErrors] = useState({});
+  const [captchaQuestion, setCaptchaQuestion] = useState({ num1: 0, num2: 0, answer: 0 });
 
   // Simplified Enquiry form states
   const [enquiryData, setEnquiryData] = useState({
@@ -79,38 +87,34 @@ export default function TripTab({ tripId }) {
     phone: '',
     captchaInput: ''
   });
-
   const [childAges, setChildAges] = useState([]);
   const maxChildren = 5;
   const [enquiryCaptcha, setEnquiryCaptcha] = useState({ num1: 0, num2: 0, answer: 0 });
-  const [enquiryMessage, setEnquiryMessage] = useState({ title: '', text: '' });
+  const [enquiryMessage, setEnquiryMessage] = useState({ title: '', text: '', success: false });
   const [showEnquiryMessage, setShowEnquiryMessage] = useState(false);
 
-  const [captchaQuestion, setCaptchaQuestion] = useState({ num1: 0, num2: 0, answer: 0 });
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  // --- END: Modal States ---
 
-  // --- END: New States ---
 
+  // --- START: Data Fetching and Initialization ---
 
   useEffect(() => {
     if (!tripId) return;
     const fetchTrip = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}${tripId}/`, {
-          headers: { "x-api-key": API_KEY },
+        const res = await axios.get(`${API_CONFIG.TRIP_DETAIL_BASE_URL}${tripId}/`, {
+          headers: { "x-api-key": API_CONFIG.API_KEY },
         });
         const data = res.data.data || res.data;
         setTripData(data);
 
-        // Set initial sharing option if fixed departure
-        if (data.pricing?.pricing_model === 'fixed_departure' && data.pricing.fixed_departure.length > 0) {
-            const firstDeparture = data.pricing.fixed_departure[0];
-            if (firstDeparture.costingPackages.length > 0) {
-                // Initialize with the first package's title/type
-                setFormData(prev => ({ ...prev, sharingOption: firstDeparture.costingPackages[0].title }));
-            }
+        // Set initial sharing option
+        if (data.pricing?.pricing_model === 'fixed_departure') {
+          const packages = data.pricing.fixed_departure[0]?.costingPackages || [];
+          if (packages.length > 0) {
+            // Initialize with the first package's title/type
+            setFormData(prev => ({ ...prev, sharingOption: packages[0].title }));
+          }
         }
       } catch (error) {
         console.error("Error fetching trip:", error);
@@ -119,60 +123,12 @@ export default function TripTab({ tripId }) {
     fetchTrip();
   }, [tripId]);
 
-
-  // --- START: New Hooks/Memos to process tripData for UI ---
-
-  // Determine pricing model
-  const isFixedDeparture = tripData?.pricing?.pricing_model === 'fixed_departure';
-  const isCustomized = tripData?.pricing?.pricing_model === 'customized';
-
-  // Get pricing details for Quick Booking section
-  const pricingDetails = useMemo(() => {
-    if (isFixedDeparture && tripData.pricing.fixed_departure.length > 0) {
-        const firstDeparture = tripData.pricing.fixed_departure[0];
-        const packages = firstDeparture.costingPackages;
-
-        const availableDates = tripData.pricing.fixed_departure.map(dep => dep.from_date);
-
-        const pricesMap = packages.reduce((acc, pkg) => {
-            acc[pkg.title.toLowerCase().replace(/\s/g, '_')] = pkg.final_price;
-            return acc;
-        }, {});
-
-        const startingPrice = Math.min(...packages.map(p => p.final_price));
-
-        return {
-            type: 'fixed_departure',
-            availableDates,
-            packages,
-            pricesMap,
-            startingPrice,
-        };
-    }
-
-    if (isCustomized && tripData.pricing.customized.final_price) {
-        return {
-            type: 'customized',
-            startingPrice: tripData.pricing.customized.final_price,
-        };
-    }
-
-    return null;
-
-  }, [tripData, isFixedDeparture, isCustomized]);
-
-
-  // --- END: New Hooks/Memos ---
-
-
-  // --- START: New Functions for Quick Booking/Enquiry Modals ---
-
   // Generate captchas on mount
   useEffect(() => {
     generateCaptcha();
     generateEnquiryCaptcha();
   }, []);
-
+  
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (showBookingModal || showEnquiryModal || showEnquiryMessage) {
@@ -184,6 +140,72 @@ export default function TripTab({ tripId }) {
       document.body.style.overflow = 'unset';
     };
   }, [showBookingModal, showEnquiryModal, showEnquiryMessage]);
+
+
+  // --- START: New Hooks/Memos to process tripData for UI ---
+
+  // Determine pricing model
+  const isFixedDeparture = tripData?.pricing?.pricing_model === 'fixed_departure';
+  const isCustomized = tripData?.pricing?.pricing_model === 'customized';
+
+  // Get pricing details for Quick Booking section
+  const pricingDetails = useMemo(() => {
+    if (isFixedDeparture && tripData.pricing.fixed_departure.length > 0) {
+      const allDepartures = tripData.pricing.fixed_departure;
+      const firstDeparture = allDepartures[0];
+      const packages = firstDeparture.costingPackages;
+
+      const availableDates = allDepartures.map(dep => dep.from_date);
+
+      const pricesMap = packages.reduce((acc, pkg) => {
+        // Use title as the key for pricing map
+        acc[pkg.title] = pkg.final_price;
+        return acc;
+      }, {});
+
+      const startingPrice = Math.min(...packages.map(p => p.final_price));
+
+      return {
+        type: 'fixed_departure',
+        availableDates,
+        packages,
+        pricesMap,
+        startingPrice,
+      };
+    }
+
+    if (isCustomized && tripData.pricing.customized.final_price) {
+      return {
+        type: 'customized',
+        startingPrice: tripData.pricing.customized.final_price,
+      };
+    }
+
+    return null;
+  }, [tripData, isFixedDeparture, isCustomized]);
+
+  // Calculate the price based on form data
+  const calculatePrice = () => {
+    if (!pricingDetails || !pricingDetails.pricesMap) return 0;
+
+    const basePrice = pricingDetails.pricesMap[formData.sharingOption];
+
+    if (!basePrice) return 0;
+
+    const totalTravelers = parseInt(formData.adults) + parseInt(formData.children);
+    return basePrice * totalTravelers;
+  };
+
+  // Get price per person for the selected sharing option
+  const getPricePerPerson = () => {
+    if (!pricingDetails || !pricingDetails.pricesMap) return 0;
+    return pricingDetails.pricesMap[formData.sharingOption] || 0;
+  }
+
+  // --- END: New Hooks/Memos ---
+
+
+  // --- START: Form and Submission Logic ---
 
   const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 10) + 1;
@@ -197,19 +219,7 @@ export default function TripTab({ tripId }) {
     setEnquiryCaptcha({ num1, num2, answer: num1 * num2 });
   };
 
-  const calculatePrice = () => {
-    if (!pricingDetails || !pricingDetails.pricesMap) return 0;
-
-    // Normalize the sharing option key
-    const sharingKey = formData.sharingOption.toLowerCase().replace(/\s/g, '_');
-    const basePrice = pricingDetails.pricesMap[sharingKey];
-
-    if (!basePrice) return 0;
-
-    const totalTravelers = parseInt(formData.adults) + parseInt(formData.children);
-    return basePrice * totalTravelers;
-  };
-
+  // Booking Form Input Handler (Unchanged)
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -217,15 +227,18 @@ export default function TripTab({ tripId }) {
     }
   };
 
+  // Enquiry Form Input Handler (Unchanged)
   const handleEnquiryChange = (field, value) => {
     setEnquiryData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Children field handlers (Unchanged)
   const addChildField = () => {
     if (childAges.length >= maxChildren) {
       setEnquiryMessage({
         title: 'Limit Reached',
-        text: `You can add a maximum of ${maxChildren} children per inquiry.`
+        text: `You can add a maximum of ${maxChildren} children per inquiry.`,
+        success: false
       });
       setShowEnquiryMessage(true);
       return;
@@ -247,33 +260,25 @@ export default function TripTab({ tripId }) {
     }
   };
 
+  // Booking Form Validation (Minor cleanup)
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.departureDate) {
       newErrors.departureDate = 'Please select a departure date';
     }
-
-    if (formData.adults < 1) {
+    if (parseInt(formData.adults) < 1) {
       newErrors.adults = 'At least 1 adult is required';
     }
-
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+    if (!formData.phone.trim() || !/^\d{10,}$/.test(formData.phone.replace(/\D/g, ''))) {
       newErrors.phone = 'Invalid phone number';
     }
-
     if (parseInt(formData.captcha) !== captchaQuestion.answer) {
       newErrors.captcha = 'Incorrect answer';
     }
@@ -282,6 +287,10 @@ export default function TripTab({ tripId }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Submission handler for the Quick Booking form.
+   * Sends data to the booking_request endpoint.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -291,86 +300,145 @@ export default function TripTab({ tripId }) {
 
     setIsSubmitting(true);
 
-    // Simulate API call for booking request
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const pricePerPerson = getPricePerPerson();
+    const estimatedTotal = calculatePrice();
 
-    setIsSubmitting(false);
-    setShowSuccess(true);
+    // Prepare API Data with snake_case and mandatory fields
+    const apiData = {
+      "departure_date": formData.departureDate,
+      "sharing_option": formData.sharingOption,
+      "price_per_person": pricePerPerson,
+      "adults": parseInt(formData.adults),
+      "children": parseInt(formData.children), // Assuming children field is in adults/children structure
+      "estimated_total_price": estimatedTotal,
+      "full_name": formData.fullName,
+      "email": formData.email,
+      "phone_number": formData.phone.replace(/\D/g, ''), // Clean phone number
+      "domain_name": API_CONFIG.DOMAIN_NAME, // Auto-filled domain name
+    };
 
-    // Reset form after 3 seconds
-    setTimeout(() => {
+    try {
+      const res = await axios.post(BOOKING_ENDPOINT, apiData, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_CONFIG.API_KEY, // Auto-filled API Key
+        },
+      });
+
+      // Handle successful booking request
+      console.log("Booking Request Sent:", res.data);
+      setShowSuccess(true);
+      
+    } catch (error) {
+      console.error("Booking submission failed:", error.response?.data || error.message);
+      setErrors({ api: "Submission failed. Please check details or contact support." });
+      generateCaptcha(); // Refresh CAPTCHA on failure
       setShowSuccess(false);
-      setShowBookingModal(false);
-      setFormData(prev => ({
-        ...prev,
-        departureDate: '',
-        adults: 1,
-        children: 0,
-        fullName: '',
-        email: '',
-        phone: '',
-        captcha: ''
-      }));
-      generateCaptcha();
-    }, 3000);
+      
+      // Keep modal open and show generic error
+      setTimeout(() => setErrors({}), 5000);
+
+    } finally {
+      setIsSubmitting(false);
+
+      // Reset form on success after 3 seconds
+      if (showSuccess) {
+        setTimeout(() => {
+          setShowSuccess(false);
+          setShowBookingModal(false);
+          setFormData(prev => ({ ...prev, departureDate: '', adults: 1, children: 0, fullName: '', email: '', phone: '', captcha: '' }));
+          generateCaptcha();
+        }, 3000);
+      }
+    }
   };
 
+
+  /**
+   * Submission handler for the general Enquiry form.
+   * Sends data to the enquiries endpoint.
+   */
   const handleEnquirySubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setShowEnquiryMessage(false);
 
-    // Validate CAPTCHA
+    // 1. Validate CAPTCHA
     if (parseInt(enquiryData.captchaInput) !== enquiryCaptcha.answer) {
       setEnquiryMessage({
         title: 'Validation Error',
-        text: 'The security check (CAPTCHA) result is incorrect. Please try again.'
+        text: 'The security check (CAPTCHA) result is incorrect. Please try again.',
+        success: false
       });
       setShowEnquiryMessage(true);
       generateEnquiryCaptcha();
+      setIsSubmitting(false);
       return;
     }
-
-    // Close modal first
-    setShowEnquiryModal(false);
-
-    const adults = parseInt(enquiryData.adults) || 0;
+    
+    // 2. Prepare API Data
+    const adults = parseInt(enquiryData.adults) || 1;
     const childrenCount = childAges.length;
-    const childAgesList = childrenCount > 0 ? childAges.join(', ') : 'None';
 
-    const submissionText = `Thank you, ${enquiryData.fullName}! Your Trip Inquiry has been submitted for:
+    const apiData = {
+      // Mapping fields to the snake_case used in your Enquiries API schema
+      "destination": tripData?.title || 'Unknown Trip',
+      "departure_city": "Not Specified", // Default/placeholder
+      "travel_date": enquiryData.departureDate || 'Flexible',
+      "adults": adults,
+      "children": childrenCount,
+      "infants": 0, // Assuming 0 as infants are not tracked separately here
+      "hotel_category": "Not Specified",
+      "full_name": enquiryData.fullName,
+      "contact_number": enquiryData.phone.replace(/\D/g, ''),
+      "email": enquiryData.email,
+      "additional_comments": `Trip ID: ${tripId}. Children Ages: ${childAges.join(', ')}`,
+      "domain_name": API_CONFIG.DOMAIN_NAME, // Auto-filled domain name
+    };
 
-**${tripData?.title || 'This Trip'}**
-
-A travel consultant will contact you shortly on ${enquiryData.phone} (${enquiryData.email}) to discuss your trip details.
-
---- Inquiry Summary ---
-Preferred Date: ${enquiryData.departureDate || 'Any Available Date'}
-Adults (12+): ${adults}
-Children (2-11): ${childrenCount}
-Children Ages: ${childAgesList}`;
-
-    setEnquiryMessage({
-      title: 'Inquiry Sent!',
-      text: submissionText
-    });
-    setShowEnquiryMessage(true);
-
-    // Reset form
-    setTimeout(() => {
-      setEnquiryData({
-        departureDate: '',
-        adults: 1,
-        fullName: '',
-        email: '',
-        phone: '',
-        captchaInput: ''
+    try {
+      const res = await axios.post(ENQUIRY_ENDPOINT, apiData, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_CONFIG.API_KEY, // Auto-filled API Key
+        },
       });
+
+      console.log("Enquiry Request Sent:", res.data);
+      
+      // 3. Show Success Message
+      setEnquiryMessage({
+        title: 'Inquiry Sent!',
+        text: `Thank you, ${enquiryData.fullName}! Your Trip Inquiry for ${tripData?.title || 'This Trip'} has been submitted. A travel consultant will contact you shortly.`,
+        success: true
+      });
+
+      // 4. Reset forms and close modal
+      setShowEnquiryModal(false);
+      setShowEnquiryMessage(true);
+      setEnquiryData(prev => ({ ...prev, adults: 1, fullName: '', email: '', phone: '', captchaInput: '' }));
       setChildAges([]);
       generateEnquiryCaptcha();
-    }, 1000);
+      
+    } catch (error) {
+      console.error("Enquiry submission failed:", error.response?.data || error.message);
+      setEnquiryMessage({
+        title: 'Submission Failed',
+        text: `There was a problem submitting your inquiry. Please try again or contact us directly. Error: ${error.response?.data?.message || error.message}`,
+        success: false
+      });
+      setShowEnquiryModal(false);
+      setShowEnquiryMessage(true);
+      generateEnquiryCaptcha();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // --- END: New Functions ---
+  // --- END: Form and Submission Logic ---
 
+
+  // --- START: UI Rendering ---
 
   const handleTabChange = (tabId) => {
     if (tabId !== activeTab) {
@@ -392,27 +460,32 @@ Children Ages: ${childAgesList}`;
 
   if (!tripData)
     return (
-      <div className="text-center py-20 text-gray-500">Loading trip...</div>
+      <div className="text-center py-20 text-gray-500">
+        <Loader2 className="w-8 h-8 mx-auto animate-spin mb-2 text-cyan-600" />
+        Loading trip...
+      </div>
     );
 
   // --- Pre-process Data ---
   const highlightsArray = parseListField(tripData.highlights);
   // Pre-process policies for the Other Info tab
   const policies = [
-      { title: "General Terms", content: tripData.terms, icon: FileText, color: "blue" },
-      { title: "Cancellation Policy", content: tripData.privacy_policy, icon: XCircle, color: "red" },
-      { title: "Payment Terms", content: tripData.payment_terms, icon: CreditCard, color: "green" },
+    { title: "General Terms", content: tripData.terms, icon: FileText, color: "blue" },
+    { title: "Cancellation Policy", content: tripData.privacy_policy, icon: XCircle, color: "red" },
+    { title: "Payment Terms", content: tripData.payment_terms, icon: CreditCard, color: "green" },
   ].filter(p => p.content);
 
 
   return (
     <>
-      {/* Enquiry Modal - Streamlined Version */}
+      {/* ------------------------------------------------------------- */}
+      {/* -------------------- 1. ENQUIRY MODAL ----------------------- */}
+      {/* ------------------------------------------------------------- */}
       {showEnquiryModal && (
         <>
           <div
             className="fixed inset-0 bg-gray-900 bg-opacity-80 z-[100000] flex items-center justify-center p-4 transition-opacity duration-300"
-            onClick={() => setShowEnquiryModal(false)}
+            onClick={() => !isSubmitting && setShowEnquiryModal(false)}
           ></div>
 
           <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 overflow-y-auto">
@@ -421,7 +494,8 @@ Children Ages: ${childAgesList}`;
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={() => setShowEnquiryModal(false)}
+                onClick={() => !isSubmitting && setShowEnquiryModal(false)}
+                disabled={isSubmitting}
                 className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-3xl font-light leading-none transition-colors"
               >
                 ×
@@ -442,7 +516,8 @@ Children Ages: ${childAgesList}`;
                     type="date"
                     value={enquiryData.departureDate}
                     onChange={(e) => handleEnquiryChange('departureDate', e.target.value)}
-                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400 transition duration-150 text-sm"
+                    disabled={isSubmitting}
+                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400 transition duration-150 text-sm disabled:bg-gray-100"
                   />
                 </div>
 
@@ -459,7 +534,8 @@ Children Ages: ${childAgesList}`;
                         onChange={(e) => handleEnquiryChange('adults', e.target.value)}
                         min="1"
                         required
-                        className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-base text-center"
+                        disabled={isSubmitting}
+                        className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-base text-center disabled:bg-gray-100"
                       />
                     </div>
                     <div>
@@ -483,13 +559,15 @@ Children Ages: ${childAgesList}`;
                             min="2"
                             max="11"
                             required
+                            disabled={isSubmitting}
                             placeholder={`Age of Child ${index + 1} (2-11)`}
-                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm text-center"
+                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm text-center disabled:bg-gray-100"
                           />
                           <button
                             type="button"
                             onClick={() => removeChildField(index)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded-lg transition duration-150"
+                            disabled={isSubmitting}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-lg transition duration-150 disabled:opacity-50"
                             title="Remove Child"
                           >
                             <Minus className="h-4 w-4" />
@@ -500,7 +578,8 @@ Children Ages: ${childAgesList}`;
                     <button
                       type="button"
                       onClick={addChildField}
-                      className="mt-1 w-full text-cyan-600 hover:text-cyan-800 text-xs font-medium flex items-center justify-center p-1.5 rounded-lg border border-cyan-100 hover:bg-cyan-50 transition duration-150"
+                      disabled={isSubmitting || childAges.length >= maxChildren}
+                      className="mt-1 w-full text-cyan-600 hover:text-cyan-800 text-xs font-medium flex items-center justify-center p-1.5 rounded-lg border border-cyan-100 hover:bg-cyan-50 transition duration-150 disabled:opacity-50"
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Child
@@ -516,26 +595,29 @@ Children Ages: ${childAgesList}`;
                     value={enquiryData.fullName}
                     onChange={(e) => handleEnquiryChange('fullName', e.target.value)}
                     required
+                    disabled={isSubmitting}
                     placeholder="Full Name"
-                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm"
+                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm disabled:bg-gray-100"
                   />
                   <input
                     type="email"
                     value={enquiryData.email}
                     onChange={(e) => handleEnquiryChange('email', e.target.value)}
                     required
+                    disabled={isSubmitting}
                     placeholder="Email ID"
-                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm"
+                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm disabled:bg-gray-100"
                   />
                   <input
                     type="tel"
                     value={enquiryData.phone}
                     onChange={(e) => handleEnquiryChange('phone', e.target.value)}
                     required
+                    disabled={isSubmitting}
                     pattern="[0-9]{10,}"
                     title="10+ digit phone number"
                     placeholder="Phone Number"
-                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm"
+                    className="mt-0.5 block w-full px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm disabled:bg-gray-100"
                   />
                 </div>
 
@@ -552,7 +634,8 @@ Children Ages: ${childAgesList}`;
                       onChange={(e) => handleEnquiryChange('captchaInput', e.target.value)}
                       placeholder="Enter result"
                       required
-                      className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm"
+                      disabled={isSubmitting}
+                      className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg transition duration-150 text-sm disabled:bg-gray-100"
                     />
                   </div>
                 </div>
@@ -561,48 +644,66 @@ Children Ages: ${childAgesList}`;
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full px-4 py-2 bg-cyan-600 text-white font-bold rounded-lg shadow-md shadow-cyan-500/50 hover:bg-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-500 transition duration-300"
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2 bg-cyan-600 text-white font-bold rounded-lg shadow-md shadow-cyan-500/50 hover:bg-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-500 transition duration-300 disabled:bg-cyan-400"
                   >
-                    Send Inquiry
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Sending Inquiry...
+                      </span>
+                    ) : (
+                      'Send Inquiry'
+                    )}
                   </button>
                 </div>
               </form>
             </div>
           </div>
-
-          {/* Message Box */}
-          {showEnquiryMessage && (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-[80] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all scale-100 opacity-100">
-                <h3 className="text-xl font-bold mb-3 text-gray-800">{enquiryMessage.title}</h3>
-                <p className="text-gray-600 mb-4 whitespace-pre-wrap text-sm">{enquiryMessage.text}</p>
-                <button
-                  onClick={() => setShowEnquiryMessage(false)}
-                  className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
         </>
       )}
 
-      {/* Booking Modal (Only for Fixed Departure) */}
+      {/* Message Box (Enquiry Success/Error) */}
+      {showEnquiryMessage && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-[100002] flex items-center justify-center p-4">
+          <div className={`bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all scale-100 opacity-100 border-t-4 ${enquiryMessage.success ? 'border-green-500' : 'border-red-500'}`}>
+            <div className="flex items-center gap-3 mb-3">
+              {enquiryMessage.success ? (
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-500" />
+              )}
+              <h3 className="text-xl font-bold text-gray-800">{enquiryMessage.title}</h3>
+            </div>
+            <p className="text-gray-600 mb-4 whitespace-pre-wrap text-sm">{enquiryMessage.text}</p>
+            <button
+              onClick={() => setShowEnquiryMessage(false)}
+              className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* -------------------- 2. BOOKING MODAL ----------------------- */}
+      {/* ------------------------------------------------------------- */}
       {isFixedDeparture && pricingDetails && (
         <>
           {showBookingModal && (
             <>
               <div
-                className="fixed inset-0 bg-black/70 backdrop-blur-mdz-[100000] animate-backdrop-fade-in"
-                onClick={() => setShowBookingModal(false)}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100000] animate-backdrop-fade-in"
+                onClick={() => !isSubmitting && setShowBookingModal(false)}
               ></div>
 
               <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4">
                 <div className="relative w-full max-w-5xl animate-modal-pop-in">
                   <button
-                    onClick={() => setShowBookingModal(false)}
-                    className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 border-4 border-white group"
+                    onClick={() => !isSubmitting && setShowBookingModal(false)}
+                    disabled={isSubmitting}
+                    className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 border-4 border-white group disabled:opacity-50"
                   >
                     <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                   </button>
@@ -614,7 +715,7 @@ Children Ages: ${childAgesList}`;
                       </div>
                       <h3 className="text-3xl font-bold text-gray-900 mb-3">Booking Request Sent!</h3>
                       <p className="text-gray-600 leading-relaxed text-lg">
-                        Thank you for your interest! Our team will contact you shortly.
+                        Thank you for your request! We have reserved your spots and our team will contact you shortly to finalize payment.
                       </p>
                     </div>
                   ) : (
@@ -637,8 +738,9 @@ Children Ages: ${childAgesList}`;
                               onChange={(e) => handleInputChange('departureDate', e.target.value)}
                               className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                 errors.departureDate ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                              }`}
+                              } disabled:bg-gray-100`}
                               required
+                              disabled={isSubmitting}
                             >
                               <option value="">Choose a Date</option>
                               {pricingDetails.availableDates.map(date => (
@@ -663,7 +765,7 @@ Children Ages: ${childAgesList}`;
                             </label>
                             <div className="grid grid-cols-3 gap-2">
                               {pricingDetails.packages.map(pkg => (
-                                <label key={pkg.title} className="relative cursor-pointer">
+                                <label key={pkg.title} className="relative cursor-pointer" style={{ opacity: isSubmitting ? 0.6 : 1 }}>
                                   <input
                                     type="radio"
                                     name="sharing"
@@ -671,6 +773,7 @@ Children Ages: ${childAgesList}`;
                                     checked={formData.sharingOption === pkg.title}
                                     onChange={(e) => handleInputChange('sharingOption', e.target.value)}
                                     className="sr-only"
+                                    disabled={isSubmitting}
                                   />
                                   <div className={`p-2 border-2 rounded-lg text-center transition-all ${
                                     formData.sharingOption === pkg.title
@@ -696,7 +799,7 @@ Children Ages: ${childAgesList}`;
                           {/* Adults and Children Count */}
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-gray-700 font-semibold text-sm mb-1.5 block">Adults (12+)</label>
+                              <label className="text-gray-700 font-semibold text-sm mb-1.5 block">No. of Travellers</label>
                               <input
                                 type="number"
                                 min="1"
@@ -705,10 +808,15 @@ Children Ages: ${childAgesList}`;
                                 onChange={(e) => handleInputChange('adults', e.target.value)}
                                 className={`w-full px-3 py-2 border-2 rounded-lg text-center font-bold focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                   errors.adults ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                }`}
+                                } disabled:bg-gray-100`}
+                                disabled={isSubmitting}
                               />
+                              {errors.adults && (
+                                <p className="text-red-600 text-xs mt-1">{errors.adults}</p>
+                              )}
                             </div>
-                            <div>
+                            
+                            {/* <div>
                               <label className="text-gray-700 font-semibold text-sm mb-1.5 block">Children (2-11)</label>
                               <input
                                 type="number"
@@ -716,14 +824,15 @@ Children Ages: ${childAgesList}`;
                                 max="10"
                                 value={formData.children}
                                 onChange={(e) => handleInputChange('children', e.target.value)}
-                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all disabled:bg-gray-100"
+                                disabled={isSubmitting}
                               />
-                            </div>
+                            </div> */}
                           </div>
 
                           {/* Total Price */}
                           <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white text-center">
-                            <div className="text-xs text-cyan-50">Total Price</div>
+                            <div className="text-xs text-cyan-50">Total Estimated Price</div>
                             <div className="text-2xl font-bold">₹{calculatePrice().toLocaleString()}</div>
                           </div>
                         </div>
@@ -733,6 +842,7 @@ Children Ages: ${childAgesList}`;
                           <div>
                             <label className="text-gray-700 font-semibold text-sm mb-1.5 block">Contact Details</label>
                             <div className="space-y-2">
+                              {/* Full Name */}
                               <div>
                                 <input
                                   type="text"
@@ -741,14 +851,16 @@ Children Ages: ${childAgesList}`;
                                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                                   className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                     errors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                  }`}
+                                  } disabled:bg-gray-100`}
                                   required
+                                  disabled={isSubmitting}
                                 />
                                 {errors.fullName && (
                                   <p className="text-red-600 text-xs mt-0.5">{errors.fullName}</p>
                                 )}
                               </div>
 
+                              {/* Email */}
                               <div>
                                 <input
                                   type="email"
@@ -757,24 +869,27 @@ Children Ages: ${childAgesList}`;
                                   onChange={(e) => handleInputChange('email', e.target.value)}
                                   className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                     errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                  }`}
+                                  } disabled:bg-gray-100`}
                                   required
+                                  disabled={isSubmitting}
                                 />
                                 {errors.email && (
                                   <p className="text-red-600 text-xs mt-0.5">{errors.email}</p>
                                 )}
                               </div>
 
+                              {/* Phone */}
                               <div>
                                 <input
                                   type="tel"
-                                  placeholder="Phone Number"
+                                  placeholder="Phone Number (10+ digits)"
                                   value={formData.phone}
                                   onChange={(e) => handleInputChange('phone', e.target.value)}
                                   className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                     errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                  }`}
+                                  } disabled:bg-gray-100`}
                                   required
+                                  disabled={isSubmitting}
                                   pattern="[0-9]{10,}"
                                   title="10+ digit phone number"
                                 />
@@ -785,6 +900,7 @@ Children Ages: ${childAgesList}`;
                             </div>
                           </div>
 
+                          {/* CAPTCHA */}
                           <div>
                             <label className="text-gray-700 font-semibold text-sm mb-1.5 block">Security Check</label>
                             <div className="flex items-center gap-3">
@@ -800,8 +916,9 @@ Children Ages: ${childAgesList}`;
                                 onChange={(e) => handleInputChange('captcha', e.target.value)}
                                 className={`flex-1 px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all ${
                                   errors.captcha ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                }`}
+                                } disabled:bg-gray-100`}
                                 required
+                                disabled={isSubmitting}
                               />
                             </div>
                             {errors.captcha && (
@@ -811,6 +928,14 @@ Children Ages: ${childAgesList}`;
                               </p>
                             )}
                           </div>
+                          
+                          {/* API Error Message */}
+                          {errors.api && (
+                            <div className="p-3 bg-red-100 border border-red-400 rounded-lg text-red-700 text-sm flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0"/>
+                              <span>{errors.api}</span>
+                            </div>
+                          )}
 
                           <button
                             type="submit"
@@ -823,8 +948,8 @@ Children Ages: ${childAgesList}`;
                           >
                             {isSubmitting ? (
                               <span className="flex items-center justify-center gap-2">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                Processing...
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Sending Request...
                               </span>
                             ) : (
                               'Confirm and Send Request'
@@ -848,7 +973,7 @@ Children Ages: ${childAgesList}`;
             {/* ================= LEFT SIDE: TABS ================= */}
             <div className="lg:col-span-7">
               <section>
-                {/* Tabs */}
+                {/* Tabs (Unchanged) */}
                 <div className="bg-gradient-to-r from-cyan-100 via-blue-50 to-cyan-100 rounded-2xl shadow-xl overflow-hidden animate-slide-down">
                   <div className="flex overflow-x-auto scrollbar-hide">
                     {tabs.map((tab, index) => (
@@ -871,7 +996,7 @@ Children Ages: ${childAgesList}`;
                   </div>
                 </div>
 
-                {/* Tab Content */}
+                {/* Tab Content (Unchanged) */}
                 <div
                   className={`bg-white rounded-2xl shadow-2xl mt-6 p-8 border border-gray-100 transition-all duration-300 ${
                     isAnimating
@@ -879,7 +1004,6 @@ Children Ages: ${childAgesList}`;
                       : "opacity-100 translate-y-0 animate-fade-in-up"
                   }`}
                 >
-                  {/* ... (Existing Tab Content: Overview, Itinerary, Inclusions, Exclusions, Other Info) ... */}
                   {/* ---------------- OVERVIEW ---------------- */}
                   {activeTab === "overview" && (
                     <div className="space-y-6">
@@ -1056,28 +1180,27 @@ Children Ages: ${childAgesList}`;
                       </div>
 
                       {policies.map((policy, index) => {
-                          // Dynamic Icon and color setup based on policy type
-                          const Icon = policy.icon;
-                          let iconColorClass = policy.color === 'blue' ? 'text-blue-600' :
-                                          policy.color === 'green' ? 'text-green-600' : 'text-red-600';
-                          let borderColorClass = policy.color === 'blue' ? 'border-l-blue-600' :
-                                          policy.color === 'green' ? 'border-l-green-600' : 'border-l-red-600';
+                        const Icon = policy.icon;
+                        let iconColorClass = policy.color === 'blue' ? 'text-blue-600' :
+                              policy.color === 'green' ? 'text-green-600' : 'text-red-600';
+                        let borderColorClass = policy.color === 'blue' ? 'border-l-blue-600' :
+                              policy.color === 'green' ? 'border-l-green-600' : 'border-l-red-600';
 
-                          return (
-                              <div
-                                  key={index}
-                                  className={`relative overflow-hidden bg-white border-l-4 ${borderColorClass} rounded-r-xl p-6 shadow-md animate-fade-in-up`}
-                                  style={{animationDelay: `${index * 0.15}s`}}
-                              >
-                                  <div className="flex items-center gap-3 mb-3">
-                                      <Icon className={`w-5 h-5 ${iconColorClass} flex-shrink-0`} />
-                                      <h3 className="text-xl font-bold text-gray-900">{policy.title}</h3>
-                                  </div>
-                                  <p className="text-gray-700 leading-relaxed text-base whitespace-pre-line">
-                                      {policy.content}
-                                  </p>
-                              </div>
-                          );
+                        return (
+                          <div
+                            key={index}
+                            className={`relative overflow-hidden bg-white border-l-4 ${borderColorClass} rounded-r-xl p-6 shadow-md animate-fade-in-up`}
+                            style={{animationDelay: `${index * 0.15}s`}}
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              <Icon className={`w-5 h-5 ${iconColorClass} flex-shrink-0`} />
+                              <h3 className="text-xl font-bold text-gray-900">{policy.title}</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed text-base whitespace-pre-line">
+                              {policy.content}
+                            </p>
+                          </div>
+                        );
                       })}
                     </div>
                   )}
@@ -1137,7 +1260,7 @@ Children Ages: ${childAgesList}`;
 
                     {isFixedDeparture && (
                       <button
-                        onClick={() => setShowBookingModal(true)}
+                        onClick={() => { setShowBookingModal(true); setShowSuccess(false); generateCaptcha(); }}
                         className="w-full bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:from-blue-700 hover:via-cyan-700 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:translate-y-0 animate-gradient-x group"
                       >
                         <span className="text-lg">Book Now</span>
@@ -1146,7 +1269,7 @@ Children Ages: ${childAgesList}`;
                     )}
 
                     <button
-                      onClick={() => setShowEnquiryModal(true)}
+                      onClick={() => { setShowEnquiryModal(true); setShowEnquiryMessage(false); generateEnquiryCaptcha(); }}
                       className={`w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-600 hover:from-cyan-700 hover:via-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:translate-y-0 animate-gradient-x ${isFixedDeparture ? 'mt-3' : ''}`}
                     >
                       <Send className="w-5 h-5 animate-send-icon" />
@@ -1171,7 +1294,7 @@ Children Ages: ${childAgesList}`;
           </div>
         </div>
         <style jsx>{`
-          /* --- Animation Keyframes (Merged) --- */
+          /* ... (Styles are lengthy, preserved in original for integrity) ... */
           @keyframes fade-in-up {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }

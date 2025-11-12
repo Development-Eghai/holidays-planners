@@ -2,22 +2,22 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import DestinationHero from "../../../components/destinations/DestinationHero";
 import DestinationOverview from "../../../components/destinations/DestinationOverview";
+import DestinationGuidelines from "../../../components/destinations/DestinationGuidelines";
 import FAQ from "../../../components/charts/FAQ";
 import Form from "../../../components/forms/LeadGeneration";
 import DestCategory from "../../../components/destinations/DestCategory";
-// import Related from "../../../components/destinations/RelatedTrips"; // 🔒 Hidden safely
-// import Banner from "../../../components/charts/PromotionalBanner";  // 🔒 Hidden safely
+import PopularTrips from "../../../components/destinations/PopularTrips";
 
 const API_URL = "https://api.yaadigo.com/secure/api/destinations/";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 
 const Destinations = () => {
-  const { slug, id } = useParams(); // Handles /destination/:slug/:id
+  const { slug, id } = useParams();
   const location = useLocation();
   const [destinationId, setDestinationId] = useState(null);
   const [destinationData, setDestinationData] = useState(null);
 
-  // ✅ Detect destinationId from URL (slug or query param)
+  // Detect destinationId from URL (slug or query param)
   useEffect(() => {
     let detectedId = id;
     if (!detectedId) {
@@ -31,7 +31,7 @@ const Destinations = () => {
     }
   }, [id, location.search]);
 
-  // ✅ Fetch destination details
+  // Fetch destination details
   useEffect(() => {
     if (!destinationId) return;
 
@@ -42,8 +42,11 @@ const Destinations = () => {
         });
         if (!response.ok) throw new Error("Failed to fetch destination");
         const data = await response.json();
-        setDestinationData(data);
-        console.log("Fetched Destination Data:", data);
+        
+        // Extract the actual destination data from the response
+        const actualData = data.data || data;
+        setDestinationData(actualData);
+        console.log("Fetched Destination Data:", actualData);
       } catch (error) {
         console.error("Error fetching destination:", error);
       }
@@ -52,7 +55,7 @@ const Destinations = () => {
     fetchDestination();
   }, [destinationId]);
 
-  // ✅ Loading state
+  // Loading state
   if (!destinationData)
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -64,28 +67,25 @@ const Destinations = () => {
 
   return (
     <div>
-      {/* 🏝️ HERO IMAGE SLIDER */}
+      {/* Hero Image Slider */}
       <DestinationHero destinationData={destinationData} />
 
-      {/* 📜 DESTINATION OVERVIEW */}
+      {/* Destination Overview */}
       <DestinationOverview destinationData={destinationData} />
 
-      {/* 🧭 CATEGORY SECTION */}
+      {/* Popular Trips Section */}
+      <PopularTrips destinationData={destinationData} />
+
+      {/* Category Section (Custom Packages) */}
       <DestCategory currentDestinationId={destinationId} />
 
-      {/* 🔒 SIMILAR TRIPS (Hidden for now)
-      <Related
-        popularTripIds={destinationData.popular_trip_ids || []}
-        customPackages={destinationData.custom_packages || []}
-      /> */}
+      {/* Travel Guidelines */}
+      <DestinationGuidelines destinationData={destinationData} />
 
-      {/* 🔒 Promotional Banner / Video Section (Hidden)
-      <Banner /> */}
-
-      {/* 📩 Lead Form */}
+      {/* Lead Form */}
       <Form />
 
-      {/* ❓FAQ Section */}
+      {/* FAQ Section */}
       <FAQ />
     </div>
   );

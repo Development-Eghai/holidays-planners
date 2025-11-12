@@ -616,3 +616,247 @@ small.text-muted {
     padding: 16px;
   }
 }
+
+/* ======================================
+   PRICING STYLES (Radio Card Enhancement)
+====================================== */
+/* Scoping is handled by .tour-container wrapper */
+.tour-container .p-3.border.rounded {
+  border-color: #e5e7eb !important; /* Default subtle border */
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+  background: #fcfcfd;
+}
+/* Active state for the radio button card */
+.tour-container .p-3.border.rounded.border-primary {
+  border-color: #2563eb !important; /* Blue border for active state */
+  background: #eff6ff !important; /* Light blue background for active state */
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1);
+}
+.tour-container .p-3.border.rounded:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.small.text-muted {
+  font-size: 13px !important;
+}
+
+/* ======================================
+   FIXED DEPARTURE PRICING - ENHANCED LAYOUT
+====================================== */
+/* Main container for slots and packages */
+.tour-container .fixed-departure-container {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 24px;
+  margin-top: 20px;
+}
+
+/* Header with title and Add Slot button */
+.tour-container .fixed-departure-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tour-container .fixed-departure-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Individual Slot Container */
+.tour-container .slot-container {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tour-container .slot-container:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Slot 1 gets special green accent */
+.tour-container .slot-container:first-child {
+  border-top: 3px solid #10b981;
+  background: linear-gradient(to bottom, #f0fff4 0%, #ffffff 100%);
+}
+
+/* Slot header with indicator and delete button */
+.tour-container .slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tour-container .slot-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tour-container .slot-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.tour-container .slot-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Costing Packages Section */
+.tour-container .costing-packages-section {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.tour-container .costing-packages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tour-container .costing-packages-header h6 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Individual Package Card */
+.tour-container .package-card {
+  background: #ffffff;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.tour-container .package-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.tour-container .package-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tour-container .package-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+/* Button Styling - GREEN for Add, RED for Delete */
+.tour-container .btn-add-slot,
+.tour-container .btn-add-package {
+  background: #10b981 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-container .btn-add-slot:hover,
+.tour-container .btn-add-package:hover {
+  background: #059669 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.tour-container .btn-delete-slot,
+.tour-container .btn-delete-package {
+  background: #ef4444 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tour-container .btn-delete-slot:hover,
+.tour-container .btn-delete-package:hover {
+  background: #dc2626 !important;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
+}
+
+/* Form fields in pricing section */
+.tour-container .pricing-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.tour-container .pricing-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.tour-container .pricing-form-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  outline: none;
+}
+
+.tour-container .pricing-form-input:read-only {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments for pricing */
+@media (max-width: 768px) {
+  .tour-container .fixed-departure-header,
+  .tour-container .slot-header,
+  .tour-container .costing-packages-header,
+  .tour-container .package-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .tour-container .btn-add-slot,
+  .tour-container .btn-add-package {
+    width: 100%;
+    justify-content: center;
+  }
+}

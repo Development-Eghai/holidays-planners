@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-// Ensure this path is correct in your project structure
-import TripCard from "../../components/trips/TripCard"; 
+import React, { useEffect, useState, useRef } from "react";
+import TripCard from "../../components/trips/TripCard";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
@@ -9,6 +9,9 @@ const DestCategory = ({ currentDestinationId }) => {
   const [destinationData, setDestinationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const scrollRefs = useRef({});
+  const scrollStep = 340; // card width (w-80) + gap
 
   useEffect(() => {
     if (!currentDestinationId) {
@@ -45,8 +48,53 @@ const DestCategory = ({ currentDestinationId }) => {
     fetchData();
   }, [currentDestinationId]);
 
-  // --- Render States ---
+  // Process pricing logic
+  const getProcessedTripData = (trip) => {
+    const fixedPrice =
+      trip.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price;
+    const customPrice = trip.pricing?.customized?.final_price;
 
+    let finalPrice;
+    let discountAmount = 0;
+
+    if (fixedPrice !== undefined && fixedPrice !== null && fixedPrice > 0) {
+      finalPrice = fixedPrice;
+      discountAmount =
+        trip.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.discount || 0;
+    } else if (customPrice !== undefined && customPrice !== null && customPrice > 0) {
+      finalPrice = customPrice;
+      discountAmount = trip.pricing?.customized?.discount || 0;
+    } else {
+      finalPrice = 0;
+    }
+
+    const finalPriceDisplay =
+      finalPrice > 0 ? finalPrice.toLocaleString("en-IN") : "N/A";
+
+    return {
+      ...trip,
+      final_price_display: finalPriceDisplay,
+      discount: discountAmount,
+    };
+  };
+
+  // Scroll navigation
+  const scrollCarousel = (pkgIndex, direction) => {
+    const container = scrollRefs.current[pkgIndex];
+    if (container) {
+      const currentScroll = container.scrollLeft;
+      const newScroll =
+        direction === "left"
+          ? currentScroll - scrollStep
+          : currentScroll + scrollStep;
+      container.scrollTo({
+        left: newScroll,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Loading state
   if (loading) {
     return (
       <div className="py-16 text-center">
@@ -56,6 +104,7 @@ const DestCategory = ({ currentDestinationId }) => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="py-12 text-center">
@@ -64,6 +113,7 @@ const DestCategory = ({ currentDestinationId }) => {
     );
   }
 
+  // Empty state
   if (!destinationData) {
     return null;
   }
@@ -73,58 +123,91 @@ const DestCategory = ({ currentDestinationId }) => {
   if (customPackages.length === 0) {
     return (
       <div className="py-12 text-center">
-        <p className="text-gray-500">No custom packages found for this destination.</p>
+        <p className="text-gray-500">
+          No custom packages found for this destination.
+        </p>
       </div>
     );
   }
 
-  // --- Main Render ---
-
+  // Main render
   return (
-    <div className="py-12 bg-gray-50">
+    <div className="py-8 bg-white">
       <div className="container mx-auto px-4">
-        
-        {/* Removed the main <h2>Custom Packages</h2> heading as requested */}
-
         {customPackages.map((pkg, index) => (
-          <div key={index} className="mb-16">
-            
-            {/* Package Header (Title & Description) */}
-            <div className="mb-8 p-6 bg-white rounded-lg shadow-md border-b-4 border-blue-500">
-              <h3 className="text-2xl font-extrabold text-gray-800 mb-2">
-                {pkg.title || 'Untitled Package'}
-              </h3>
+          <div
+            key={index}
+            className={`pt-10 ${index > 0 ? "border-t border-gray-200 mt-10" : ""}`}
+          >
+            {/* Header and controls */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-3xl font-extrabold text-blue-900">
+                  {pkg.title || "Untitled Package"}
+                </h3>
+
+                {Array.isArray(pkg.trips) && pkg.trips.length > 3 && (
+                  <div className="hidden sm:flex space-x-3">
+                    <button
+                      onClick={() => scrollCarousel(index, "left")}
+                      className="p-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition-colors shadow-md"
+                      aria-label={`Scroll Left ${pkg.title}`}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => scrollCarousel(index, "right")}
+                      className="p-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition-colors shadow-md"
+                      aria-label={`Scroll Right ${pkg.title}`}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {pkg.description && (
-                <p className="text-gray-600">{pkg.description}</p>
+                <p className="text-gray-600 mb-6">{pkg.description}</p>
               )}
 
-              <br />
-
-              {/* Render the trips associated with this package */}
-            {Array.isArray(pkg.trips) && pkg.trips.length > 0 ? (
-              // TripCards are rendered directly inside this grid div
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {pkg.trips.map((trip) => (
-                  <TripCard 
-                    key={trip.id || trip._id} 
-                    trip={trip} 
-                    // Add onSendQuery handler if needed for modal/form submission
-                    // onSendQuery={(t) => console.log('Query for:', t.title)}
-                  /> 
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-4">
-                No trips found for this package.
-              </p>
-            )}
-            
+              {/* Trip cards */}
+              {Array.isArray(pkg.trips) && pkg.trips.length > 0 ? (
+                <div
+                  ref={(el) => (scrollRefs.current[index] = el)}
+                  className="flex overflow-x-scroll pb-4 space-x-6 custom-scrollbar-hide"
+                >
+                  {pkg.trips.map((trip) => {
+                    const processedTrip = getProcessedTripData(trip);
+                    return (
+                      <div
+                        key={processedTrip.id || processedTrip._id}
+                        className="w-80 flex-shrink-0"
+                      >
+                        <TripCard trip={processedTrip} />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-4">
+                  No trips found for this package.
+                </p>
+              )}
             </div>
-
-            
           </div>
         ))}
       </div>
+
+      {/* Custom Scrollbar Hide */}
+      <style jsx>{`
+        .custom-scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .custom-scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 };

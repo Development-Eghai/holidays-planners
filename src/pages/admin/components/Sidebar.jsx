@@ -28,7 +28,7 @@ const sidebarGroups = [
             // Categories List View
             { name: 'Add Categories', path: '/admin/dashboard/add-categories', icon: Database },
             
-            { name: 'Destination Type', path: '/admin/dashboard/destination-type', icon: FileText },
+            // { name: 'Destination Type', path: '/admin/dashboard/destination-type', icon: FileText },
         ]
     },
     {

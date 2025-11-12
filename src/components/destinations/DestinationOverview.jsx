@@ -1,24 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Share2, Facebook, Twitter, Linkedin, Link2, X } from 'lucide-react';
 
-/**
- * Component to display the destination's description and social sharing options.
- * It expects to receive the full destination data object fetched from the API.
- */
-export default function DestinationDetails({ destinationData }) {
+export default function DestinationOverview({ destinationData }) {
     const [showShareOptions, setShowShareOptions] = useState(false);
     const [currentDestination, setCurrentDestination] = useState(null);
     const [showFullOverview, setShowFullOverview] = useState(false);
-    const [showAllGuidelines, setShowAllGuidelines] = useState(false);
 
     // --- Data Mapping Effect ---
     useEffect(() => {
         if (destinationData) {
-            // Map the dynamic API fields to the required structure
             const apiData = destinationData.data || destinationData;
-            
             const mappedData = {
-                title: apiData.title || 'About Destination',
                 overview: apiData.overview || 'No overview available.',
                 travelGuidelines: apiData.travel_guidelines || '',
             };
@@ -30,13 +22,11 @@ export default function DestinationDetails({ destinationData }) {
 
     const handleShare = (platform) => {
         const url = window.location.href;
-        const title = destination?.title || 'Check out this awesome trip!';
-        
         const shareUrls = {
             facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-            twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+            twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`,
             linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-            whatsapp: `https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`,
+            whatsapp: `https://wa.me/?text=${encodeURIComponent(url)}`,
         };
 
         if (platform === 'copy') {
@@ -49,47 +39,47 @@ export default function DestinationDetails({ destinationData }) {
     };
 
     const shareButtons = [
-        { 
-            name: 'Copy Link', 
-            icon: Link2, 
-            bg: 'bg-gray-700 hover:bg-gray-800',
-            action: 'copy'
-        },
-        { 
-            name: 'LinkedIn', 
-            icon: Linkedin, 
-            bg: 'bg-blue-700 hover:bg-blue-800',
-            action: 'linkedin'
-        },
-        { 
-            name: 'Twitter', 
-            icon: Twitter, 
-            bg: 'bg-sky-500 hover:bg-sky-600',
-            action: 'twitter'
-        },
-        { 
-            name: 'Facebook', 
-            icon: Facebook, 
-            bg: 'bg-blue-600 hover:bg-blue-700',
-            action: 'facebook'
-        },
+        { name: 'Copy Link', icon: Link2, bg: 'bg-gray-700 hover:bg-gray-800', action: 'copy' },
+        { name: 'LinkedIn', icon: Linkedin, bg: 'bg-blue-700 hover:bg-blue-800', action: 'linkedin' },
+        { name: 'Twitter', icon: Twitter, bg: 'bg-sky-500 hover:bg-sky-600', action: 'twitter' },
+        { name: 'Facebook', icon: Facebook, bg: 'bg-blue-600 hover:bg-blue-700', action: 'facebook' },
     ];
 
-    if (!destination) {
-        return null;
-    }
+    // --- Content Processor ---
+    const processOverviewContent = (overviewText) => {
+        if (!overviewText) return [];
+        return overviewText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map((line, index) => {
+                const isPotentialHeading = /^\d+\.\s/.test(line) || line.length < 60;
+                return {
+                    content: line.replace(/^[0-9]+\.\s*/, '').trim(),
+                    isHeading: isPotentialHeading && (index === 0 || /^[^a-z]/.test(line)),
+                };
+            });
+    };
+
+    if (!destination) return null;
+
+    const processedOverview = processOverviewContent(destination.overview);
+    const totalLines = processedOverview.length;
+    const initialLinesToShow = 6;
+    const linesToShow = showFullOverview ? processedOverview : processedOverview.slice(0, initialLinesToShow);
+    const hasMoreContent = totalLines > initialLinesToShow;
 
     return (
         <>
             {/* Backdrop when share options are open */}
             {showShareOptions && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
                     onClick={() => setShowShareOptions(false)}
                 ></div>
             )}
 
-            {/* Share Button with Options - Bottom Left */}
+            {/* Floating Share Buttons */}
             <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse items-center gap-4">
                 <button
                     onClick={() => setShowShareOptions(!showShareOptions)}
@@ -109,8 +99,8 @@ export default function DestinationDetails({ destinationData }) {
                         key={button.name}
                         onClick={() => handleShare(button.action)}
                         className={`${button.bg} text-white p-4 rounded-full shadow-2xl transition-all duration-300 border-4 border-white ${
-                            showShareOptions 
-                                ? 'opacity-100 scale-100 translate-y-0' 
+                            showShareOptions
+                                ? 'opacity-100 scale-100 translate-y-0'
                                 : 'opacity-0 scale-0 translate-y-20 pointer-events-none'
                         }`}
                         style={{
@@ -123,105 +113,55 @@ export default function DestinationDetails({ destinationData }) {
                 ))}
             </div>
 
-            <section className="py-20 px-4 bg-white">
+            {/* --- Overview Section --- */}
+            <section className="py-10 px-4 bg-white">
                 <div className="max-w-7xl mx-auto">
                     <div className="opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
-                        {/* Title Section */}
-                        <div className="mb-12 opacity-0 animate-slide-down text-center" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
-                            <h2 className="text-3xl md:text-4xl font-bold text-blue-900 mb-6">
-                                {destination.title}
-                            </h2>
-                            <div className="h-1.5 w-24 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full mx-auto"></div>
-                        </div>
-
-                        {/* Single Blue Container with All Content */}
+                        
+                        {/* ✅ Removed title section completely (no margin gap) */}
+                        
                         <div className="opacity-0 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
-                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-10 md:p-12 border-l-4 border-blue-600 shadow-md hover:shadow-lg transition-shadow duration-300 space-y-8">
-                                {/* Overview */}
-                                <div>
-                                    <h3 className="text-2xl font-semibold text-blue-900 mb-4">
-                                        Overview
-                                    </h3>
-                                    <div className="relative">
-                                        <div 
-                                            className={`text-gray-800 text-lg leading-relaxed whitespace-pre-line ${!showFullOverview && destination.overview.length > 400 ? 'line-clamp-4' : ''}`}
-                                            dangerouslySetInnerHTML={{ 
-                                                __html: destination.overview.replace(/\n/g, '<br/>') 
-                                            }}
-                                        />
-                                        {destination.overview.length > 400 && (
-                                            <button
-                                                onClick={() => setShowFullOverview(!showFullOverview)}
-                                                className="mt-3 text-blue-600 hover:text-blue-800 font-medium text-base transition-colors duration-200 flex items-center gap-1"
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-10 md:p-12 border-l-4 border-blue-600 shadow-md hover:shadow-lg transition-shadow duration-300 space-y-4">
+                                
+                                <h3 className="text-2xl font-semibold text-blue-900 mb-6">
+                                    Overview
+                                </h3>
+
+                                {linesToShow.map((item, index) => {
+                                    if (item.isHeading) {
+                                        return (
+                                            <h4
+                                                key={index}
+                                                className="text-xl font-extrabold text-blue-900 pt-4 pb-1 mt-4 border-t border-blue-300 first:border-t-0 first:mt-0"
                                             >
-                                                {showFullOverview ? 'View Less' : 'View More'}
-                                                <svg 
-                                                    className={`w-4 h-4 transition-transform duration-300 ${showFullOverview ? 'rotate-180' : ''}`}
-                                                    fill="none" 
-                                                    stroke="currentColor" 
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                                                {item.content}
+                                            </h4>
+                                        );
+                                    } else {
+                                        return (
+                                            <p key={index} className="text-gray-800 text-lg leading-relaxed pt-2">
+                                                {item.content}
+                                            </p>
+                                        );
+                                    }
+                                })}
 
-                                {/* Travel Guidelines - Only show if available */}
-                                {destination.travelGuidelines && (() => {
-                                    const allPoints = destination.travelGuidelines
-                                        .split('.')
-                                        .filter(point => point.trim().length > 0);
-                                    const pointsToShow = showAllGuidelines ? allPoints : allPoints.slice(0, 3);
-                                    const hasMorePoints = allPoints.length > 3;
-
-                                    return (
-                                        <div className="pt-6 border-t-2 border-blue-200">
-                                            <h3 className="text-2xl font-semibold text-blue-900 mb-5">
-                                                Travel Guidelines
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {pointsToShow.map((point, index) => (
-                                                    <div key={index} className="flex items-start gap-3">
-                                                        <svg 
-                                                            className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" 
-                                                            fill="none" 
-                                                            stroke="currentColor" 
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path 
-                                                                strokeLinecap="round" 
-                                                                strokeLinejoin="round" 
-                                                                strokeWidth={2} 
-                                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
-                                                            />
-                                                        </svg>
-                                                        <p className="text-gray-800 text-lg leading-relaxed flex-1">
-                                                            {point.trim()}.
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {hasMorePoints && (
-                                                <button
-                                                    onClick={() => setShowAllGuidelines(!showAllGuidelines)}
-                                                    className="mt-5 text-blue-600 hover:text-blue-800 font-medium text-base transition-colors duration-200 flex items-center gap-1"
-                                                >
-                                                    {showAllGuidelines ? 'View Less' : `View More (${allPoints.length - 3} more)`}
-                                                    <svg 
-                                                        className={`w-4 h-4 transition-transform duration-300 ${showAllGuidelines ? 'rotate-180' : ''}`}
-                                                        fill="none" 
-                                                        stroke="currentColor" 
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </button>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
+                                {hasMoreContent && (
+                                    <button
+                                        onClick={() => setShowFullOverview(!showFullOverview)}
+                                        className="mt-8 text-blue-600 hover:text-blue-800 font-medium text-base transition-colors duration-200 flex items-center gap-1"
+                                    >
+                                        {showFullOverview ? 'View Less' : `View More (${totalLines - initialLinesToShow} lines)`}
+                                        <svg
+                                            className={`w-4 h-4 transition-transform duration-300 ${showFullOverview ? 'rotate-180' : ''}`}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -230,19 +170,10 @@ export default function DestinationDetails({ destinationData }) {
 
             <style jsx>{`
                 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slide-down { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
                 .animate-fade-in { animation: fade-in 0.6s ease-out; }
-                .animate-slide-down { animation: slide-down 0.6s ease-out; }
                 .animate-slide-up { animation: slide-up 0.6s ease-out; }
-                
-                .line-clamp-4 {
-                    display: -webkit-box;
-                    -webkit-line-clamp: 4;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                }
             `}</style>
         </>
     );

@@ -24,6 +24,16 @@ import '../../css/Destinations/DestinationCreate.css'; // Corrected path
 const DESTINATION_API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ"; 
 const BACKEND_DOMAIN = "https://api.yaadigo.com/uploads"; 
 
+// Helper for slug generation
+const generateSlug = (title) =>
+    title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "") // Remove all non-alphanumeric, non-whitespace, non-hyphen
+        .replace(/\s+/g, "-") // Replace all spaces with hyphens
+        .replace(/-+/g, "-") // Replace multiple hyphens with a single one
+        .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+
 
 const DestinationCreate = () => {
 
@@ -38,7 +48,7 @@ const DestinationCreate = () => {
     const [customPackage, setCustomPackage] = useState([{ title: "", description: "", trip_ids: [] }]);
     
     const editor = useRef(null);
-    const editor2 = useRef(null);
+    // Removed unused editor2 ref
 
     // --- Image URL Helpers ---
     const getFullImageUrl = (path) => {
@@ -73,6 +83,38 @@ const DestinationCreate = () => {
 
     const handleChange = (key, value) => {
         setCreateDestination({ ...createDestination, [key]: value })
+        if (validation[key]) {
+            setValidation({ ...validation, [key]: false })
+        }
+    }
+
+    /**
+     * Handles changes to the Title or Slug field, with automatic slug generation/cleaning.
+     * @param {string} key - 'title' or 'slug'
+     * @param {string} value - The input value
+     */
+    const handleTitleSlugChange = (key, value) => {
+        let updatedValue = value;
+        let updatedData = { ...createDestination };
+
+        // 1. Handle Slug Input Cleaning (Remove all except a-z, 0-9, and -)
+        if (key === "slug") {
+            updatedValue = value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, '') // Only allow alphanumeric and hyphens
+                .replace(/-+/g, "-"); // Collapse multiple hyphens
+        }
+        
+        // 2. Auto-generate slug from title on creation/if slug is empty
+        if (key === "title") {
+            if (!id || !createDestination.slug) {
+                updatedData.slug = generateSlug(value);
+            }
+        }
+        
+        updatedData[key] = updatedValue;
+        setCreateDestination(updatedData);
+
         if (validation[key]) {
             setValidation({ ...validation, [key]: false })
         }
@@ -322,29 +364,15 @@ const DestinationCreate = () => {
             const destinationData = res?.data?.data;
             
             // --- FIX 1: Normalize all top-level linked ID fields ---
-            
-            // Popular Trips: Convert array of trip objects into array of trip IDs (Numbers)
-            destinationData.popular_trip_ids = (destinationData.popular_trips || [])
-                .map(trip => Number(trip.id));
-
-            // Activities: Convert array of activity objects into array of activity IDs
-            destinationData.activity_ids = (destinationData.activities || [])
-                .map(activity => activity.id);
-
-            // Featured Blogs: Convert array of blog objects into array of blog IDs
-            destinationData.featured_blog_ids = (destinationData.featured_blogs || [])
-                .map(blog => blog.id);
-
-            // Blog Categories: Convert array of category objects into array of category IDs
-            destinationData.blog_category_ids = (destinationData.blog_category_data || [])
-                .map(cat => cat.id);
-
+            destinationData.popular_trip_ids = (destinationData.popular_trips || []).map(trip => Number(trip.id));
+            destinationData.activity_ids = (destinationData.activities || []).map(activity => activity.id);
+            destinationData.featured_blog_ids = (destinationData.featured_blogs || []).map(blog => blog.id);
+            destinationData.blog_category_ids = (destinationData.blog_category_data || []).map(cat => cat.id);
 
             // --- FIX 2: Handle Nested Custom Packages (Existing Fix) ---
             if (destinationData.custom_packages) {
                 destinationData.custom_packages = destinationData.custom_packages.map(pkg => ({
                     ...pkg,
-                    // trip_ids array inside custom_packages must be an array of NUMBERS
                     trip_ids: (pkg.trips || []).map(trip => Number(trip.id))
                 }));
             }
@@ -406,23 +434,25 @@ const DestinationCreate = () => {
                             <div className='admin-input-div'>
                                 <label>Destination Name <span className='required-icon'>*</span></label>
                                 <input type="text" value={createDestination?.title || ""} placeholder="Enter Destination Name"
-                                    onChange={(e) => handleChange("title", e.target.value)}
+                                    onChange={(e) => handleTitleSlugChange("title", e.target.value)}
                                     onBlur={(e) => handleBlur("title", e.target.value)}
                                     className="form-control" />
                                 {validation?.title?.status === false && validation?.title?.message && (<p className='error-para'>Destination Name {validation.title.message}</p>)}
                             </div>
                         </div>
 
+                        {/* SLUG FIELD (Now uses handleTitleSlugChange for clean input) */}
                         <div className='col-lg-6'>
                             <div className='admin-input-div'>
-                                <label>Slug <span className='required-icon'>*</span></label>
-                                <input type="text" value={createDestination?.slug || ""} placeholder="Enter Slug"
-                                    onChange={(e) => handleChange("slug", e.target.value)}
+                                <label>URL Slug <span className='required-icon'>*</span></label>
+                                <input type="text" value={createDestination?.slug || ""} placeholder="enter-url-slug"
+                                    onChange={(e) => handleTitleSlugChange("slug", e.target.value)}
                                     onBlur={(e) => handleBlur("slug", e.target.value)}
                                     className="form-control" />
                                 {validation?.slug?.status === false && validation?.slug?.message && (<p className='error-para'>Slug {validation.slug.message}</p>)}
                             </div>
                         </div>
+                        {/* END SLUG FIELD */}
                         
                         <div className='col-lg-12'>
                             <div className='admin-input-div'>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom"; // Import Navigate for redirection
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // Layout Components
 import Header from "./components/layout/Header";
@@ -24,11 +24,10 @@ import CategoryDetails from "./pages/user/Category/CategoryPreview";
 // --- ADMIN PAGES & PROTECTED ROUTE COMPONENT ---
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import PrivateRoute from "./pages/admin/components/PrivateRoute"; // Assuming you place PrivateRoute inside admin/components
+import PrivateRoute from "./pages/admin/components/PrivateRoute";
 
 export default function App() {
   // Hide Header & Footer for Admin pages
-  // Note: For a true admin app, this logic often moves into a dedicated AdminLayout.
   const isAdminRoute = window.location.pathname.startsWith("/admin");
 
   return (
@@ -63,21 +62,21 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
-
+    
           {/* --- ADMIN ROUTES --- */}
           
           {/* 1. Admin Login Page (Publicly accessible) */}
           <Route path="/admin/login" element={<AdminLogin />} />
           
-          {/* 2. Base /admin path redirects directly to the login for clarity */}
+          {/* 2. Base /admin path redirects directly to the login */}
           <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
 
-          {/* 3. Protected Dashboard Routes: All routes under this wrapper require login */}
+          {/* 3. Protected Dashboard Routes - All admin routes inside PrivateRoute */}
           <Route element={<PrivateRoute />}>
-            {/* The AdminDashboard component handles all nested routes like /overview, /users, etc. */}
+            {/* The AdminDashboard component handles all nested routes */}
             <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
           </Route>
-          
+
         </Routes>
       </main>
 
