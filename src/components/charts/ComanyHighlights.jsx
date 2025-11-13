@@ -21,6 +21,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => {
       <div className={`relative h-full bg-white rounded-2xl p-6 border-2 border-blue-600 shadow-md hover:shadow-2xl transition-all duration-500 ${
         isHovered ? 'scale-105 border-blue-700' : ''
       }`}>
+        
         {/* Icon */}
         <div className="mb-4">
           <div className={`inline-flex p-3 bg-blue-50 rounded-xl transition-all duration-500 ${
@@ -40,12 +41,10 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => {
           {description}
         </p>
 
-        {/* Animated corner accent */}
+        {/* Accent */}
         <div className={`absolute top-0 right-0 w-16 h-16 bg-blue-600 rounded-bl-3xl opacity-5 transition-all duration-500 ${
           isHovered ? 'w-20 h-20 opacity-10' : ''
         }`}></div>
-        
-        {/* Bottom accent line */}
         <div className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-500 ${
           isHovered ? 'w-full' : 'w-0'
         }`}></div>
@@ -58,56 +57,56 @@ export default function TravelFeatures() {
   const features = [
     {
       icon: Home,
-      title: 'Handpicked Stays with Friendly Hosts',
-      description: 'All our accommodations are verified pre-checked for quality and hygiene.',
+      title: 'Founded by Experts, Built on Trust',
+      description: 'Holidays Planners was established in 2015 by CEO Miss Poonam Sharma and a team of travel professionals dedicated to simplifying travel for every customer.',
       delay: 0
     },
     {
       icon: Plane,
-      title: '2500+ Trips Hosted PAN India & Abroad',
-      description: 'From group trips to custom tours exploring diverse landscapes, cultures & lots more.',
+      title: 'Complete Travel Services Under One Roof',
+      description: 'From flights to hotels, transfers, visas, and currency exchange—we manage your entire journey seamlessly, without third-party dependency.',
       delay: 100
     },
     {
       icon: UserCheck,
-      title: 'Solo Travel Friendly Trips for All',
-      description: 'We provide absolutely safe and comfortable environment for solo travellers.',
+      title: 'Personalized Itineraries for Every Traveller',
+      description: 'Every trip is designed according to your comfort, budget, interests, and pace—ensuring you get a travel experience made just for you.',
       delay: 200
     },
     {
       icon: MapPin,
-      title: 'Trip Itineraries Curated with Love',
-      description: 'Trip plans hand-crafted by destination experts for hassle -free travel experience.',
+      title: 'Pan-India Destination Expertise',
+      description: 'We cover 250+ destinations including Himachal, J&K, Leh Ladakh, Goa, Kerala, Maharashtra, Delhi, Uttarakhand, and Andaman & Nicobar.',
       delay: 300
     },
     {
       icon: Award,
-      title: '8 Years of On-Ground Experience',
-      description: 'Being in Tourism industry for over 8 years, we put our heart in planning your trips.',
+      title: '10+ Years of Travel Experience',
+      description: 'With over a decade in the tourism industry, our on-ground knowledge helps us deliver smooth, safe, and enriching trips.',
       delay: 400
     },
     {
       icon: ThumbsUp,
-      title: 'Rated 4.8 Stars on Google Reviews',
-      description: 'Our growth lies in the memorable travel experiences we offer to our travellers.',
+      title: 'Trusted by 15,000+ Happy Travellers',
+      description: 'Our rising customer base is built on referrals and repeat travellers who trust us for honest pricing and reliable service.',
       delay: 500
     },
     {
       icon: Calendar,
-      title: 'Hassle-Free Booking Process',
-      description: 'Seamless booking process on all our trips with the help of our travel experts.',
+      title: 'Hassle-Free Booking & Support',
+      description: 'Our team assists you at every step—from planning to booking and on-trip support—to ensure a stress-free experience.',
       delay: 600
     },
     {
       icon: Users,
-      title: 'Filtering Like-Minded Travellers',
-      description: 'We make sure to bring only like-minded travellers on basis of age, gender, comfort etc.',
+      title: 'Dedicated Professional Team',
+      description: 'Our strong hotel, transport, and service provider network ensures that your trip is smooth from start to finish.',
       delay: 700
     },
     {
       icon: Shield,
-      title: 'Experienced & Cool Trip Captains',
-      description: 'We appoint friendly trip leaders with strong leadership qualities & high spirit!',
+      title: '98% Customer Satisfaction Rate',
+      description: 'We focus on delivering value, safety, and transparency—the core reasons travellers choose us year after year.',
       delay: 800
     }
   ];
@@ -115,12 +114,16 @@ export default function TravelFeatures() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white-100 py-16 px-4">
       <div className="max-w-7xl mx-auto">
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 inline-flex items-center justify-center gap-2 flex-wrap">
-            Why Select To Travel With Us? 
-            <span className="text-4xl animate-wave inline-block">👍</span>
+            Why Choose Holidays Planners? 
+            <span className="text-4xl animate-wave inline-block">🌍</span>
           </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            A trusted Indian travel company offering personalized journeys, transparent services, and unforgettable experiences since 2015.
+          </p>
         </div>
         
         {/* Features Grid */}
@@ -146,46 +149,22 @@ export default function TravelFeatures() {
       
       <style jsx>{`
         @keyframes wave {
-          0%, 100% {
-            transform: rotate(0deg);
-          }
-          25% {
-            transform: rotate(20deg);
-          }
-          75% {
-            transform: rotate(-20deg);
-          }
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(20deg); }
+          75% { transform: rotate(-20deg); }
         }
-
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-          }
-          50% {
-            transform: translateY(-30px) translateX(20px);
-          }
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-30px) translateX(20px); }
         }
-
         @keyframes float-delayed {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-          }
-          50% {
-            transform: translateY(-40px) translateX(-30px);
-          }
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-40px) translateX(-30px); }
         }
         
-        .animate-wave {
-          animation: wave 2s ease-in-out infinite;
-        }
-
-        .animate-float {
-          animation: float 8s ease-in-out infinite;
-        }
-
-        .animate-float-delayed {
-          animation: float-delayed 10s ease-in-out infinite;
-        }
+        .animate-wave { animation: wave 2s ease-in-out infinite; }
+        .animate-float { animation: float 8s ease-in-out infinite; }
+        .animate-float-delayed { animation: float-delayed 10s ease-in-out infinite; }
       `}</style>
     </div>
   );

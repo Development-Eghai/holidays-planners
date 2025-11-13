@@ -1,17 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Loader2, X } from 'lucide-react';
+import { Search, MapPin, Loader2, X, Users } from 'lucide-react';
 
 const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
 
-const getFullImageUrl = (path) =>
-  !path || typeof path !== "string"
-    ? ''
-    : path.startsWith("http")
-    ? path
-    : `${IMAGE_BASE_URL}${path}`;
+const getFullImageUrl = (path) => {
+  if (!path || typeof path !== "string") return null;
+  if (path.startsWith("http")) return path;
+  return `${IMAGE_BASE_URL}${path}`;
+};
+
+const slugify = (str = "") =>
+  str
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,13 +40,21 @@ export default function HeroSection() {
       const json = await response.json();
       const fetchedList = json.data || [];
 
+      // Debug log
+      if (fetchedList.length > 0) {
+        console.log("Sample destination:", fetchedList[0]);
+      }
+
       const standardizedList = fetchedList.map((d) => ({
-        id: d._id || d.id,
-        name: d.name || d.title || 'Unknown',
+        id: d.id,
+        name: d.title || d.name || 'Unknown',
+        slug: d.slug || slugify(d.title || d.name),
         type: 'destination',
         country: d.destination_type || 'Global',
-        image: getFullImageUrl(d.hero_banner_images?.[0] || d.image || d.hero_image || ''),
-        tourCount: d.tour_count || 0,
+        image: getFullImageUrl(
+          d.hero_banner_images?.[0] || d.image || d.hero_image || ''
+        ),
+        tourCount: d.tour_count || d.tourCount || d.tours_count || d.total_tours || 0,
       }));
 
       setDestinations(standardizedList);
@@ -57,14 +73,27 @@ export default function HeroSection() {
       const json = await response.json();
       const fetchedList = json.data || [];
 
+      // Debug log
+      if (fetchedList.length > 0) {
+        console.log("Sample trip:", fetchedList[0]);
+      }
+
       const standardizedList = fetchedList.map((t) => ({
-        id: t._id || t.id,
+        id: t.id,
         name: t.title || t.name || 'Unknown Trip',
+        slug: slugify(t.title || t.name),
         type: 'trip',
-        destination: t.destination_name || 'Unknown',
+        destination: t.destination_name || t.destination || 'Unknown',
         duration: t.duration || 'N/A',
         price: t.price || 'Contact for pricing',
-        image: getFullImageUrl(t.images?.[0]?.path || t.image || t.hero_image || ''),
+        image: getFullImageUrl(
+          t.image || 
+          t.images?.[0]?.path || 
+          t.images?.[0] || 
+          t.thumbnail || 
+          t.hero_image || 
+          ''
+        ),
       }));
 
       setTrips(standardizedList);
@@ -122,9 +151,9 @@ export default function HeroSection() {
 
   const handleResultClick = (item) => {
     if (item.type === 'destination') {
-      window.location.href = `/destinfo?destinationId=${item.id}`;
+      window.location.href = `/destination/${item.slug}/${item.id}`;
     } else {
-      window.location.href = `/trip?tripId=${item.id}`;
+      window.location.href = `/trip-preview/${item.slug}/${item.id}`;
     }
   };
 
@@ -159,7 +188,7 @@ export default function HeroSection() {
   const totalResults =
     filteredResults.destinations.length + filteredResults.trips.length;
 
-    return (
+  return (
     <section
       className="relative z-[1] h-[600px] md:h-[700px] flex items-center justify-center overflow-visible"
       style={{
@@ -265,7 +294,6 @@ export default function HeroSection() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                // Updated z-index to z-[9998]
                 className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl max-h-96 overflow-y-auto z-[9998]"
               >
                 {/* Destinations */}
@@ -280,11 +308,17 @@ export default function HeroSection() {
                         onClick={() => handleResultClick(dest)}
                         className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
                       >
-                        <img
-                          src={dest.image || 'https://via.placeholder.com/60'}
-                          alt={dest.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
+                        {dest.image ? (
+                          <img
+                            src={dest.image}
+                            alt={dest.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <MapPin className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
                         <div className="flex-1">
                           <p className="font-semibold text-gray-800">
                             {dest.name}
@@ -311,11 +345,17 @@ export default function HeroSection() {
                         onClick={() => handleResultClick(trip)}
                         className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
                       >
-                        <img
-                          src={trip.image || 'https://via.placeholder.com/60'}
-                          alt={trip.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
+                        {trip.image ? (
+                          <img
+                            src={trip.image}
+                            alt={trip.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
                         <div className="flex-1">
                           <p className="font-semibold text-gray-800">
                             {trip.name}
@@ -342,7 +382,6 @@ export default function HeroSection() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  // Updated z-index to z-[9998]
                   className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg shadow-2xl p-6 text-center z-[9998]"
                 >
                   <p className="text-gray-500">

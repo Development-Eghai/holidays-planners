@@ -178,16 +178,16 @@ export default function DestinationCards() {
 
                 {/* --- Fixed Departure Section --- */}
                 <TripSection
-                    title="Fixed Departures"
-                    description="Join our upcoming group adventures with confirmed departure dates."
+                    title="Expert-Curated Trips 📆"
+                    description="Professionally designed itineraries with guaranteed group departure dates."
                     trips={fixedDepartures}
                     onSendQuery={onSendQuery}
                 />
                 
                 {/* --- Customized Packages Section --- */}
                 <TripSection
-                    title="Customized Packages"
-                    description="Tailor your dream trip with a flexible itinerary and private dates."
+                    title="Build Your Own Trip ✏️"
+                    description="Create a personalized itinerary with full flexibility and private dates."
                     trips={customizedPackages}
                     onSendQuery={onSendQuery}
                 />
