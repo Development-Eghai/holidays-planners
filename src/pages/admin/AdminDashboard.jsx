@@ -12,6 +12,8 @@ import DestinationCreate from './modules/Destinations/DestinationCreate';
 import DestinationList from './modules/Destinations/DestinationList';
 import ActivityList from './modules/Activities/ActivityList';
 import LeadManagement from './modules/LeadMangement/LeadManagement';
+import LeadTrash from './modules/LeadMangement/LeadTrash';
+
 // --- END IMPORTS ---
 
 // --- PLACEHOLDER COMPONENTS ---
@@ -96,6 +98,7 @@ export default function AdminDashboard() {
 
             {/* --- LEAD MANAGEMENT --- */}
             <Route path="lead-management" element={<LeadManagement />} />
+            <Route path="lead-trash" element={<LeadTrash />} />
 
             {/* --- OTHER MODULES --- */}
             <Route path="destination-type" element={<DestinationType />} />

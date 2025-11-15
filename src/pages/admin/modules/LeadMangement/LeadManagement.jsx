@@ -1,5 +1,5 @@
-// fileName: LeadManagement.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -12,7 +12,9 @@ import {
   Alert,
   CircularProgress,
   InputLabel,
+  Badge,
 } from '@mui/material';
+import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -22,6 +24,7 @@ import AddLeadDialog from './AddLeadDialog';
 const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
 
 const LeadManagement = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,13 +33,14 @@ const LeadManagement = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [openAddLead, setOpenAddLead] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState([]);
+  const [trashCount, setTrashCount] = useState(0);
   const [dataStats, setDataStats] = useState({
     bookingRequests: 0,
     enquiries: 0,
     manualLeads: 0,
   });
 
-  // --- Handle Local Lead Update ---
+  // Handle Local Lead Update
   const handleLocalLeadUpdate = (updatedFields) => {
     setLeads(prevLeads => prevLeads.map(lead => {
       if (lead.id === updatedFields.id) {
@@ -51,7 +55,32 @@ const LeadManagement = () => {
       return lead;
     }));
   };
-  // --- END Handle Local Lead Update ---
+
+  // Fetch trash count from all tables
+  const fetchTrashCount = async () => {
+    try {
+      const [bookingRequestsTrash, enquiriesTrash, manualLeadsTrash] = await Promise.all([
+        fetch('https://api.yaadigo.com/secure/api/global/global/trash?table=booking_requests', {
+          headers: { 'x-api-key': API_KEY },
+        }).then(res => res.json()),
+        fetch('https://api.yaadigo.com/secure/api/global/global/trash?table=enquire_form', {
+          headers: { 'x-api-key': API_KEY },
+        }).then(res => res.json()),
+        fetch('https://api.yaadigo.com/secure/api/global/global/trash?table=leads', {
+          headers: { 'x-api-key': API_KEY },
+        }).then(res => res.json()),
+      ]);
+
+      const totalTrash = 
+        (bookingRequestsTrash?.data?.length || 0) +
+        (enquiriesTrash?.data?.length || 0) +
+        (manualLeadsTrash?.data?.length || 0);
+
+      setTrashCount(totalTrash);
+    } catch (error) {
+      console.error('Error fetching trash count:', error);
+    }
+  };
 
   // Fetch all leads from multiple sources
   const fetchLeads = async () => {
@@ -72,88 +101,97 @@ const LeadManagement = () => {
         }).then(res => res.json()),
       ]);
 
-      // Process Booking Requests
+      // Process Booking Requests - Filter out deleted ones
       const bookingRequestsList = Array.isArray(bookingRequestsData) 
         ? bookingRequestsData 
         : bookingRequestsData?.data || [];
 
-      const formattedBookingRequests = bookingRequestsList.map((item, index) => ({
-        id: `BR-${item.id ?? index}`,
-        source_id: item.id ?? index,
-        name: item.full_name || '-',
-        email: item.email || '-',
-        mobile: item.phone_number || '-',
-        destination_type: item.domain_name || 'Holidays Planners', 
-        trip_type: `${item.adults} Adults, ${item.children} Children`,
-        status: 'new',
-        priority: 'high',
-        assigned_to: 'Unassigned',
-        follow_up_date: null,
-        created_at: item.created_at || new Date().toISOString(),
-        source: 'Booking Request',
-        type: 'booking_request',
-        additional_info: {
-          departure_date: item.departure_date,
-          sharing_option: item.sharing_option,
-          price_per_person: item.price_per_person,
-          estimated_total_price: item.estimated_total_price,
-          adults: item.adults,
-          children: item.children,
-        }
-      }));
+      const formattedBookingRequests = bookingRequestsList
+        .filter(item => !item.is_deleted || item.is_deleted === 0) // Filter out deleted
+        .map((item, index) => ({
+          id: `BR-${item.id ?? index}`,
+          source_id: item.id ?? index,
+          name: item.full_name || '-',
+          email: item.email || '-',
+          mobile: item.phone_number || '-',
+          destination_type: item.domain_name || 'Holidays Planners', 
+          trip_type: `${item.adults || 0} Adults, ${item.children || 0} Children`,
+          status: 'new',
+          priority: 'high',
+          assigned_to: 'Unassigned',
+          follow_up_date: null,
+          created_at: item.created_at || new Date().toISOString(),
+          source: 'Booking Request',
+          type: 'booking_request',
+          table: 'booking_requests',
+          additional_info: {
+            departure_date: item.departure_date,
+            sharing_option: item.sharing_option,
+            price_per_person: item.price_per_person,
+            estimated_total_price: item.estimated_total_price,
+            adults: item.adults,
+            children: item.children,
+          }
+        }));
 
-      // Process Enquiries
+      // Process Enquiries - Filter out deleted ones
       const enquiriesList = Array.isArray(enquiriesData) 
         ? enquiriesData 
         : enquiriesData?.data || [];
 
-      const formattedEnquiries = enquiriesList.map((item, index) => ({
-        id: `ENQ-${item.id ?? index}`,
-        source_id: item.id ?? index,
-        name: item.full_name || '-',
-        email: item.email || '-',
-        mobile: item.contact_number || '-',
-        destination_type: item.destination || '-',
-        trip_type: item.hotel_category || '-',
-        status: 'new',
-        priority: 'medium',
-        assigned_to: 'Unassigned',
-        follow_up_date: null,
-        created_at: item.created_at || new Date().toISOString(),
-        source: 'Website Enquiry',
-        type: 'enquiry',
-        additional_info: {
-          departure_city: item.departure_city,
-          travel_date: item.travel_date,
-          adults: item.adults,
-          children: item.children,
-          infants: item.infants,
-          additional_comments: item.additional_comments,
-          domain_name: item.domain_name,
-        }
-      }));
+      const formattedEnquiries = enquiriesList
+        .filter(item => !item.is_deleted || item.is_deleted === 0) // Filter out deleted
+        .map((item, index) => ({
+          id: `ENQ-${item.id ?? index}`,
+          source_id: item.id ?? index,
+          name: item.full_name || '-',
+          email: item.email || '-',
+          mobile: item.contact_number || '-',
+          destination_type: item.destination || '-',
+          trip_type: item.hotel_category || '-',
+          status: 'new',
+          priority: 'medium',
+          assigned_to: 'Unassigned',
+          follow_up_date: null,
+          created_at: item.created_at || new Date().toISOString(),
+          source: 'Website Enquiry',
+          type: 'enquiry',
+          table: 'enquire_form',
+          additional_info: {
+            departure_city: item.departure_city,
+            travel_date: item.travel_date,
+            adults: item.adults,
+            children: item.children,
+            infants: item.infants,
+            additional_comments: item.additional_comments,
+            domain_name: item.domain_name,
+          }
+        }));
 
-      // Process Manual Leads
+      // Process Manual Leads - Filter out deleted ones
       const manualLeadsList = Array.isArray(manualLeadsData) 
         ? manualLeadsData 
         : manualLeadsData?.data || [];
 
-      const formattedManualLeads = manualLeadsList.map((item, index) => ({
-        id: `L-${item.id ?? index}`,
-        source_id: Number(item.id ?? index),
-        name: item.name || '-',
-        email: item.email || '-',
-        mobile: item.mobile || '-',
-        destination_type: item.destination_type || '-',
-        trip_type: item.trip_type || '-',
-        status: item.status || 'new',
-        priority: item.priority || 'medium',
-        assigned_to: item.assigned_to || 'Unassigned',
-        follow_up_date: item.follow_up_date || null,
-        created_at: item.created_at || new Date().toISOString(),
-        source: 'Manual Entry',
-        type: 'lead',
-      }));
+      const formattedManualLeads = manualLeadsList
+        .filter(item => !item.is_deleted || item.is_deleted === 0) // Filter out deleted
+        .map((item, index) => ({
+          id: `L-${item.id ?? index}`,
+          source_id: Number(item.id ?? index),
+          name: item.name || '-',
+          email: item.email || '-',
+          mobile: item.mobile || '-',
+          destination_type: item.destination_type || '-',
+          trip_type: item.trip_type || '-',
+          status: item.status || 'new',
+          priority: item.priority || 'medium',
+          assigned_to: item.assigned_to || 'Unassigned',
+          follow_up_date: item.follow_up_date || null,
+          created_at: item.created_at || new Date().toISOString(),
+          source: 'Manual Entry',
+          type: 'lead',
+          table: 'leads',
+        }));
 
       // Combine and sort by created date
       const combined = [
@@ -169,6 +207,9 @@ const LeadManagement = () => {
         manualLeads: formattedManualLeads.length,
       });
       setSelectedLeads([]);
+
+      // Update trash count
+      await fetchTrashCount();
     } catch (error) {
       console.error('❌ Error fetching leads:', error);
       setError('Failed to fetch leads. Please try again.');
@@ -177,28 +218,56 @@ const LeadManagement = () => {
     }
   };
 
-  // Delete a single lead
+  // Soft Delete lead
   const handleDeleteLead = async (lead) => {
-    if (lead.type !== 'lead') {
-      alert('❌ Only manual leads can be deleted. Booking requests and enquiries are read-only.');
-      return;
+    let tableName = lead.table;
+    if (!tableName) {
+      if (lead.type === 'booking_request') {
+        tableName = 'booking_requests';
+      } else if (lead.type === 'enquiry') {
+        tableName = 'enquire_form';
+      } else if (lead.type === 'lead') {
+        tableName = 'leads';
+      } else {
+        alert('❌ Unknown lead type.');
+        return;
+      }
     }
 
-    if (!window.confirm(`Are you sure you want to delete "${lead.name}"?`)) return;
+    if (!window.confirm(`Are you sure you want to move "${lead.name}" to trash?`)) return;
 
     try {
-      const response = await fetch(`https://api.yaadigo.com/secure/api/leads/${lead.source_id}`, {
-        method: 'DELETE',
-        headers: { 'x-api-key': API_KEY },
-      });
+      const response = await fetch(
+        `https://api.yaadigo.com/secure/api/global/global/soft-delete?table=${tableName}&id=${lead.source_id}`,
+        {
+          method: 'POST',
+          headers: { 
+            'accept': 'application/json',
+            'x-api-key': API_KEY 
+          },
+        }
+      );
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Remove from UI immediately
         setLeads((prev) => prev.filter((item) => item.id !== lead.id));
         setSelectedLeads((prev) => prev.filter((id) => id !== lead.id));
-        alert('✅ Lead deleted successfully.');
+        
+        // Update stats
+        setDataStats(prev => {
+          const newStats = { ...prev };
+          if (lead.type === 'booking_request') newStats.bookingRequests--;
+          else if (lead.type === 'enquiry') newStats.enquiries--;
+          else if (lead.type === 'lead') newStats.manualLeads--;
+          return newStats;
+        });
+        
+        await fetchTrashCount();
+        alert(`✅ ${result.message || 'Lead moved to trash successfully.'}`);
       } else {
-        const result = await response.json();
-        alert(`❌ Failed to delete lead: ${result.message || 'Unknown error'}`);
+        alert(`❌ Failed to delete lead: ${result.detail || result.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('❌ Error deleting lead:', error);
@@ -206,42 +275,63 @@ const LeadManagement = () => {
     }
   };
 
-  // Bulk delete
+  // Bulk soft delete
   const handleBulkDelete = async () => {
     if (selectedLeads.length === 0) {
       alert('❌ No leads selected.');
       return;
     }
 
-    const leadsToDelete = leads.filter(
-      (lead) => selectedLeads.includes(lead.id) && lead.type === 'lead'
-    );
-
-    if (leadsToDelete.length === 0) {
-      alert('❌ Only manual leads can be deleted.');
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to delete ${leadsToDelete.length} lead(s)?`))
+    if (!window.confirm(`Are you sure you want to move ${selectedLeads.length} lead(s) to trash?`))
       return;
 
-    for (const lead of leadsToDelete) {
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const leadId of selectedLeads) {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) continue;
+
+      let tableName = lead.table;
+      if (!tableName) {
+        if (lead.type === 'booking_request') {
+          tableName = 'booking_requests';
+        } else if (lead.type === 'enquiry') {
+          tableName = 'enquire_form';
+        } else if (lead.type === 'lead') {
+          tableName = 'leads';
+        } else {
+          continue;
+        }
+      }
+
       try {
-        const response = await fetch(`https://api.yaadigo.com/secure/api/leads/${lead.source_id}`, {
-          method: 'DELETE',
-          headers: { 'x-api-key': API_KEY },
-        });
-        if (!response.ok) {
-          const result = await response.json();
-          console.error('Failed to delete lead:', lead, result);
+        const response = await fetch(
+          `https://api.yaadigo.com/secure/api/global/global/soft-delete?table=${tableName}&id=${lead.source_id}`,
+          {
+            method: 'POST',
+            headers: { 
+              'accept': 'application/json',
+              'x-api-key': API_KEY 
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          successCount++;
+        } else {
+          failCount++;
         }
       } catch (error) {
+        failCount++;
         console.error('Error deleting lead:', lead, error);
       }
     }
 
-    alert(`✅ ${leadsToDelete.length} lead(s) deleted.`);
-    fetchLeads();
+    alert(`✅ ${successCount} lead(s) moved to trash.${failCount > 0 ? ` ${failCount} failed.` : ''}`);
+    fetchLeads(); // Refresh the list
   };
 
   useEffect(() => {
@@ -274,8 +364,8 @@ const LeadManagement = () => {
   };
 
   const selectAll = () => {
-    const manualLeads = filteredLeads.filter((lead) => lead.type === 'lead').map((l) => l.id);
-    setSelectedLeads(manualLeads);
+    const allLeadIds = filteredLeads.map((l) => l.id);
+    setSelectedLeads(allLeadIds);
   };
 
   const deselectAll = () => setSelectedLeads([]);
@@ -286,9 +376,26 @@ const LeadManagement = () => {
         {/* Header */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <h2 style={{ margin: 0 }}>Lead Management</h2>
-          <Button variant="contained" color="primary" onClick={() => setOpenAddLead(true)}>
-            Add New Lead
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Badge badgeContent={trashCount} color="error" max={999}>
+              <Button 
+                variant="contained" 
+                color="error" 
+                startIcon={<DeleteIcon />}
+                onClick={() => navigate('/admin/dashboard/lead-trash')}
+              >
+                Trash
+              </Button>
+            </Badge>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<AddIcon />}
+              onClick={() => setOpenAddLead(true)}
+            >
+              Add New Lead
+            </Button>
+          </Box>
         </Box>
 
         {/* Data Source Stats */}
@@ -353,13 +460,13 @@ const LeadManagement = () => {
                   label="From Date"
                   value={dateRange[0]}
                   onChange={(newValue) => setDateRange([newValue, dateRange[1]])}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
                 <DatePicker
                   label="To Date"
                   value={dateRange[1]}
                   onChange={(newValue) => setDateRange([dateRange[0], newValue])}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
               </Box>
             </LocalizationProvider>
@@ -369,7 +476,7 @@ const LeadManagement = () => {
         {/* Bulk Actions */}
         <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <Button variant="outlined" onClick={selectAll}>
-            Select All Manual Leads
+            Select All
           </Button>
           <Button variant="outlined" onClick={deselectAll}>
             Deselect All
@@ -380,7 +487,7 @@ const LeadManagement = () => {
             onClick={handleBulkDelete}
             disabled={selectedLeads.length === 0}
           >
-            Delete Selected ({selectedLeads.length})
+            Move to Trash ({selectedLeads.length})
           </Button>
           <Button variant="outlined" onClick={fetchLeads} disabled={loading}>
             Refresh Data
