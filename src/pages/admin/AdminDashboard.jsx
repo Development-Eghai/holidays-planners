@@ -18,6 +18,13 @@ import LeadTrash from './modules/LeadMangement/LeadTrash';
 import QuotationManagement from './modules/QuotationManagement/QuotationManagement';
 import QuotationTrash from './modules/QuotationManagement/QuotationTrash';
 
+// --- NEW BLOG IMPORTS ---
+import BlogList from './modules/BlogManagement/BlogList';
+import BlogCreate from './modules/BlogManagement/BlogCreate';
+import CategoryManagement from './modules/BlogManagement/CategoryManagement';
+import TagManagement from './modules/BlogManagement/TagManagement';
+// --- END NEW BLOG IMPORTS ---
+
 // placeholders
 const ModulePlaceholder = ({ name }) => (
   <div className="luxury-card p-8 min-h-[500px] flex flex-col items-center justify-center mt-6">
@@ -43,12 +50,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     document.body.classList.remove('admin-login-body');
     document.body.classList.add('admin-dashboard-body');
+    
+    // ✅ HEADER EXPAND FIX: Add/remove sidebar state class on body
+    if (isSidebarOpen) {
+      document.body.classList.remove('sidebar-collapsed');
+    } else {
+      document.body.classList.add('sidebar-collapsed');
+    }
+    
     return () => {
       document.body.classList.remove('admin-dashboard-body');
+      document.body.classList.remove('sidebar-collapsed');
     };
-  }, []);
-
-  const contentMargin = isSidebarOpen ? '280px' : '80px';
+  }, [isSidebarOpen]); // ✅ Re-run when sidebar state changes
 
   const handleLogout = () => {
     localStorage.removeItem('admin_api_key');
@@ -57,9 +71,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="dashboard-container">
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} onLogout={handleLogout} />
-      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} onLogout={handleLogout} />
-      <div className="dashboard-content" style={{ marginLeft: contentMargin }}>
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+        onLogout={handleLogout} 
+      />
+      
+      <Header 
+        isSidebarOpen={isSidebarOpen} 
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+        onLogout={handleLogout} 
+      />
+      
+      <div 
+        className="dashboard-content"
+        style={{ marginLeft: isSidebarOpen ? '280px' : '80px' }}
+      >
         <div className="dashboard-inner-content">
           <Routes>
             <Route path="overview" element={<DashboardOverview />} />
@@ -74,6 +101,14 @@ export default function AdminDashboard() {
 
             <Route path="add-categories" element={<CategoryList />} />
             <Route path="add-activity" element={<ActivityList />} />
+
+            {/* --- NEW BLOG ROUTES --- */}
+            <Route path="blog/list" element={<BlogList />} />
+            <Route path="blog/create" element={<BlogCreate />} />
+            <Route path="blog/create/:id" element={<BlogCreate />} /> {/* For editing */}
+            <Route path="blog/categories" element={<CategoryManagement />} />
+            <Route path="blog/tags" element={<TagManagement />} />
+            {/* --- END NEW BLOG ROUTES --- */}
 
             <Route path="lead-management" element={<LeadManagement />} />
             <Route path="lead-trash" element={<LeadTrash />} />

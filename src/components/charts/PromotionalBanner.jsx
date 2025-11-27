@@ -1,43 +1,64 @@
 import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+// --- LOCAL IMAGE ASSET IMPORTS ---
+// Assuming these files are placed in the public/ folder and referenced via root path '/'
+// or directly via relative path if they are in the same folder as the component.
+// Based on the structure (components/charts/PromotionalBanner.jsx),
+// using a relative path like './promo-manali-sissu.png' is generally correct for React
+// but since the image is in /public, it's safer to use the root public path: /image-name.png
+
+const IMAGE_PATHS = {
+    manaliSissu: '/promo-manali-sissu.png',
+    spitiAdventure: '/promo-spiti-adventure.png',
+    kashmirHoliday: '/promo-kashmir.png',
+};
+
+
+// --- Original PromoBanner Component Logic ---
 export default function PromoBanner() {
+  // ADMIN CONFIG - Fixed slides using local paths
+  const slides = [
+    {
+      type: 'image',
+      desktopSrc: IMAGE_PATHS.manaliSissu,
+      mobileSrc: IMAGE_PATHS.manaliSissu,
+      link: 'https://holidaysplanners.com/trip-preview/3-days-2-nights-in-manali-sissu/135',
+      altText: '3 Days 2 Nights in Manali & Sissu - Himalayan Views',
+      title: 'Manali & Sissu: 3 Days 2 Nights Getaway'
+    },
+    {
+      type: 'image',
+      desktopSrc: IMAGE_PATHS.spitiAdventure,
+      mobileSrc: IMAGE_PATHS.spitiAdventure,
+      link: 'https://holidaysplanners.com/trip-preview/manali-to-spiti-5-day-himalayan-adventure/185',
+      altText: 'Manali to Spiti 5 Day Himalayan Adventure',
+      title: 'Manali to Spiti: 5 Day Himalayan Adventure'
+    },
+    {
+      type: 'image',
+      desktopSrc: IMAGE_PATHS.kashmirHoliday,
+      mobileSrc: IMAGE_PATHS.kashmirHoliday,
+      link: 'https://holidaysplanners.com/trip-preview/4-nights-kashmir-signature-holiday/196',
+      altText: '4 Nights Kashmir Signature Holiday on Dal Lake',
+      title: 'Kashmir: 4 Nights Signature Holiday'
+    }
+  ];
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const autoPlayRef = useRef(null);
 
-  // ADMIN CONFIG - Change these values
-  const slides = [
-    {
-      type: 'image', // 'image' or 'video'
-      desktopSrc: 'https://images.unsplash.com/photo-1483791424735-e9ad0209eea2?w=1920&q=80',
-      mobileSrc: 'https://images.unsplash.com/photo-1483791424735-e9ad0209eea2?w=768&q=80',
-      link: '/northern-lights',
-      altText: 'Northern Lights Tour'
-    },
-    {
-      type: 'image',
-      desktopSrc: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80',
-      mobileSrc: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=768&q=80',
-      link: '/mountain-adventure',
-      altText: 'Mountain Adventure'
-    },
-    {
-      type: 'video',
-      desktopSrc: 'https://www.w3schools.com/html/mov_bbb.mp4', // Replace with your video URL
-      mobileSrc: 'https://www.w3schools.com/html/mov_bbb.mp4', // Mobile video URL
-      link: '/video-tour',
-      altText: 'Video Tour'
-    }
-  ];
-
   const totalSlides = slides.length;
-
+  
   // Auto-play functionality
   useEffect(() => {
-    if (!isPaused) {
+    if (totalSlides > 0 && !isPaused) {
       autoPlayRef.current = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % totalSlides);
       }, 5000); // Change slide every 5 seconds
+    } else if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
     }
 
     return () => {
@@ -58,6 +79,9 @@ export default function PromoBanner() {
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
+  
+  // Since we are using static image paths, no loading spinner is needed based on API status.
+  // The component renders directly using the local paths.
 
   return (
     <section 
@@ -95,6 +119,7 @@ export default function PromoBanner() {
                   />
                 </picture>
               ) : (
+                // Video rendering remains for future use
                 <video
                   className="w-full h-full object-cover"
                   autoPlay
@@ -107,8 +132,24 @@ export default function PromoBanner() {
                 </video>
               )}
               
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
+              {/* Overlay with Title and CTA */}
+              <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-8 bg-black/30 group-hover:bg-black/40 transition-all duration-300">
+                  
+                  {/* Title */}
+                  <h2 className="text-2xl md:text-4xl font-extrabold text-white text-shadow-lg drop-shadow-lg max-w-2xl">
+                      {slide.title}
+                  </h2>
+
+                  {/* CTA Button */}
+                  <div className="flex justify-start">
+                      <button
+                          onClick={(e) => { e.preventDefault(); window.location.href = slide.link; }}
+                          className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold rounded-lg shadow-xl uppercase tracking-wide text-sm md:text-base transition-all duration-300 transform hover:scale-105 hover:shadow-2xl focus:outline-none"
+                      >
+                          Book Now / View Trip!
+                      </button>
+                  </div>
+              </div>
             </a>
           </div>
         ))}
@@ -119,9 +160,7 @@ export default function PromoBanner() {
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-cyan-500 hover:bg-cyan-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg opacity-80 hover:opacity-100"
           aria-label="Previous slide"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ChevronLeft className="w-6 h-6 text-white" />
         </button>
 
         <button
@@ -129,9 +168,7 @@ export default function PromoBanner() {
           className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-cyan-500 hover:bg-cyan-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg opacity-80 hover:opacity-100"
           aria-label="Next slide"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRight className="w-6 h-6 text-white" />
         </button>
 
         {/* Dots Indicators */}
@@ -153,58 +190,3 @@ export default function PromoBanner() {
     </section>
   );
 }
-
-/* 
-===========================================
-ADMIN INSTRUCTIONS
-===========================================
-
-RECOMMENDED SIZES:
-------------------
-Desktop Images/Videos: 1920 x 400-500 pixels
-Mobile Images/Videos: 768 x 400 pixels
-Aspect Ratio: 16:9 or similar wide format
-
-SUPPORTED FORMATS:
-------------------
-Images: JPG, PNG, WebP
-Videos: MP4, WebM (MP4 recommended for best compatibility)
-
-HOW TO ADD/UPDATE SLIDES:
---------------------------
-1. Edit the 'slides' array in the component
-2. For images:
-   {
-     type: 'image',
-     desktopSrc: 'your-desktop-image-url.jpg',
-     mobileSrc: 'your-mobile-image-url.jpg',
-     link: '/your-destination-url',
-     altText: 'Description for accessibility'
-   }
-
-3. For videos:
-   {
-     type: 'video',
-     desktopSrc: 'your-video-url.mp4',
-     mobileSrc: 'your-mobile-video-url.mp4',
-     link: '/your-destination-url',
-     altText: 'Description'
-   }
-
-FEATURES:
----------
-✅ Auto-play carousel (5 seconds per slide)
-✅ Pause on hover
-✅ Click arrows to navigate
-✅ Click dots to jump to specific slide
-✅ Supports both images and videos
-✅ Fully responsive
-✅ Smooth transitions
-
-VIDEO TIPS:
------------
-- Keep videos under 10MB for fast loading
-- Use compressed MP4 format
-- Videos auto-play, loop, and are muted
-- Consider using a poster image as fallback
-*/

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Plane,
   MapPin,
   Users,
   Phone,
@@ -183,16 +182,15 @@ export default function LeadGeneration({ isOpen, onClose }) {
 
                 <div className="flex flex-col lg:flex-row h-full overflow-hidden">
                   {/* Sidebar */}
-                  <div className="hidden lg:block lg:w-2/5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 text-white overflow-y-auto">
+                  <div className="hidden lg:block lg:w-2/5 bg-gradient-to-br from-slate-900 to-blue-900 p-6 text-white overflow-y-auto">
                     <div className="flex items-center gap-3 mb-4">
-                      <Plane className="h-6 w-6" />
                       <a href="/" className="flex items-center gap-3 group">
-                                    <motion.img
-                                      src="/HP-logo.png"
-                                      alt="Holidays Planners Logo"
-                                      className="h-[24] w-60"
-                                    />
-                                  </a>
+                        <motion.img
+                          src="/holidaysplanners-logo.png"
+                          alt="Holidays Planners Logo"
+                          className="h-auto w-36"
+                        />
+                      </a>
                     </div>
 
                     <div className="mb-4">
@@ -201,7 +199,7 @@ export default function LeadGeneration({ isOpen, onClose }) {
                         <div className="flex text-yellow-400 text-xl">★★★★★</div>
                       </div>
                       <p className="text-indigo-200 text-sm">Excellent on Google</p>
-                      <p className="text-indigo-300 text-xs">Based on 1,245 reviews</p>
+                      {/* <p className="text-indigo-300 text-xs">Based on 1,245 reviews</p> */}
                     </div>
 
                     <div className="space-y-3 mb-4">

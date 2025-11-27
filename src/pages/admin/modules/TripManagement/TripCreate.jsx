@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Trash2,
   Plus,
-  X, // Added X icon for removing selected multi-select items
+  X,
 } from "lucide-react";
 import "../../css/TripManagement/TripCreate.css";
 import { ToastContainer, toast } from "react-toastify";
@@ -22,8 +22,6 @@ const SECURE_BASE = "https://api.yaadigo.com/secure/api/";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const AFTER_CREATE_REDIRECT = "/admin/dashboard/trip-management/list";
 const AFTER_UPDATE_REDIRECT = "/admin/dashboard/trip-management/list";
-
-// --- Default structures for state initialization ---
 
 const defaultCostingPackage = {
   title: "",
@@ -44,7 +42,6 @@ const defaultFixedDepartureSlot = {
   ],
 };
 
-// --- Component Start ---
 export default function TripCreate() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -53,9 +50,7 @@ export default function TripCreate() {
   const [openDay, setOpenDay] = useState(null);
   const [selectedPricing, setSelectedPricing] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activityList, setActivityList] = useState([]); // New state for activity types
-  // Renamed the state index to manage which slot's packages are being edited,
-  // defaulting to the first slot (index 0).
+  const [activityList, setActivityList] = useState([]);
   const [activePackageSlotIndex, setActivePackageSlotIndex] = useState(0);
 
   const [categoryList, setCategoryList] = useState([]);
@@ -66,7 +61,6 @@ export default function TripCreate() {
   const [inclusionsText, setInclusionsText] = useState("");
   const [exclusionsText, setExclusionsText] = useState("");
 
-  // fixedPackage holds the list of *departure slots* (date ranges).
   const [fixedPackage, setFixedPackage] = useState([
     { ...defaultFixedDepartureSlot },
   ]);
@@ -77,12 +71,12 @@ export default function TripCreate() {
     overview: "",
     destination_id: "",
     destination_type: "",
-    category_id: [], // Array of category IDs (strings)
+    category_id: [],
     hotel_category: "",
     pickup_location: "",
     drop_location: "",
     days: "",
-    nights: "", // Will be days - 1
+    nights: "",
     itineraryDays: [
       {
         id: 1,
@@ -146,9 +140,7 @@ export default function TripCreate() {
       let updatedValue = value;
       const updated = { ...prev };
 
-      // Custom validation for slug field
       if (field === "slug") {
-        // Only allow alphanumeric characters, hyphens (-), and underscores (_)
         updatedValue = value
           .toLowerCase()
           .replace(/[^a-z0-9\-_]/g, '')
@@ -159,19 +151,41 @@ export default function TripCreate() {
 
       updated[field] = updatedValue;
 
-      // Auto-generate slug on title change, but only if not in edit mode (id)
-      // OR if the current slug is empty (meaning it hasn't been manually set)
       if (field === "title" && (!id || !prev.slug)) {
         updated.slug = generateSlug(value);
       }
 
-      // Logic for Days/Nights: Nights should be days - 1
+      // Auto-generate itinerary days when days field changes
       if (field === "days") {
         const daysInt = parseInt(value);
         if (daysInt > 0) {
           updated.nights = Math.max(0, daysInt - 1).toString();
+          
+          // Auto-generate itinerary days based on the number of days
+          const newItineraryDays = [];
+          for (let i = 1; i <= daysInt; i++) {
+            newItineraryDays.push({
+              id: i,
+              day_number: i,
+              title: `Day ${i}: ${i === 1 ? 'Arrival' : i === daysInt ? 'Departure' : 'Activity'}`,
+              description: "",
+              activities: [],
+              hotel_name: "",
+              meal_plan: [],
+            });
+          }
+          updated.itineraryDays = newItineraryDays;
         } else {
           updated.nights = "";
+          updated.itineraryDays = [{
+            id: 1,
+            day_number: 1,
+            title: "Day 1: Arrival",
+            description: "",
+            activities: [],
+            hotel_name: "",
+            meal_plan: [],
+          }];
         }
       }
 
@@ -188,7 +202,6 @@ export default function TripCreate() {
     }));
   };
 
-  // NEW: Multi-select handler for categories
   const handleCategoryMultiSelect = (categoryId, isChecked) => {
     setFormData(prev => {
       const currentCategories = prev.category_id;
@@ -224,6 +237,32 @@ export default function TripCreate() {
             meal_plan: [],
           },
         ],
+      };
+    });
+  };
+
+  const deleteDay = (dayId) => {
+    setFormData((prev) => {
+      if (prev.itineraryDays.length === 1) {
+        toast.warn("Cannot delete the last day. At least one day is required.");
+        return prev;
+      }
+
+      const updatedDays = prev.itineraryDays
+        .filter((day) => day.id !== dayId)
+        .map((day, index) => ({
+          ...day,
+          id: index + 1,
+          day_number: index + 1,
+        }));
+
+      if (openDay === dayId) {
+        setOpenDay(null);
+      }
+
+      return {
+        ...prev,
+        itineraryDays: updatedDays,
       };
     });
   };
@@ -352,9 +391,7 @@ export default function TripCreate() {
       gallery_images: prev.gallery_images.filter((_, i) => i !== index),
     }));
 
-  // Add new slot (Date Range block)
   const addFixedPackage = () => {
-    // When a new slot is added, clone the costing packages from the *first* slot
     const newSlot = {
       ...defaultFixedDepartureSlot,
       costingPackages: fixedPackage[0]?.costingPackages.map(pkg => ({...pkg})) || [{ ...defaultCostingPackage }]
@@ -362,7 +399,6 @@ export default function TripCreate() {
     setFixedPackage((p) => [...p, newSlot]);
   };
 
-  // Delete slot
   const deleteFixedPackage = (indexToRemove) => {
     if (fixedPackage.length === 1) {
       setFixedPackage([{ ...defaultFixedDepartureSlot }]);
@@ -372,12 +408,9 @@ export default function TripCreate() {
     setFixedPackage((prev) => prev.filter((_, i) => i !== indexToRemove));
   };
 
-  // Add costing package to the *first* slot (and all others to maintain data integrity)
   const addCostingPackage = (slotIndex) => {
     setFixedPackage((prev) => {
       const updated = [...prev];
-      // Important: Add to ALL slots to maintain data integrity for the backend,
-      // ensuring all date ranges have the same package definitions.
       for (let i = 0; i < updated.length; i++) {
         updated[i].costingPackages.push({ ...defaultCostingPackage });
       }
@@ -385,19 +418,16 @@ export default function TripCreate() {
     });
   };
 
-  // Delete costing package from ALL slots
   const deleteCostingPackage = (slotIndex, packageIndexToRemove) => {
     setFixedPackage((prev) => {
       const updated = [...prev];
       if (updated[0].costingPackages.length === 1) {
-        // Reset the single remaining package across all slots
         for (let i = 0; i < updated.length; i++) {
             updated[i].costingPackages = [{ ...defaultCostingPackage }];
         }
         return updated;
       }
 
-      // Filter out the package from ALL slots
       for (let i = 0; i < updated.length; i++) {
         updated[i].costingPackages = updated[i].costingPackages.filter((_, idx) => idx !== packageIndexToRemove);
       }
@@ -405,7 +435,6 @@ export default function TripCreate() {
     });
   };
 
-  // Update slot or package details
   const updateFixedPackage = (
     slotIndex,
     key,
@@ -416,19 +445,15 @@ export default function TripCreate() {
       const updated = [...prev];
       
       if (packageIndex === null) {
-        // Update slot-level properties (date, slots)
         updated[slotIndex][key] = value;
       } else {
-        // Update costing package properties (must apply to ALL slots)
         for (let i = 0; i < updated.length; i++) {
-            // Only update the property if it's not final_price, which is calculated
             if (key !== 'final_price') {
                 updated[i].costingPackages[packageIndex][key] = value;
             }
           
             const pkg = updated[i].costingPackages[packageIndex];
 
-            // Auto-calculate final price for the specific package (in all slots)
             const basePrice = parseFloat(pkg.base_price) || 0;
             const discount = parseFloat(pkg.discount) || 0;
             const gst = parseFloat(pkg.gst_percentage) || 0;
@@ -442,7 +467,6 @@ export default function TripCreate() {
       return updated;
     });
   };
-
 
   const handleCustomPricingChange = (field, value) => {
     setFormData((prev) => {
@@ -498,14 +522,12 @@ export default function TripCreate() {
     }
   };
 
-  // NEW: Fetch Activity Types
   const getActivityTypes = async () => {
     try {
       const res = await axios.get(`${SECURE_BASE}activity-types/`, {
         headers: { "x-api-key": API_KEY },
       });
       if (res?.data?.success) {
-        // Map data to a simple array of strings for ease of use
         setActivityList(res.data.data.map(item => item.name) || []);
       }
     } catch (err) {
@@ -556,7 +578,6 @@ export default function TripCreate() {
           destination_id: tripData.destination_id || "",
           destination_type: tripData.destination_type || "",
           category_id: categoryId,
-          // Removed themes field
           hotel_category: tripData.hotel_category?.toString() || "",
           pickup_location: tripData.pickup_location || "",
           drop_location: tripData.drop_location || "",
@@ -626,7 +647,7 @@ export default function TripCreate() {
   useEffect(() => {
     getCategories();
     getDestinations();
-    getActivityTypes(); // Fetch activity types on load
+    getActivityTypes();
   }, []);
 
   useEffect(() => {
@@ -653,14 +674,13 @@ export default function TripCreate() {
       destination_id: formData.destination_id ? parseInt(formData.destination_id) : null,
       destination_type: formData.destination_type,
       category_id: formData.category_id,
-      themes: [], // Themes removed from UI, submit as empty array
+      themes: [],
       hotel_category: parseInt(formData.hotel_category) || 0,
       pickup_location: formData.pickup_location,
       drop_location: formData.drop_location,
       days: parseInt(formData.days) || 0,
       nights: parseInt(formData.nights) || 0,
-      meta_tags: `${formData.title}`, // Simplified meta_tags after removing themes
-      // Use the slug from formData which is either auto-generated or manually entered
+      meta_tags: `${formData.title}`,
       slug: formData.slug || generateSlug(formData.title || ""), 
       pricing_model: formData.pricing_model,
       highlights: formatDetailString(highlightsText),
@@ -767,9 +787,6 @@ export default function TripCreate() {
     }
   };
 
-  // --- RENDER FUNCTIONS (Bootstrap/General Styling) ---
-
-  // Custom Multi-select Dropdown Component (simplified for inline use)
   const CategoryMultiSelect = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -824,7 +841,7 @@ export default function TripCreate() {
                         placeholder="Search categories..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onClick={(e) => e.stopPropagation()} // Keep dropdown open on search click
+                        onClick={(e) => e.stopPropagation()}
                     />
                     <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         {filteredCategories.map((cat) => (
@@ -841,7 +858,7 @@ export default function TripCreate() {
                                     type="checkbox"
                                     className="form-check-input"
                                     checked={formData.category_id.includes(String(cat.id))}
-                                    onChange={() => {}} // Controlled by outer div click
+                                    onChange={() => {}}
                                     style={{ marginTop: '0.45em' }}
                                 />
                                 <label className="form-check-label ms-2">{cat.name}</label>
@@ -856,7 +873,6 @@ export default function TripCreate() {
         </div>
     );
   };
-
 
   const renderBasic = () => (
     <div className="container">
@@ -876,7 +892,6 @@ export default function TripCreate() {
             <small className="text-muted">{formData.title?.length || 0}/100 characters</small>
           </div>
 
-          {/* SLUG FIELD */}
           <div className="mb-3">
             <label className="form-label">URL Slug *</label>
             <input
@@ -888,7 +903,6 @@ export default function TripCreate() {
             />
             <small className="text-muted">Only alphanumeric, hyphens (-), and underscores (_) are allowed. Auto-generated from title on new trips.</small>
           </div>
-          {/* END SLUG FIELD */}
 
           <div className="mb-3">
             <label className="form-label">Trip Overview *</label>
@@ -919,9 +933,7 @@ export default function TripCreate() {
             </select>
           </div>
 
-          {/* Multi-select for Categories */}
           <CategoryMultiSelect />
-          {/* End Multi-select for Categories */}
 
           <div className="mb-3">
             <label className="form-label d-block">Destination Type *</label>
@@ -993,11 +1005,11 @@ export default function TripCreate() {
                 placeholder="Nights"
                 value={formData.nights}
                 onChange={(e) => handleInputChange("nights", e.target.value)}
-                readOnly // Nights is now calculated automatically
+                readOnly
               />
             </div>
           </div>
-          <small className="text-muted">Nights is automatically set to **Days - 1**.</small>
+          <small className="text-muted">When you enter the number of days, itinerary days will be auto-generated. Nights = Days - 1.</small>
         </div>
 
         <div className="col-md-6">
@@ -1023,7 +1035,11 @@ export default function TripCreate() {
 
   const renderItinerary = () => (
     <div className="form-container">
-      <h3 className="mb-4 font-bold text-lg">Trip Itinerary</h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="font-bold text-lg mb-0">Trip Itinerary</h3>
+        <span className="badge bg-info">{formData.itineraryDays.length} Days Created</span>
+      </div>
+      
       {formData.itineraryDays.map((day) => (
         <div
           key={day.id}
@@ -1041,12 +1057,43 @@ export default function TripCreate() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              cursor: "pointer",
             }}
-            onClick={() => toggleDay(day.id)}
           >
-            <span className="font-medium">{day.title}</span>
-            {openDay === day.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, cursor: "pointer" }}
+              onClick={() => toggleDay(day.id)}
+            >
+              <span className="font-medium">{day.title}</span>
+              <span className="badge bg-secondary">Day {day.day_number}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {formData.itineraryDays.length > 1 && (
+                <button
+                  className="btn btn-sm"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 12px",
+                    background: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteDay(day.id);
+                  }}
+                  title="Delete this day"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              )}
+              <div onClick={() => toggleDay(day.id)} style={{ cursor: "pointer" }}>
+                {openDay === day.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </div>
+            </div>
           </div>
 
           {openDay === day.id && (
@@ -1072,7 +1119,6 @@ export default function TripCreate() {
 
               <div className="form-group">
                 <label>Select Activities</label>
-                {/* Dynamically mapped activities from the backend endpoint */}
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   {activityList.map((activity) => (
                     <label key={activity} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -1086,7 +1132,6 @@ export default function TripCreate() {
                   ))}
                   {activityList.length === 0 && <small className="text-muted">Loading activities...</small>}
                 </div>
-                {/* End Dynamically mapped activities */}
               </div>
 
               <div className="form-group">
@@ -1291,7 +1336,6 @@ export default function TripCreate() {
     </div>
   );
 
-// *** UPDATED RENDER PRICING FUNCTION (WITH PROPER STYLING) ***
   const renderPricing = () => {
     const masterCostingPackages = fixedPackage[0]?.costingPackages || [];
 
@@ -1299,7 +1343,6 @@ export default function TripCreate() {
       <div className="container">
         <h5 className="mb-3 fw-bold">Pricing Model *</h5>
 
-        {/* Pricing Model Radio Buttons */}
         <div className="row mb-4">
           <div className="col-md-6">
             <div
@@ -1354,7 +1397,6 @@ export default function TripCreate() {
 
         {selectedPricing === "fixed" && (
           <div className="fixed-departure-container">
-            {/* Header with Add Slot button */}
             <div className="fixed-departure-header">
               <h5>Enter Slots & Packages</h5>
               <button className="btn-add-slot" onClick={addFixedPackage}>
@@ -1362,11 +1404,9 @@ export default function TripCreate() {
               </button>
             </div>
 
-            {/* Slots List */}
             <div className="slots-list">
               {fixedPackage.map((slot, slotIndex) => (
                 <div key={`slot-${slotIndex}`} className="slot-container">
-                  {/* Slot Header */}
                   <div className="slot-header">
                     <div className="slot-indicator">
                       <div className="slot-dot" />
@@ -1382,7 +1422,6 @@ export default function TripCreate() {
                     )}
                   </div>
 
-                  {/* Slot Fields */}
                   <div className="row">
                     <div className="col-md-4 mb-3">
                       <label className="pricing-form-label">From Date *</label>
@@ -1417,7 +1456,6 @@ export default function TripCreate() {
               ))}
             </div>
 
-            {/* Costing Packages Section - Edit master packages in first slot */}
             <div className="costing-packages-section">
               <div className="costing-packages-header">
                 <h6>Costing Packages (Applies to all slots)</h6>
@@ -1426,10 +1464,8 @@ export default function TripCreate() {
                 </button>
               </div>
 
-              {/* Packages List */}
               {masterCostingPackages.map((pkg, pkgIndex) => (
                 <div key={`pkg-${pkgIndex}`} className="package-card">
-                  {/* Package Header */}
                   <div className="package-header">
                     <label className="package-title">Package {pkgIndex + 1}</label>
                     {(pkgIndex !== 0 || masterCostingPackages.length > 1) && (
@@ -1442,7 +1478,6 @@ export default function TripCreate() {
                     )}
                   </div>
 
-                  {/* Package Fields */}
                   <div className="row mb-3">
                     <div className="col-md-6">
                       <label className="pricing-form-label">Package Title *</label>
@@ -1514,7 +1549,6 @@ export default function TripCreate() {
           </div>
         )}
 
-        {/* Customized Pricing */}
         {selectedPricing === "custom" && (
           <>
             <h6 className="fw-bold mb-2">Customized Pricing</h6>
@@ -1591,8 +1625,6 @@ export default function TripCreate() {
       </div>
     );
   };
-  // *** END RENDER PRICING FUNCTION ***
-
 
   const renderDetails = () => (
     <div className="form-container details">

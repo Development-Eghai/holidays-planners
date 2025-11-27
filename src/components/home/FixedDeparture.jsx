@@ -15,21 +15,21 @@ const standardizeTripData = (t) => {
     // Determine if it is a Fixed Departure (F.D.) using all possible indicators
     const isFixed = 
         t.pricing_model === 'fixed_departure' || 
-        t.pricing_model === 'fixed' || // Checks for 'fixed' model from the API
+        t.pricing_model === 'fixed' || 
         (t.fixed_departure && t.fixed_departure.length > 0) || 
         (t.pricing?.fixed_departure && t.pricing.fixed_departure.length > 0);
     
-    // Determine the relevant price and discount (uses the first available package price for F.D.)
+    // Determine the relevant price and discount
     const fixedPricePackage = t.pricing?.fixed_departure?.[0]?.costingPackages?.[0];
     
     // Price logic: F.D. price first, otherwise customized price
-    const finalPrice = isFixed 
-        ? fixedPricePackage?.final_price || 0
-        : t.pricing?.customized?.final_price || 0;
+    const finalPriceRaw = isFixed 
+        ? (fixedPricePackage?.final_price || 0)
+        : (t.pricing?.customized?.final_price || 0);
         
     const discount = isFixed
-        ? fixedPricePackage?.discount || 0
-        : t.pricing?.customized?.discount || 0;
+        ? (fixedPricePackage?.discount || 0)
+        : (t.pricing?.customized?.discount || 0);
 
     return {
         ...t, // Spread all properties
@@ -40,27 +40,14 @@ const standardizeTripData = (t) => {
         hero_image: getFullImageUrl(t.hero_image || t.image),
         days: t.days || 1,
         nights: t.nights || 0,
-        // Standardized price fields for easy card consumption
-        final_price_display: finalPrice.toLocaleString(),
-        is_fixed_departure: isFixed, // Handy flag for filtering/display
+        // Keep the raw price as number for filtering
+        final_price: finalPriceRaw,
+        // Formatted version for display
+        final_price_display: finalPriceRaw.toLocaleString(),
+        is_fixed_departure: isFixed,
+        discount: discount,
         
-        pricing: {
-            ...t.pricing,
-            // Ensure fixed_departure pricing is formatted if it exists
-            fixed_departure: t.pricing?.fixed_departure?.map(fd => ({
-                ...fd,
-                costingPackages: fd.costingPackages?.map(cp => ({
-                    ...cp,
-                    final_price: cp.final_price.toLocaleString(), // Format the final price
-                    discount: cp.discount
-                })) || []
-            })) || [],
-            customized: {
-                ...t.pricing?.customized,
-                final_price: t.pricing?.customized?.final_price?.toLocaleString() || '0',
-                discount: t.pricing?.customized?.discount || 0
-            }
-        }
+        pricing: t.pricing // Keep original pricing structure
     };
 };
 
@@ -82,25 +69,30 @@ export default function DestinationCards() {
             const json = await response.json();
             const fetchedList = json.data || [];
 
+            console.log('Total trips fetched:', fetchedList.length);
+
             const fixedTrips = [];
             const customizedTrips = [];
 
-            fetchedList.slice(0, 16).forEach(t => { 
+            fetchedList.forEach(t => { 
                 const standardizedTrip = standardizeTripData(t);
 
-                // Using the same robust check to separate trips
-                const isFixedDeparture = 
-                    t.pricing_model === 'fixed_departure' || 
-                    t.pricing_model === 'fixed' || 
-                    (t.fixed_departure && t.fixed_departure.length > 0) || 
-                    (t.pricing?.fixed_departure && t.pricing.fixed_departure.length > 0);
+                // Debug logging
+                console.log('Trip:', t.title, {
+                    pricing_model: t.pricing_model,
+                    has_fixed_departure: t.pricing?.fixed_departure?.length > 0,
+                    is_classified_as_fixed: standardizedTrip.is_fixed_departure
+                });
                 
-                if (isFixedDeparture) {
+                if (standardizedTrip.is_fixed_departure) {
                     fixedTrips.push(standardizedTrip);
                 } else {
                     customizedTrips.push(standardizedTrip);
                 }
             });
+
+            console.log('Fixed Departures found:', fixedTrips.length);
+            console.log('Customized Packages found:', customizedTrips.length);
 
             // Set the two states, capping at 8 items for each section
             setFixedDepartures(fixedTrips.slice(0, 8));

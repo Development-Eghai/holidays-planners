@@ -109,7 +109,7 @@ export default function Header() {
 
             {/* LOGO */}
             <a href="/" className="flex items-center gap-3">
-              <motion.img src="/HP-logo.png" alt="Logo" className="h-[24] w-60" />
+              <motion.img src="/holidaysplanners-logo.png" alt="Logo" className="h-auto w-24" />
             </a>
 
             {/* DESKTOP NAV */}
@@ -121,7 +121,7 @@ export default function Header() {
                 onMouseEnter={() => setOpenDropdown("domestic")}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-bold">
                   Domestic Trips <ChevronDown className="h-4 w-4" />
                 </button>
 
@@ -157,7 +157,7 @@ export default function Header() {
                 onMouseEnter={() => setOpenDropdown("international")}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-bold">
                   International Trips <ChevronDown className="h-4 w-4" />
                 </button>
 
@@ -188,7 +188,7 @@ export default function Header() {
               </div>
 
               {/* EXPLORE TRIPS */}
-              <a href="/triplist" className="px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+              <a href="/triplist" className="px-4 py-2 text-gray-700 hover:text-blue-600 font-bold">
                 Explore Trips
               </a>
 
@@ -198,7 +198,7 @@ export default function Header() {
                 onMouseEnter={() => setOpenDropdown("company")}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+                <button className="flex items-center gap-1 px-4 py-2 text-gray-700 hover:text-blue-600 font-bold">
                   Company <ChevronDown className="h-4 w-4" />
                 </button>
 
@@ -220,7 +220,7 @@ export default function Header() {
               </div>
 
               {/* BLOG */}
-              <a href="/blog" className="px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">
+              <a href="/blog" className="px-4 py-2 text-gray-700 hover:text-blue-600 font-bold">
                 Blog
               </a>
             </nav>
@@ -274,7 +274,7 @@ export default function Header() {
 
                 {/* Mobile DOMESTIC */}
                 <details>
-                  <summary className="py-2 text-gray-700 font-medium flex justify-between">
+                  <summary className="py-2 text-gray-700 font-bold flex justify-between">
                     Domestic Trips <ChevronDown className="h-4 w-4" />
                   </summary>
                   <div className="ml-4 border-l pl-4">
@@ -289,7 +289,7 @@ export default function Header() {
 
                 {/* Mobile INTERNATIONAL */}
                 <details>
-                  <summary className="py-2 text-gray-700 font-medium flex justify-between">
+                  <summary className="py-2 text-gray-700 font-bold flex justify-between">
                     International Trips <ChevronDown className="h-4 w-4" />
                   </summary>
                   <div className="ml-4 border-l pl-4">
@@ -302,13 +302,13 @@ export default function Header() {
                   </div>
                 </details>
 
-                <a href="/triplist" className="py-2 text-gray-700 font-medium">
+                <a href="/triplist" className="py-2 text-gray-700 font-bold">
                   Explore Trips
                 </a>
 
                 {/* Mobile COMPANY */}
                 <details>
-                  <summary className="py-2 text-gray-700 font-medium flex justify-between">
+                  <summary className="py-2 text-gray-700 font-bold flex justify-between">
                     Company <ChevronDown className="h-4 w-4" />
                   </summary>
                   <div className="ml-4 border-l pl-4">
@@ -319,7 +319,7 @@ export default function Header() {
                   </div>
                 </details>
 
-                <a href="/blog" className="py-2 text-gray-700 font-medium">
+                <a href="/blog" className="py-2 text-gray-700 font-bold">
                   Blog
                 </a>
 

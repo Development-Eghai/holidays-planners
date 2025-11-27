@@ -19,31 +19,142 @@ export default function DestinationGuidelines({ destinationData }) {
         return null;
     }
 
-    // Process lines to categorize them as HEADINGS or POINTS
+    // COMPREHENSIVE HEADING DETECTION
+    const isHeadingLine = (line, lineWithoutEmoji) => {
+        // 1. Lines starting with numbers (e.g., "1. Passport")
+        if (/^\d+\.\s/.test(line)) {
+            return true;
+        }
+        
+        // 2. Lines with emoji at start - EXPANDED EMOJI RANGES
+        // This catches most emojis including 🗓️, ✈️, 🧳, 🌿, etc.
+        const hasEmojiAtStart = /^[\p{Emoji}\p{Emoji_Component}]\s*/u.test(line);
+        if (hasEmojiAtStart) {
+            // If it has an emoji at start, check if the rest looks like a heading
+            const textAfterEmoji = line.replace(/^[\p{Emoji}\p{Emoji_Component}]\s*/u, '').trim();
+            
+            // If the text after emoji is short (< 50 chars) and doesn't end with period, it's likely a heading
+            if (textAfterEmoji.length < 50 && !textAfterEmoji.endsWith('.')) {
+                return true;
+            }
+        }
+        
+        // 3. Specific common section titles (case-insensitive, exact or contains)
+        const commonHeadings = [
+            'Best Time to Visit',
+            'How to Reach',
+            'What to Pack',
+            'Travel Guidelines for',
+            'Getting Around',
+            'Accommodation',
+            'Food and Cuisine',
+            'Budget',
+            'Important Numbers',
+            'Safety Tips',
+            'Local Transport',
+            'Visa Requirements',
+            'Currency',
+            'Language',
+            'Emergency Contacts',
+            'Responsible Travel',
+            'Why Visit',
+            'Things to Do',
+            'Places to Visit',
+            'Local Culture',
+            'Weather',
+            'Transportation',
+            'Health and Safety',
+            'Travel Insurance',
+            'Customs and Etiquette',
+            'Shopping',
+            'Nightlife',
+            'Photography Tips',
+            'Connectivity',
+            'Time Zone',
+            'Festivals',
+            'Adventure Activities'
+        ];
+        
+        // CRITICAL FIX: Check if line is a sub-point (contains colon followed by detailed text)
+        // Example: "By Air: The nearest airport..." should be a point, not a heading
+        const hasColonWithContent = lineWithoutEmoji.includes(':') && 
+                                   lineWithoutEmoji.split(':')[1]?.trim().length > 10;
+        
+        if (hasColonWithContent) {
+            // This is a detailed point, not a heading
+            return false;
+        }
+        
+        // Check if line contains any common heading (not just starts with)
+        const lowerLine = lineWithoutEmoji.toLowerCase();
+        for (const heading of commonHeadings) {
+            // Only match if it's the EXACT heading or very close to it (within 5 chars)
+            if (lowerLine === heading.toLowerCase() || 
+                (lowerLine.startsWith(heading.toLowerCase()) && lowerLine.length - heading.length < 5)) {
+                return true;
+            }
+        }
+        
+        // 4. Lines ending with "?" that are likely section questions
+        if (lineWithoutEmoji.endsWith('?') && lineWithoutEmoji.length < 100) {
+            return true;
+        }
+        
+        // 5. Lines in ALL CAPS (must be at least 3 chars and not too long)
+        if (lineWithoutEmoji === lineWithoutEmoji.toUpperCase() && 
+            lineWithoutEmoji.length > 3 && 
+            lineWithoutEmoji.length < 50 &&
+            !/[.!?]$/.test(lineWithoutEmoji)) { // Not ending with punctuation
+            return true;
+        }
+        
+        // 6. Title Case lines that are short and don't end with regular sentence punctuation
+        const isTitleCase = /^[A-Z][a-z]+(\s+[A-Z][a-z]+)*$/.test(lineWithoutEmoji);
+        const isShortEnough = lineWithoutEmoji.length < 60;
+        const noSentenceEnd = !/[.!]$/.test(lineWithoutEmoji) || lineWithoutEmoji.endsWith('?');
+        
+        if (isTitleCase && isShortEnough && noSentenceEnd) {
+            return true;
+        }
+        
+        return false;
+    };
+
+    // Process lines with improved heading detection
     const processedLines = travelGuidelines
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
         .map(line => {
-            // Regex to detect lines starting with a number followed by a period and a space (e.g., "1. Passport")
-            const isHeading = /^\d+\.\s/.test(line);
+            // Remove emoji from the start to check the actual text
+            // Using modern Unicode emoji property
+            const lineWithoutEmoji = line.replace(/^[\p{Emoji}\p{Emoji_Component}]\s*/u, '').trim();
+            
+            const isHeading = isHeadingLine(line, lineWithoutEmoji);
 
-            // Clean the line and determine the type
-            const content = line.replace(/^[0-9]+\.\s*/, '').trim();
+            // Clean the line (remove leading numbers, keep emojis)
+            let content = line.replace(/^[0-9]+\.\s*/, '').trim();
 
             return {
                 content: content,
                 isHeading: isHeading,
-                isListPoint: !isHeading, 
+                isListPoint: !isHeading,
             };
         });
+    
+    // Debug log to see what's being classified as what
+    console.log('🔍 Travel Guidelines Classification:', 
+        processedLines.map(p => ({ 
+            text: p.content.substring(0, 50) + '...', 
+            type: p.isHeading ? 'HEADING' : 'POINT' 
+        }))
+    );
     
     // Filter out only the list points to manage the "View More" functionality correctly
     const allListPoints = processedLines.filter(item => item.isListPoint);
     
     // Control "View More" based on list points, not headings
-    const initialPointsToShowCount = 5; // Show more points initially for better content visibility
-    const pointsToShow = showAllGuidelines ? allListPoints : allListPoints.slice(0, initialPointsToShowCount);
+    const initialPointsToShowCount = 5;
     const hasMorePoints = allListPoints.length > initialPointsToShowCount;
 
     // Map back to the original structure to render headings and points together
