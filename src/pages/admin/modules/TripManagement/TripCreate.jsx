@@ -11,6 +11,7 @@ import {
   Trash2,
   Plus,
   X,
+  Search,
 } from "lucide-react";
 import "../../css/TripManagement/TripCreate.css";
 import { ToastContainer, toast } from "react-toastify";
@@ -109,6 +110,11 @@ export default function TripCreate() {
     privacy_policy: "",
     payment_terms: "",
     custom_policies: [],
+    feature_trip_flag: false,
+    feature_trip_type: "",
+    display_order: "",
+    meta_title: "",
+    meta_description: "",
   });
 
   const steps = useMemo(
@@ -119,6 +125,7 @@ export default function TripCreate() {
       { id: "pricing", label: "Pricing", icon: DollarSign },
       { id: "details", label: "Details", icon: FileText },
       { id: "policies", label: "Policies", icon: Shield },
+      { id: "seo", label: "SEO", icon: Search },
     ],
     []
   );
@@ -606,6 +613,11 @@ export default function TripCreate() {
               gst_percentage: tripData.pricing?.customized?.gst_percentage || "",
             },
           },
+          feature_trip_flag: tripData.feature_trip_flag || false,
+          feature_trip_type: tripData.feature_trip_type || "",
+          display_order: tripData.display_order || "",
+          meta_title: tripData.meta_title || "",
+          meta_description: tripData.meta_description || "",
         }));
 
         setFaqs(tripData.faqs || []);
@@ -741,6 +753,11 @@ export default function TripCreate() {
         ...(formData.payment_terms ? [{ title: "Payment Terms", content: formData.payment_terms }] : []),
         ...formData.custom_policies,
       ],
+      feature_trip_flag: formData.feature_trip_flag,
+      feature_trip_type: formData.feature_trip_flag ? formData.feature_trip_type : null,
+      display_order: formData.display_order ? parseInt(formData.display_order) : null,
+      meta_title: formData.meta_title || null,
+      meta_description: formData.meta_description || null,
     };
   };
 
@@ -958,6 +975,61 @@ export default function TripCreate() {
               <label className="form-check-label">International</label>
             </div>
           </div>
+
+          {/* Featured Trip Section */}
+          <div className="mb-3">
+            <label className="form-label d-block">Featured Trip</label>
+            <div className="form-check form-check-inline">
+              <input
+                type="radio"
+                name="featureTripFlag"
+                className="form-check-input"
+                checked={formData.feature_trip_flag === true}
+                onChange={() => handleInputChange("feature_trip_flag", true)}
+              />
+              <label className="form-check-label">Yes</label>
+            </div>
+            <div className="form-check form-check-inline">
+              <input
+                type="radio"
+                name="featureTripFlag"
+                className="form-check-input"
+                checked={formData.feature_trip_flag === false}
+                onChange={() => handleInputChange("feature_trip_flag", false)}
+              />
+              <label className="form-check-label">No</label>
+            </div>
+          </div>
+
+          {formData.feature_trip_flag && (
+            <>
+              <div className="mb-3">
+                <label className="form-label">Featured Trip Page *</label>
+                <select
+                  className="form-select"
+                  value={formData.feature_trip_type}
+                  onChange={(e) => handleInputChange("feature_trip_type", e.target.value)}
+                >
+                  <option value="">Select page</option>
+                  <option value="Homepage">Homepage</option>
+                  <option value="Destination Page">Destination Page</option>
+                  <option value="Category Page">Category Page</option>
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Display Order</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Enter display order (e.g., 1, 2, 3...)"
+                  value={formData.display_order}
+                  onChange={(e) => handleInputChange("display_order", e.target.value)}
+                />
+                <small className="text-muted">Lower numbers appear first</small>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1776,6 +1848,68 @@ export default function TripCreate() {
     </div>
   );
 
+  const renderSEO = () => (
+    <div className="container">
+      <h3 className="mb-4 fw-bold fs-5">SEO Settings</h3>
+      <p className="text-muted mb-4">Optimize your trip page for search engines</p>
+      
+      <div className="row">
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label">Meta Title</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter meta title for SEO (recommended: 50-60 characters)"
+              maxLength={60}
+              value={formData.meta_title}
+              onChange={(e) => handleInputChange("meta_title", e.target.value)}
+            />
+            <small className="text-muted">{formData.meta_title?.length || 0}/60 characters</small>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Meta Description</label>
+            <textarea
+              rows={4}
+              className="form-control"
+              placeholder="Enter meta description for SEO (recommended: 150-160 characters)"
+              maxLength={160}
+              value={formData.meta_description}
+              onChange={(e) => handleInputChange("meta_description", e.target.value)}
+            />
+            <small className="text-muted">{formData.meta_description?.length || 0}/160 characters</small>
+            <div className="mt-2">
+              <small className="text-info">
+                <strong>Tips:</strong>
+                <ul className="mb-0 mt-1">
+                  <li>Include your main keyword</li>
+                  <li>Write a compelling description that encourages clicks</li>
+                  <li>Keep it under 160 characters for best display</li>
+                </ul>
+              </small>
+            </div>
+          </div>
+
+          <div className="alert alert-info">
+            <strong>Preview:</strong>
+            <div className="mt-2 p-3 bg-white border rounded">
+              <div className="text-primary" style={{ fontSize: '18px', fontWeight: '500' }}>
+                {formData.meta_title || formData.title || 'Your Trip Title'}
+              </div>
+              <div className="text-success small">
+                yourwebsite.com/trips/{formData.slug || 'trip-slug'}
+              </div>
+              <div className="text-muted small mt-1">
+                {formData.meta_description || formData.overview || 'Your trip description will appear here...'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderStepContent = () => {
     switch (activeStep) {
       case "basic":
@@ -1790,6 +1924,8 @@ export default function TripCreate() {
         return renderDetails();
       case "policies":
         return renderPolicies();
+      case "seo":
+        return renderSEO();
       default:
         return <div>Step Not Found</div>;
     }

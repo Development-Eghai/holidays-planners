@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import TripCard from "../../../components/trips/TripCard"; // ✅ imported reusable card
+import TripCard from "../../../components/trips/TripCard";
+import CategoryFeaturedTrips from "../../../components/categories/CategoryFeaturedTrips.jsx";
 
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const API_URL = "https://api.yaadigo.com/secure/api/";
@@ -164,10 +165,16 @@ const CategoryPreview = () => {
         </section>
       )}
 
-      {/* --- Trip List --- */}
+      {/* --- Featured Trips Section --- */}
+      <CategoryFeaturedTrips 
+        categoryId={id} 
+        categoryName={categoryData.name || "Category"} 
+      />
+
+      {/* --- All Trip List --- */}
       <section className="py-16 container mx-auto px-4">
         <h2 className="text-3xl font-bold mb-8 text-center">
-          Explore {categoryData.name} Packages
+          Explore All {categoryData.name} Packages
         </h2>
 
         {trips.length === 0 ? (

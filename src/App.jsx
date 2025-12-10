@@ -1,6 +1,8 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
+import './styles/global-theme.css';
+
 // Layout Components
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";

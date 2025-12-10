@@ -6,6 +6,13 @@ const API_URL = "https://api.yaadigo.com/secure/api";
 const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
 
+// ✅ ADD YOUR BACKGROUND IMAGES HERE
+const HERO_IMAGES = [
+  './hero-section-banners/hero-bg-kerala-backwaters-holidaysplanners.webp',
+  'public/hero-section-banners/hero-image-kullu-manali-holidays-planners.jpg',
+  'public/hero-section-banners/hero-image-spiti-valley-holidays-planners.jpg',
+];
+
 const getFullImageUrl = (path) => {
   if (!path || typeof path !== "string") return null;
   if (path.startsWith("http")) return path;
@@ -29,6 +36,17 @@ export default function HeroSection() {
   const [trips, setTrips] = useState([]);
   const [filteredResults, setFilteredResults] = useState({ destinations: [], trips: [] });
   const searchRef = useRef(null);
+
+  // ✅ Image slider state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // ✅ Auto-slide images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch destinations
   const fetchDestinations = useCallback(async () => {
@@ -195,19 +213,24 @@ export default function HeroSection() {
         fontFamily: 'Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
-      {/* Background */}
-      <motion.div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage:
-            'url(https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1920)',
-        }}
-        initial={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 1, ease: 'easeOut' }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50" />
-      </motion.div>
+      {/* ✅ Background Image Slider */}
+      <div className="absolute inset-0 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentImageIndex}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(${HERO_IMAGES[currentImageIndex]})`,
+            }}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50" />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Content */}
       <motion.div
@@ -217,72 +240,77 @@ export default function HeroSection() {
         animate="visible"
       >
         <motion.h1
-          className="text-4xl md:text-6xl font-bold text-white mb-4 text-center"
+          className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 text-center leading-tight"
           variants={itemVariants}
         >
-          Explore The World With Us
+          Your Journey Begins Here
         </motion.h1>
 
         <motion.p
-          className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-10 text-center"
+          className="text-lg md:text-xl text-white/95 max-w-3xl mx-auto mb-12 text-center leading-relaxed"
           variants={itemVariants}
         >
-          Discover amazing places and create unforgettable memories
+          Handpicked destinations and expertly curated tours await. 
+          <span className="block mt-2 font-semibold">Start exploring your next adventure today.</span>
         </motion.p>
 
-        {/* Search Bar */}
+        {/* ✅ Compact Search Bar */}
         <motion.div
           ref={searchRef}
-          className="bg-white rounded-lg shadow-2xl p-6 md:p-7 max-w-4xl mx-auto relative w-full overflow-visible"
+          className="bg-white/95 backdrop-blur-sm rounded-full shadow-2xl px-5 py-2 max-w-2xl mx-auto relative w-full overflow-visible"
           variants={itemVariants}
-          whileHover={{ boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)' }}
+          whileHover={{ 
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+            backgroundColor: 'rgba(255, 255, 255, 1)'
+          }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex items-center gap-2">
+            {/* Location Icon */}
+            <MapPin className="h-5 w-5 text-blue-500 flex-shrink-0" />
+
             {/* Input */}
             <motion.div
               className="relative flex-1"
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -1 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search destinations or trips..."
+                placeholder="Search destinations, trips, or experiences..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 onFocus={() =>
                   searchQuery.length > 0 && setShowResults(true)
                 }
-                className="w-full pl-10 pr-10 py-3 h-12 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                className="w-full py-2 bg-transparent border-none focus:outline-none text-gray-800 placeholder-gray-500 text-sm md:text-base"
               />
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
               {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500 animate-spin" />
+                <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
               )}
             </motion.div>
 
-            {/* Search button */}
+            {/* Search Icon Button */}
             <motion.button
               onClick={handleSearch}
-              className="h-12 md:w-40 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-lg font-semibold rounded-md flex items-center justify-center gap-2 transition-all"
+              className="h-10 w-10 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-full flex items-center justify-center flex-shrink-0 transition-all"
               whileHover={{
-                scale: 1.05,
-                boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)',
+                scale: 1.08,
+                boxShadow: '0 8px 20px rgba(37, 99, 235, 0.4)',
               }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <Search className="h-5 w-5" />
-              Search
+              <Search className="h-4 w-4" />
             </motion.button>
           </div>
 

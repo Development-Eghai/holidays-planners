@@ -3,6 +3,7 @@ import HeroSection from '../../../components/home/HeroSection';
 import TravelStyle from '../../../components/home/TravelStyle';
 import TrendingDestination from '../../../components/home/TrendingDestination';
 import PromoBanner from '../../../components/charts/PromotionalBanner';
+import FeaturedTrips from '../../../components/home/FeaturedTrips';
 import FixedDeparture from '../../../components/home/FixedDeparture';
 import CustomizedDeparture from '../../../components/home/CustomizedDeparture';
 import LeadGeneration from '../../../components/forms/LeadGeneration';
@@ -17,6 +18,7 @@ const Home = () => {
       <TravelStyle />
       <TrendingDestination />
       <PromoBanner />
+      <FeaturedTrips />
       <FixedDeparture />
       <CustomizedDeparture />
       <LeadGeneration />
