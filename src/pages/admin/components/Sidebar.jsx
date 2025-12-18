@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, MapPin, PlusCircle, Layers, Database, 
     Users, DollarSign, FileText, LogOut, Trash2,
-    ListTree, Tag
+    ListTree, Tag, Layout
 } from 'lucide-react';
 import '../css/Sidebar.css';
 
@@ -15,7 +15,7 @@ const sidebarGroups = [
         ]
     },
     {
-        title: 'Trip Management', 
+        title: 'TRIP MANAGEMENT', 
         modules: [
             { name: 'All Trips', path: '/admin/dashboard/trip-management/list', icon: PlusCircle }, 
             { name: 'Add Destination', path: '/admin/dashboard/add-destination', icon: MapPin },
@@ -24,7 +24,7 @@ const sidebarGroups = [
         ]
     },
     {
-        title: 'Blog Management',
+        title: 'BLOG MANAGEMENT',
         modules: [
             { name: 'All Posts', path: '/admin/dashboard/blog/list', icon: FileText },
             { name: 'Add New Post', path: '/admin/dashboard/blog/create', icon: PlusCircle },
@@ -33,7 +33,14 @@ const sidebarGroups = [
         ]
     },
     {
-        title: 'Travel CRM',
+        title: 'LANDING PAGE MANAGEMENT',
+        modules: [
+            { name: 'All Pages', path: '/admin/dashboard/landing-pages', icon: Layout },
+            { name: 'Create Page', path: '/admin/dashboard/landing-pages/create', icon: PlusCircle },
+        ]
+    },
+    {
+        title: 'TRAVEL CRM',
         modules: [
             { name: 'Lead Management', path: '/admin/dashboard/lead-management', icon: Users },
             { name: 'Lead Trash', path: '/admin/dashboard/lead-trash', icon: Trash2 },
@@ -65,6 +72,13 @@ export default function Sidebar({ isOpen, toggleSidebar, onLogout }) {
             return true;
         }
 
+        // Landing Pages active state
+        if (path === '/admin/dashboard/landing-pages' && 
+            (location.pathname.startsWith('/admin/dashboard/landing-pages/edit') ||
+             location.pathname.startsWith('/admin/dashboard/landing-pages/create'))) {
+            return true;
+        }
+
         return location.pathname.startsWith(path);
     };
 
@@ -79,7 +93,7 @@ export default function Sidebar({ isOpen, toggleSidebar, onLogout }) {
             )}
 
             <div className={`sidebar-container ${isOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-                {/* LOGO SECTION - No toggle button here anymore */}
+                {/* LOGO SECTION */}
                 <div className="sidebar-header">
                     <div className="sidebar-logo-wrapper">
                         <a href="/" className="sidebar-logo-link">

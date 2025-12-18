@@ -18,12 +18,17 @@ import LeadTrash from './modules/LeadMangement/LeadTrash';
 import QuotationManagement from './modules/QuotationManagement/QuotationManagement';
 import QuotationTrash from './modules/QuotationManagement/QuotationTrash';
 
-// --- NEW BLOG IMPORTS ---
+// --- BLOG IMPORTS ---
 import BlogList from './modules/BlogManagement/BlogList';
 import BlogCreate from './modules/BlogManagement/BlogCreate';
 import CategoryManagement from './modules/BlogManagement/CategoryManagement';
 import TagManagement from './modules/BlogManagement/TagManagement';
-// --- END NEW BLOG IMPORTS ---
+// --- END BLOG IMPORTS ---
+
+// --- LANDING PAGE MANAGEMENT IMPORTS ---
+import LandingPageCreate from './modules/LandingPageManagement/LandingPageCreate';
+import LandingPageList from './modules/LandingPageManagement/LandingPageList';
+// --- END LANDING PAGE MANAGEMENT IMPORTS ---
 
 // placeholders
 const ModulePlaceholder = ({ name }) => (
@@ -91,25 +96,35 @@ export default function AdminDashboard() {
           <Routes>
             <Route path="overview" element={<DashboardOverview />} />
 
+            {/* Trip Management */}
             <Route path="trip-management/list" element={<TripList />} />
             <Route path="trip-management/create" element={<TripCreate />} />
             <Route path="trip-management/create/:id" element={<TripCreate />} />
 
+            {/* Destinations */}
             <Route path="add-destination" element={<DestinationList />} />
             <Route path="destination-create" element={<DestinationCreate />} />
             <Route path="destination-create/:id" element={<DestinationCreate />} />
 
+            {/* Categories & Activities */}
             <Route path="add-categories" element={<CategoryList />} />
             <Route path="add-activity" element={<ActivityList />} />
 
-            {/* --- NEW BLOG ROUTES --- */}
+            {/* --- BLOG ROUTES --- */}
             <Route path="blog/list" element={<BlogList />} />
             <Route path="blog/create" element={<BlogCreate />} />
-            <Route path="blog/create/:id" element={<BlogCreate />} /> {/* For editing */}
+            <Route path="blog/create/:id" element={<BlogCreate />} />
             <Route path="blog/categories" element={<CategoryManagement />} />
             <Route path="blog/tags" element={<TagManagement />} />
-            {/* --- END NEW BLOG ROUTES --- */}
+            {/* --- END BLOG ROUTES --- */}
 
+            {/* --- LANDING PAGE MANAGEMENT ROUTES --- */}
+            <Route path="landing-pages" element={<LandingPageList />} />
+            <Route path="landing-pages/create" element={<LandingPageCreate />} />
+            <Route path="landing-pages/edit/:id" element={<LandingPageCreate />} />
+            {/* --- END LANDING PAGE MANAGEMENT ROUTES --- */}
+
+            {/* Lead Management */}
             <Route path="lead-management" element={<LeadManagement />} />
             <Route path="lead-trash" element={<LeadTrash />} />
 
@@ -117,6 +132,7 @@ export default function AdminDashboard() {
             <Route path="quotations" element={<QuotationManagement />} />
             <Route path="quotations/trash" element={<QuotationTrash />} />
 
+            {/* Other Modules */}
             <Route path="destination-type" element={<DestinationType />} />
             <Route path="invoice-management" element={<InvoiceManagement />} />
             <Route path="manage-bookings" element={<BookingManagement />} />
