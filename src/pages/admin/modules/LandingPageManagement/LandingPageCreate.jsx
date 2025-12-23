@@ -3,12 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Save, Eye, ArrowLeft, ArrowRight, Info, Layout, Sparkles, 
   Package, MapPin, Image as ImageIcon, MessageSquare, HelpCircle, 
-  BookOpen, Tag, Plus, Trash2, X, Upload, Search, Film, Check
+  BookOpen, Tag, Plus, Trash2, X, Upload, Search, Film, Check,
+  MonitorPlay, ChevronLeft
 } from 'lucide-react';
 
 // Rich Text Editor - React Quill
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
+// --- TEMPLATE IMPORTS ---
+import ModernTemplate from './templates/ModernTemplate/ModernTemplate';
 
 const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
 const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
@@ -24,16 +28,28 @@ export default function LandingPageCreate() {
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Preview State
+  const [showPreview, setShowPreview] = useState(false);
+
   // Available data from API
   const [availableTrips, setAvailableTrips] = useState([]);
   const [filteredTrips, setFilteredTrips] = useState([]);
   const [tripSearchQuery, setTripSearchQuery] = useState('');
   const [showTripDropdown, setShowTripDropdown] = useState(false);
 
+  // Template Display Mapping
+  const templateMap = {
+    'template-one': 'Minimal',
+    'template-two': 'Classic',
+    'template-three': 'Modern'
+  };
+
   // Form Data Initial State
   const [formData, setFormData] = useState({
     page_name: '',
     slug: '',
+    template: 'template-three', // Default to Modern
+    is_active: true,
     company: {
       name: '',
       contact: '',
@@ -44,13 +60,13 @@ export default function LandingPageCreate() {
       meta_description: '',
       meta_tags: ''
     },
-    template: 'template-one',
     hero: {
       title: '',
       subtitle: '',
       description: '',
-      cta_button_1: { text: 'Book Now', link: '' },
-      cta_button_2: { text: 'Enquire Now', link: '' },
+      // --- UPDATED DEFAULTS HERE ---
+      cta_button_1: { text: 'Explore Destinations', link: '#packages' },
+      cta_button_2: { text: 'Get Quote', link: '#contact' },
       background_type: 'slider',
       background_images: [],
       background_videos: []
@@ -58,13 +74,13 @@ export default function LandingPageCreate() {
     packages: {
       section_title: 'Popular Tour Packages',
       section_subtitle: 'Explore our hand-picked packages',
-      selected_trips: [], // { trip_id, badge, custom_title, custom_price }
+      selected_trips: [], 
       show_section: true
     },
     attractions: {
       section_title: 'Top Attractions',
       section_subtitle: 'Must-visit places',
-      items: [], // { title, image, description }
+      items: [], 
       show_section: true
     },
     gallery: {
@@ -77,13 +93,13 @@ export default function LandingPageCreate() {
     testimonials: {
       section_title: 'What Our Travelers Say',
       section_subtitle: 'Real experiences',
-      items: [], // { name, destination, rating, description, image, date }
+      items: [], 
       show_section: true
     },
     faqs: {
       section_title: 'Frequently Asked Questions',
       section_subtitle: 'Everything you need to know',
-      items: [], // { question, answer }
+      items: [], 
       show_section: true
     },
     travel_guidelines: {
@@ -99,12 +115,11 @@ export default function LandingPageCreate() {
       footer: { enabled: false, text: '' },
       mid_section: { enabled: false, type: 'image', media_urls: [] },
       popups: {
-        entry: { enabled: false, title: 'Welcome Offer!' },
-        exit: { enabled: false, title: 'Wait! Special Discount' },
-        idle: { enabled: false, title: 'Still Here? Get Discount' }
+        entry: { enabled: false, title: '' },
+        exit: { enabled: false, title: '' },
+        idle: { enabled: false, title: '' }
       }
-    },
-    is_active: true
+    }
   });
 
   const steps = [
@@ -134,7 +149,6 @@ export default function LandingPageCreate() {
     if (id) fetchLandingPage(id);
   }, [id]);
 
-  // Search Filter for Trips
   useEffect(() => {
     if (tripSearchQuery) {
       const filtered = availableTrips.filter(trip =>
@@ -169,7 +183,6 @@ export default function LandingPageCreate() {
       });
       if (!response.ok) throw new Error('Failed to fetch landing page');
       const data = await response.json();
-      // Handle both direct data and wrapped response
       setFormData(data.data || data);
     } catch (error) { 
       console.error('Error loading landing page:', error);
@@ -178,7 +191,6 @@ export default function LandingPageCreate() {
     finally { setIsLoading(false); }
   };
 
-  // Auto-generate slug from page name
   useEffect(() => {
     if (formData.page_name && !id) {
       const slug = formData.page_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -186,12 +198,10 @@ export default function LandingPageCreate() {
     }
   }, [formData.page_name, id]);
 
-  // Generic Handlers
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
   const handleNestedChange = (parent, field, value) => setFormData(prev => ({ ...prev, [parent]: { ...prev[parent], [field]: value } }));
   const handleDeepNestedChange = (parent, child, field, value) => setFormData(prev => ({ ...prev, [parent]: { ...prev[parent], [child]: { ...prev[parent][child], [field]: value } } }));
   
-  // Array Handlers
   const handleArrayItemChange = (parent, index, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -201,25 +211,16 @@ export default function LandingPageCreate() {
   const addArrayItem = (parent, newItem) => setFormData(prev => ({ ...prev, [parent]: { ...prev[parent], items: [...prev[parent].items, newItem] } }));
   const removeArrayItem = (parent, index) => setFormData(prev => ({ ...prev, [parent]: { ...prev[parent], items: prev[parent].items.filter((_, i) => i !== index) } }));
 
-  // Single File Upload to Server (Same as TripCreate)
   const uploadSingleFile = async (file) => {
     const fd = new FormData();
-    fd.append('image', file);  // Changed from 'file' to 'image'
+    fd.append('image', file); 
     fd.append('storage', 'local');
     
     try {
-      const response = await fetch(UPLOAD_URL, {
-        method: 'POST',
-        body: fd  // Don't set Content-Type - browser sets it with boundary
-      });
-      
+      const response = await fetch(UPLOAD_URL, { method: 'POST', body: fd });
       if (!response.ok) throw new Error('Upload failed');
-      
       const data = await response.json();
-      // TripCreate expects: { message: "Upload successful", url: "..." }
-      if (data.message === 'Upload successful' || data.url) {
-        return data.url;
-      }
+      if (data.message === 'Upload successful' || data.url) return data.url;
       throw new Error('Upload response invalid');
     } catch (error) {
       console.error('Upload error:', error);
@@ -228,25 +229,17 @@ export default function LandingPageCreate() {
     }
   };
 
-  // Multiple Files Upload to Server (Same as TripCreate)
   const uploadMultipleFiles = async (files) => {
     const fd = new FormData();
-    Array.from(files).forEach(file => fd.append('gallery_images', file));  // Changed from 'files' to 'gallery_images'
+    Array.from(files).forEach(file => fd.append('gallery_images', file)); 
     fd.append('storage', 'local');
     
     try {
-      const response = await fetch(MULTIPLE_UPLOAD_URL, {
-        method: 'POST',
-        body: fd  // Don't set Content-Type - browser sets it with boundary
-      });
-      
+      const response = await fetch(MULTIPLE_UPLOAD_URL, { method: 'POST', body: fd });
       if (!response.ok) throw new Error('Upload failed');
-      
       const data = await response.json();
-      // TripCreate expects: { message: "Files uploaded", files: [...] }
       if (data.message === 'Files uploaded' && data.files) {
-        const uploaded = Array.isArray(data.files) ? data.files.flat() : [data.files];
-        return uploaded;
+        return Array.isArray(data.files) ? data.files.flat() : [data.files];
       }
       throw new Error('Upload response invalid');
     } catch (error) {
@@ -274,37 +267,25 @@ export default function LandingPageCreate() {
 
   const validateForm = () => {
     const errors = {};
-    
-    // Required fields
-    if (!formData.page_name || formData.page_name.trim() === '') {
-      errors.page_name = 'Page name is required';
-    }
-    
+    if (!formData.page_name || formData.page_name.trim() === '') errors.page_name = 'Page name is required';
     if (!formData.slug || formData.slug.trim() === '') {
       errors.slug = 'URL slug is required';
     } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
       errors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     }
-    
-    if (!formData.hero || !formData.hero.title || formData.hero.title.trim() === '') {
-      errors.hero_title = 'Hero title is required';
-    }
+    if (!formData.hero || !formData.hero.title || formData.hero.title.trim() === '') errors.hero_title = 'Hero title is required';
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSave = async () => {
-    // Clear previous errors
     setValidationErrors({});
-    
-    // Validate form
     if (!validateForm()) {
       alert('Please fix the validation errors before saving');
-      setCurrentStep(0); // Go to first step where errors are
+      setCurrentStep(0);
       return;
     }
-    
     if (uploadingFiles) {
       alert('Please wait for file uploads to complete');
       return;
@@ -313,8 +294,8 @@ export default function LandingPageCreate() {
     setIsSaving(true);
     try {
       const url = id 
-        ? `${API_BASE_URL}/landing-pages/${id}` 
-        : `${API_BASE_URL}/landing-pages`;
+        ? `${API_BASE_URL}/landing-pages/${id}/` 
+        : `${API_BASE_URL}/landing-pages/`;
       const method = id ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -331,17 +312,14 @@ export default function LandingPageCreate() {
         throw new Error(errorData.detail || errorData.message || 'Failed to save');
       }
       
-      const result = await response.json();
       alert(id ? 'Landing page updated successfully!' : 'Landing page created successfully!');
       navigate('/admin/dashboard/landing-pages');
     } catch (error) { 
       console.error('Save error:', error);
-      
-      // Handle specific error types
       if (error.message.includes('Slug already exists')) {
-        setValidationErrors({ slug: 'This slug is already in use. Please choose a different one.' });
+        setValidationErrors({ slug: 'This slug is already in use.' });
         setCurrentStep(0);
-        alert('Error: This slug is already in use. Please choose a different one.');
+        alert('Error: This slug is already in use.');
       } else if (error.message.includes('Unauthorized')) {
         alert('Authentication error. Please check your API key.');
       } else {
@@ -351,32 +329,87 @@ export default function LandingPageCreate() {
     finally { setIsSaving(false); }
   };
 
-  // Pricing Logic Calculation
   const getTripPriceDisplay = (trip) => {
     if (!trip) return 'N/A';
-    
-    // Check for Custom Pricing Model
     if (trip.pricing_model === 'custom' || trip.pricing_model === 'customized' || trip.is_custom) {
       const basePrice = trip.pricing?.customized?.base_price || trip.base_price || trip.price;
       return basePrice ? `Starting from ₹${basePrice}` : 'Price on Request';
     }
-    
-    // Check for Fixed Departure
     if (trip.pricing_model === 'fixed_departure') {
-        // Assumption: taking the first available price
         const price = trip.pricing?.fixed_departure?.[0]?.price || trip.price;
         return `₹${price}`;
     }
-
     return `₹${trip.price || trip.base_price || 0}`;
   };
 
   const badgeOptions = ['Hot Deal', 'Best Seller', 'Most Popular', 'Limited Offer', 'New'];
 
+  // --- RENDER PREVIEW LOGIC ---
+  const renderTemplatePreview = () => {
+    switch(formData.template) {
+      case 'template-three': // Modern
+        return <ModernTemplate pageData={formData} />;
+      case 'template-two': // Classic
+        return (
+            <div className="flex flex-col items-center justify-center h-full bg-slate-50 text-slate-500">
+                <Layout className="w-16 h-16 mb-4 opacity-20" />
+                <h2 className="text-2xl font-bold">Classic Template</h2>
+                <p>Preview implementation coming soon for this template.</p>
+            </div>
+        );
+      case 'template-one': // Minimal
+      default:
+        return (
+            <div className="flex flex-col items-center justify-center h-full bg-slate-50 text-slate-500">
+                <Layout className="w-16 h-16 mb-4 opacity-20" />
+                <h2 className="text-2xl font-bold">Minimal Template</h2>
+                <p>Preview implementation coming soon for this template.</p>
+            </div>
+        );
+    }
+  };
+
   if (isLoading) return <div className="p-20 text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div></div>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
+    <div className="p-6 bg-gray-50 min-h-screen font-sans relative">
+      {/* --- PREVIEW MODAL OVERLAY --- */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 bg-white overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-200">
+          {/* Header Bar */}
+          <div className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md z-20 shrink-0">
+            <div className="flex items-center gap-4">
+               {/* MAIN BACK BUTTON IN HEADER */}
+               <button onClick={() => setShowPreview(false)} className="flex items-center gap-2 text-white hover:text-blue-300 transition-colors font-bold text-lg">
+                 <ArrowLeft className="w-6 h-6" /> Back to Editor
+               </button>
+               <div className="h-6 w-px bg-slate-700 mx-2 hidden sm:block"></div>
+               <span className="text-slate-400 text-sm hidden sm:block">Previewing: <span className="text-white">{formData.page_name || 'Untitled Page'}</span></span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+               <span className="text-xs bg-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                 {templateMap[formData.template]} Mode
+               </span>
+            </div>
+          </div>
+
+          {/* Preview Content Area */}
+          <div className="flex-1 overflow-y-auto bg-white custom-scrollbar relative">
+            {renderTemplatePreview()}
+            
+            {/* FLOATING BACK BUTTON (Bottom Right Fallback) */}
+            <button 
+              onClick={() => setShowPreview(false)} 
+              className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:bg-black hover:scale-105 transition-all z-50 flex items-center justify-center group"
+              title="Close Preview"
+            >
+              <X className="w-6 h-6 group-hover:rotate-90 transition-transform" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Upload Indicator */}
       {uploadingFiles && (
         <div className="fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
@@ -385,13 +418,17 @@ export default function LandingPageCreate() {
         </div>
       )}
 
-      {/* Header */}
+      {/* Main Editor Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">{id ? 'Edit Landing Page' : 'Create Landing Page'}</h1>
           <p className="text-slate-500 mt-1">Design a high-converting travel experience</p>
         </div>
         <div className="flex gap-3">
+           {/* Main Preview Button */}
+          <button onClick={() => setShowPreview(true)} className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:bg-slate-50 hover:text-blue-600 font-bold transition-all">
+            <MonitorPlay className="w-4 h-4" /> Preview
+          </button>
           <button onClick={() => navigate('/admin/dashboard/landing-pages')} className="border bg-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-50 shadow-sm text-slate-700"><ArrowLeft className="w-4 h-4" /> Back</button>
           <button onClick={handleSave} disabled={isSaving || uploadingFiles} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 shadow-lg disabled:opacity-50"><Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save Page'}</button>
         </div>
@@ -477,14 +514,20 @@ export default function LandingPageCreate() {
               <div className="space-y-6 animate-in fade-in">
                 <div className="flex justify-between items-center"><h3 className="text-xl font-bold">Visual Layouts</h3></div>
                 <div className="grid grid-cols-3 gap-6">
-                  {['template-one', 'template-two', 'template-three'].map(template => (
+                  {Object.keys(templateMap).map(template => (
                     <div key={template} onClick={() => handleChange('template', template)} className={`cursor-pointer group relative p-4 border-2 rounded-2xl transition-all ${formData.template === template ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:border-blue-200'}`}>
                       <div className="aspect-video bg-gray-100 rounded-xl mb-4 flex items-center justify-center group-hover:bg-blue-100">
                         <Layout className={`w-12 h-12 ${formData.template === template ? 'text-blue-600' : 'text-slate-300'}`} />
                       </div>
                       <div className="text-center">
-                        <p className="font-bold capitalize">{template.replace(/-/g, ' ')}</p>
-                        <button className="mt-2 text-xs text-blue-600 font-bold flex items-center justify-center gap-1 mx-auto bg-white px-3 py-1 rounded-full shadow-sm"><Eye className="w-3 h-3" /> Preview</button>
+                        <p className="font-bold capitalize">{templateMap[template]}</p>
+                        {/* Modified Preview Button to Trigger Modal */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleChange('template', template); setShowPreview(true); }} 
+                            className="mt-2 text-xs text-blue-600 font-bold flex items-center justify-center gap-1 mx-auto bg-white px-3 py-1 rounded-full shadow-sm hover:bg-blue-50 border border-blue-100 transition-colors"
+                        >
+                            <Eye className="w-3 h-3" /> Preview
+                        </button>
                       </div>
                       {formData.template === template && <div className="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full"><Check className="w-4 h-4" /></div>}
                     </div>
@@ -510,12 +553,12 @@ export default function LandingPageCreate() {
                     <div className="p-4 bg-slate-50 rounded-xl">
                       <label className="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">Primary CTA Button</label>
                       <input type="text" value={formData.hero.cta_button_1.text} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_1', 'text', e.target.value)} placeholder="Text (e.g. Book Now)" className="w-full px-3 py-2 border rounded-lg mb-2" />
-                      <input type="text" value={formData.hero.cta_button_1.link} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_1', 'link', e.target.value)} placeholder="URL Link" className="w-full px-3 py-2 border rounded-lg text-sm" />
+                      <input type="text" value={formData.hero.cta_button_1.link} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_1', 'link', e.target.value)} placeholder="URL Link or #section" className="w-full px-3 py-2 border rounded-lg text-sm" />
                     </div>
                     <div className="p-4 bg-slate-50 rounded-xl">
                       <label className="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-widest">Secondary CTA Button</label>
                       <input type="text" value={formData.hero.cta_button_2.text} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_2', 'text', e.target.value)} placeholder="Text (e.g. Enquire)" className="w-full px-3 py-2 border rounded-lg mb-2" />
-                      <input type="text" value={formData.hero.cta_button_2.link} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_2', 'link', e.target.value)} placeholder="URL Link" className="w-full px-3 py-2 border rounded-lg text-sm" />
+                      <input type="text" value={formData.hero.cta_button_2.link} onChange={(e) => handleDeepNestedChange('hero', 'cta_button_2', 'link', e.target.value)} placeholder="URL Link or #section" className="w-full px-3 py-2 border rounded-lg text-sm" />
                     </div>
                   </div>
                 </section>
@@ -558,6 +601,13 @@ export default function LandingPageCreate() {
                     </div>
                   )}
                 </section>
+
+                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-3 border border-blue-100">
+                    <Info className="text-blue-600 w-5 h-5 flex-shrink-0" />
+                    <p className="text-sm text-blue-800">
+                        <strong>Pro Tip:</strong> Want to see how your hero section looks? Click the <strong className="cursor-pointer hover:underline" onClick={() => setShowPreview(true)}>Preview Button</strong> at the top right to see changes in real-time!
+                    </p>
+                </div>
               </div>
             )}
 
@@ -767,7 +817,6 @@ export default function LandingPageCreate() {
                   <div key={idx} className="p-4 border rounded-2xl bg-white shadow-sm hover:border-blue-200 transition-all relative">
                     <button onClick={() => removeArrayItem('faqs', idx)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><X className="w-4 h-4" /></button>
                     <input type="text" value={item.question} onChange={(e) => handleArrayItemChange('faqs', idx, 'question', e.target.value)} placeholder="Question Title" className="w-full px-4 py-2 border-b font-bold mb-2 outline-none focus:border-blue-500" />
-                    {/* Using ReactQuill for Answer as requested */}
                     <ReactQuill theme="snow" value={item.answer} onChange={(v) => handleArrayItemChange('faqs', idx, 'answer', v)} modules={quillModules} placeholder="Answer Details..." className="bg-slate-50 rounded-lg" />
                   </div>
                 ))}

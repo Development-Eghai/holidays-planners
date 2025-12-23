@@ -28,6 +28,7 @@ import TagManagement from './modules/BlogManagement/TagManagement';
 // --- LANDING PAGE MANAGEMENT IMPORTS ---
 import LandingPageCreate from './modules/LandingPageManagement/LandingPageCreate';
 import LandingPageList from './modules/LandingPageManagement/LandingPageList';
+// NOTE: LandingPageRenderer is now in App.jsx as a public route
 // --- END LANDING PAGE MANAGEMENT IMPORTS ---
 
 // placeholders
@@ -122,6 +123,7 @@ export default function AdminDashboard() {
             <Route path="landing-pages" element={<LandingPageList />} />
             <Route path="landing-pages/create" element={<LandingPageCreate />} />
             <Route path="landing-pages/edit/:id" element={<LandingPageCreate />} />
+            {/* REMOVED: Landing page renderer route - now in App.jsx as public route */}
             {/* --- END LANDING PAGE MANAGEMENT ROUTES --- */}
 
             {/* Lead Management */}

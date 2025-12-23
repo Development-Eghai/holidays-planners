@@ -3,11 +3,8 @@ import { Facebook, Instagram, Linkedin, Twitter, ChevronUp } from 'lucide-react'
 import GlobalCTA from '../Globalcta';
 
 const API_CONFIG = {
-  // Existing endpoint for International/Domestic destinations
   DESTINATIONS_URL: 'https://api.yaadigo.com/secure/api/destinations/',
-  // Assuming this is the correct endpoint for Categories based on prior data
   CATEGORIES_URL: 'https://api.yaadigo.com/secure/api/categories/',
-  // Adding TRIPS URL to fetch list of trips
   TRIPS_URL: 'https://api.yaadigo.com/secure/api/trips/',
   API_KEY: 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ',
 };
@@ -126,7 +123,6 @@ const ScrollToTop = () => {
 export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
   const [internationalTrips, setInternationalTrips] = useState([]);
   const [domesticTrips, setDomesticTrips] = useState([]);
-  // New states for category links
   const [honeymoonTrips, setHoneymoonTrips] = useState([]);
   const [fixedDepartureTrips, setFixedDepartureTrips] = useState([]);
 
@@ -136,7 +132,6 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
   useEffect(() => {
     const fetchFooterLinks = async () => {
       try {
-        // Fetch Destinations and Trips concurrently
         const [destRes, tripsRes] = await Promise.all([
           fetch(API_CONFIG.DESTINATIONS_URL, { headers: { 'Content-Type': 'application/json', 'x-api-key': API_CONFIG.API_KEY } }),
           fetch(API_CONFIG.TRIPS_URL, { headers: { 'Content-Type': 'application/json', 'x-api-key': API_CONFIG.API_KEY } }),
@@ -144,7 +139,7 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
 
         const [destJson, tripsJson] = await Promise.all([destRes.json(), tripsRes.json()]);
 
-        // 1. Process Destinations (International & Domestic)
+        // Process Destinations
         const destData = destJson?.data || [];
         
         const domestic = destData
@@ -166,13 +161,12 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
         setDomesticTrips(domestic);
         setInternationalTrips(international);
 
-        // 2. Process Trips for Categories
+        // Process Trips for Categories
         const tripsData = tripsJson?.data || [];
         
         const HONEYMOON_ID = '11';
         const FIXED_DEPARTURE_ID = '50';
 
-        // Filter trips for Honeymoon (ID 11)
         const honeymoonLinks = tripsData
           .filter(t => t.category_id && t.category_id.includes(HONEYMOON_ID))
           .slice(0, 6)
@@ -182,7 +176,6 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
           }));
         setHoneymoonTrips(honeymoonLinks);
 
-        // Filter trips for Fixed Departure (ID 50)
         const fixedDepartureLinks = tripsData
           .filter(t => t.category_id && t.category_id.includes(FIXED_DEPARTURE_ID))
           .slice(0, 6)
@@ -194,7 +187,6 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
 
       } catch (err) {
         console.error('Error fetching footer links:', err);
-        // Fallback links if API calls fail
         setHoneymoonTrips([{ label: 'Honeymoon Packages', href: '/triplist?category=honeymoon' }]);
         setFixedDepartureTrips([{ label: 'Fixed Departure Trips', href: '/triplist?category=fixed-departure' }]);
       }
@@ -212,36 +204,35 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
     { label: 'Privacy Policy', href: '/privacy' },
   ];
 
+  // Check if CTA should be shown - only hide if explicitly set to "none"
+  const shouldShowCTA = ctaType !== 'none';
+
   return (
     <>
       <StickyWhatsApp />
       <ScrollToTop />
 
-      {/* ⭐ GLOBAL CTA SECTION - Appears as separate section before footer */}
-      <GlobalCTA 
-        type={ctaType} 
-        name={ctaName}
-        title={ctaTitle}
-        subtitle={ctaSubtitle}
-      />
+      {/* GLOBAL CTA SECTION - Only show if ctaType is provided and not "none" */}
+      {shouldShowCTA && (
+        <GlobalCTA 
+          type={ctaType} 
+          name={ctaName}
+          title={ctaTitle}
+          subtitle={ctaSubtitle}
+        />
+      )}
 
       {/* FOOTER CONTENT */}
       <footer className="bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="h-1 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600"></div>
 
         <div className="max-w-7xl mx-auto px-4 py-12">
-          {/* Updated grid to accommodate 5 columns */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-12">
             
             <FooterColumn title="International Trips" links={internationalTrips} delay={0} />
             <FooterColumn title="India Trips" links={domesticTrips} delay={100} />
-            
-            {/* Dynamic Honeymoon Category */}
             <FooterColumn title="Honeymoon" links={honeymoonTrips} delay={200} />
-            
-            {/* Dynamic Fixed Departure Category */}
             <FooterColumn title="Fixed Departure" links={fixedDepartureTrips} delay={300} />
-            
             <FooterColumn title="Quick Links" links={quickLinks} delay={400} />
           </div>
 
@@ -252,7 +243,7 @@ export default function Footer({ ctaType, ctaName, ctaTitle, ctaSubtitle }) {
               HOLIDAYS PLANNERS
             </h2>
             <p className="text-gray-400 text-sm mb-4">
-              <a href="https://maps.app.goo.gl/pkCAr39eBtwqskYs7">
+              <a href="https://maps.app.goo.gl/pkCAr39eBtwqskYs7" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">
                 Kapil Niwas Bye Pass Road Chakkar Shimla, H.P. (171005)
               </a>
             </p>
