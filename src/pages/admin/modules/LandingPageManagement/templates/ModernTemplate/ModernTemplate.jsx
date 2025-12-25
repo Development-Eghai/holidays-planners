@@ -17,24 +17,21 @@ import TrustBadges from './components/TrustBadges';
 import CountdownTimer from './components/CountdownTimer';
 import FAQSection from './components/FAQSection';
 import AttractionsSection from './components/AttractionsSection';
-import TravelGuidelinesSection from './components/TravelGuidelinesSection';
 import PromoMediaSection from './components/PromoMediaSection';
-import Footer from '../../../../../../components/layout/Footer'; // Common website footer
-import { Badge } from '@/components/ui/badge';
+import Footer from '../../../../../../components/layout/Footer'; 
 import { Flame, TrendingUp } from 'lucide-react';
 
 const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
 const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
 
 export default function ModernTemplate({ pageData }) {
-  const [selectedTrip, setSelectedTrip] = useState(null); // For Enquiry
-  const [viewDetailsTrip, setViewDetailsTrip] = useState(null); // For View Details Modal
+  const [selectedTrip, setSelectedTrip] = useState(null); 
+  const [viewDetailsTrip, setViewDetailsTrip] = useState(null); 
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const tripsRef = useRef(null);
 
-  // Fetch trips based on selected trip IDs
   useEffect(() => {
     const fetchTrips = async () => {
       if (!pageData?.packages?.selected_trips || pageData.packages.selected_trips.length === 0) {
@@ -49,11 +46,9 @@ export default function ModernTemplate({ pageData }) {
         const data = await response.json();
         const allTrips = data.data || data;
 
-        // Filter trips that are in selected_trips
         const selectedTripIds = pageData.packages.selected_trips.map(st => st.trip_id);
         const filteredTrips = allTrips.filter(trip => selectedTripIds.includes(trip.id));
 
-        // Merge with badge information from pageData
         const enrichedTrips = filteredTrips.map(trip => {
           const selectedTripData = pageData.packages.selected_trips.find(st => st.trip_id === trip.id);
           return {
@@ -83,18 +78,15 @@ export default function ModernTemplate({ pageData }) {
     if(element) element.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Handler: Open Enquiry Form (for specific trip or general)
   const handleEnquire = (trip) => {
     setSelectedTrip(trip);
     setIsEnquiryOpen(true);
   };
 
-  // Handler: Open View Details Modal
   const handleViewDetails = (trip) => {
     setViewDetailsTrip(trip);
   };
 
-  // Handler: Hero "Get Quote"
   const handleHeroGetQuote = () => {
     setSelectedTrip(null);
     setIsEnquiryOpen(true);
@@ -102,27 +94,21 @@ export default function ModernTemplate({ pageData }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* SEO Meta Tags */}
       <Helmet>
         <title>{pageData?.seo?.meta_title || pageData?.page_name || 'Travel Landing Page'}</title>
         <meta name="description" content={pageData?.seo?.meta_description || pageData?.hero?.description || ''} />
         <meta name="keywords" content={pageData?.seo?.meta_tags || ''} />
       </Helmet>
 
-      {/* Popup Manager for Entry/Exit/Idle popups */}
       <PopupManager offersConfig={pageData?.offers} />
-
-      {/* Live Booking Notifications */}
       <BookingNotification />
       
-      {/* Floating CTA */}
       <FloatingCTA 
         settings={pageData?.company || {}} 
         offersConfig={pageData?.offers}
         onOpenEnquiry={handleHeroGetQuote}
       />
       
-      {/* Enquiry Modal (Contact Form Popup) */}
       <UnifiedEnquiryModal 
         trip={selectedTrip}
         isOpen={isEnquiryOpen}
@@ -133,9 +119,9 @@ export default function ModernTemplate({ pageData }) {
         settings={pageData?.company || {}}
         popupSettings={null}
         popupType={null}
+        selectedTrips={pageData?.packages?.selected_trips || []} // Fixed: Added this prop
       />
 
-      {/* Detail View Modal (Trip Details) */}
       <TripModal 
         trip={viewDetailsTrip}
         isOpen={!!viewDetailsTrip}
@@ -144,7 +130,6 @@ export default function ModernTemplate({ pageData }) {
         primaryColor={primaryColor}
       />
 
-      {/* HEADER */}
       <LandingPageHeader 
         companySettings={pageData?.company} 
         promoData={pageData?.offers?.header} 
@@ -152,7 +137,6 @@ export default function ModernTemplate({ pageData }) {
         secondaryColor={secondaryColor} 
       />
 
-      {/* Hero Section (ID: hero) */}
       <div id="hero">
         <HeroSection 
           onExploreClick={scrollToTrips} 
@@ -163,12 +147,10 @@ export default function ModernTemplate({ pageData }) {
         />
       </div>
 
-      {/* Trust Badges (ID: about) */}
       <div id="about">
         <TrustBadges />
       </div>
 
-      {/* Flash Sale Banner */}
       {pageData?.offers?.header?.enabled && pageData?.offers?.end_date && (
         <section className="relative overflow-hidden">
           <div 
@@ -211,7 +193,6 @@ export default function ModernTemplate({ pageData }) {
         </section>
       )}
 
-      {/* Trips Section (ID: packages) */}
       {pageData?.packages?.show_section && (
         <section id="packages" ref={tripsRef} className="py-24 bg-gradient-to-b from-slate-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -275,10 +256,8 @@ export default function ModernTemplate({ pageData }) {
         </section>
       )}
 
-      {/* Promo Media Section (Mid Section) */}
       <PromoMediaSection data={pageData?.offers?.mid_section} />
 
-      {/* Attractions Section (ID: attractions) */}
       {pageData?.attractions?.show_section && pageData?.attractions?.items?.length > 0 && (
         <div id="attractions">
           <AttractionsSection 
@@ -291,7 +270,6 @@ export default function ModernTemplate({ pageData }) {
         </div>
       )}
 
-      {/* Testimonials */}
       {pageData?.testimonials?.show_section && pageData?.testimonials?.items?.length > 0 && (
         <TestimonialCarousel 
           testimonials={pageData.testimonials.items}
@@ -300,18 +278,8 @@ export default function ModernTemplate({ pageData }) {
         />
       )}
 
-      {/* Travel Guidelines */}
-      {pageData?.travel_guidelines?.show_section && pageData?.travel_guidelines?.description && (
-        <TravelGuidelinesSection 
-          content={pageData.travel_guidelines.description} 
-          sectionTitle={pageData.travel_guidelines.section_title}
-          sectionSubtitle={pageData.travel_guidelines.section_subtitle}
-          primaryColor={primaryColor} 
-          secondaryColor={secondaryColor} 
-        />
-      )}
+      {/* Travel Guidelines Section Removed Here */}
 
-      {/* FAQ Section */}
       {pageData?.faqs?.show_section && pageData?.faqs?.items?.length > 0 && (
         <FAQSection 
           faqs={pageData.faqs.items} 
@@ -322,7 +290,6 @@ export default function ModernTemplate({ pageData }) {
         />
       )}
 
-      {/* Contact Form (ID: contact) */}
       <div id="contact">
         <ContactForm 
           settings={pageData?.company || {}} 
@@ -332,7 +299,6 @@ export default function ModernTemplate({ pageData }) {
         />
       </div>
 
-      {/* Footer - Using Common Website Footer */}
       <Footer 
         ctaType="none"
         ctaName=""

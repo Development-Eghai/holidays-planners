@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import './styles/global-theme.css';
 
 // Layout Components
@@ -40,49 +41,53 @@ export default function App() {
       {/* Header (Public Only - Hide on Admin & Landing Pages) */}
       {!isAdminRoute && !isLandingPage && <Header />}
 
-      <Routes>
-        {/* --- PUBLIC ROUTES --- */}
-        <Route path="/" element={<Home />} />
+      <main className="pt-0">
+        <Routes>
+          {/* --- PUBLIC ROUTES --- */}
+          <Route path="/" element={<Home />} />
 
-        {/* TRIPS */}
-        <Route path="/trips" element={<TripList />} />
-        <Route path="/trips/:id" element={<TripDetails />} />
-        <Route path="/trip/:slug" element={<TripDetails />} />
+          {/* TRIPS */}
+          <Route path="/triplist" element={<TripList />} />
+          <Route path="/trips" element={<TripDetails />} />
+          <Route path="/trip-preview/:slug/:id" element={<TripDetails />} />
 
-        {/* DESTINATIONS */}
-        <Route path="/destinations" element={<Destinations />} />
-        <Route path="/destination/:id" element={<DestinationList />} />
-        <Route path="/destination/:destination/:id" element={<DestinationList />} />
+          {/* DESTINATIONS */}
+          <Route path="/destinations" element={<DestinationList />} />
+          <Route path="/destination/:slug/:id" element={<Destinations />} />
+          <Route path="/destinfo" element={<Destinations />} />
 
-        {/* CATEGORY ROUTES */}
-        <Route path="/honeymoon" element={<Honeymoon />} />
-        <Route path="/office" element={<Office />} />
-        <Route path="/family" element={<Family />} />
-        <Route path="/category/:slug" element={<CategoryDetails />} />
+          {/* CATEGORY ROUTES */}
+          <Route path="/destinfo/honeymoon" element={<Honeymoon />} />
+          <Route path="/destinfo/office" element={<Office />} />
+          <Route path="/destinfo/family" element={<Family />} />
+          <Route path="/category-preview/:slug/:id" element={<CategoryDetails />} />
 
-        {/* BLOG & STATIC PAGES */}
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
+          {/* BLOG & STATIC PAGES */}
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
 
-        {/* --- LANDING PAGE ROUTE (Public, No Header/Footer) --- */}
-        <Route path="/landing/:slug" element={<LandingPageRenderer />} />
+          {/* --- LANDING PAGE ROUTE (Public, No Header/Footer) --- */}
+          <Route path="/landing/:slug" element={<LandingPageRenderer />} />
+    
+          {/* --- ADMIN ROUTES --- */}
+          
+          {/* 1. Admin Login Page (Publicly accessible) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* 2. Base /admin path redirects directly to the login */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
 
-        {/* --- ADMIN ROUTES --- */}
-        {/* 1. Admin Login Page (Publicly accessible) */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+          {/* 3. Protected Dashboard Routes - All admin routes inside PrivateRoute */}
+          <Route element={<PrivateRoute />}>
+            {/* The AdminDashboard component handles all nested routes */}
+            <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+          </Route>
 
-        {/* 2. Base /admin path redirects directly to the login */}
-        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-
-        {/* 3. Protected Dashboard Routes - All admin routes inside PrivateRoute */}
-        <Route element={<PrivateRoute />}>
-          {/* The AdminDashboard component handles all nested routes */}
-          <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
-        </Route>
-      </Routes>
+        </Routes>
+      </main>
 
       {/* Footer (Public Only - Hide on Admin & Landing Pages) */}
       {!isAdminRoute && !isLandingPage && <Footer />}

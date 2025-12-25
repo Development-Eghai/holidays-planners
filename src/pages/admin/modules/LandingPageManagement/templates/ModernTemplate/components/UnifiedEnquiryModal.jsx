@@ -2,398 +2,360 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Send, MapPin, Calendar, Users, Mail, Phone, User, Star, FileText, Plane, CheckSquare, Sparkles, PhoneCall } from 'lucide-react';
+import { X, Send, MapPin, Users, Mail, Phone, User, PhoneCall, ChevronDown, ArrowLeft, Clock } from 'lucide-react';
 import { toast, Toaster } from "sonner";
+import CountdownTimer from './CountdownTimer'; 
 
 const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
 const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
 const DEFAULT_DOMAIN = 'https://www.holidaysplanners.com';
 
-export default function UnifiedEnquiryModal({ trip, isOpen, onClose, popupSettings, popupType }) {
+export default function UnifiedEnquiryModal({ 
+  trip, 
+  isOpen, 
+  onClose, 
+  popupSettings, 
+  popupType, 
+  selectedTrips = [], 
+  offersConfig 
+}) {
+  
+  // DEBUG LOGS
+  console.log('🔍 selectedTrips received:', selectedTrips);
+  console.log('🔍 selectedTrips count:', selectedTrips?.length);
+  
   const [formData, setFormData] = useState({
     destination: '',
-    departure_city: '',
-    travel_date: '',
-    adults: 2,
-    hotel_category: '3 Star',
     full_name: '',
     contact_number: '',
     email: '',
+    adults: 2,
+    departure_city: 'Web Modal Lead',
+    travel_date: new Date().toISOString().split('T')[0],
+    hotel_category: '3 Star',
     additional_comments: '',
     domain_name: DEFAULT_DOMAIN
   });
-  
-  const [isFlexibleDate, setIsFlexibleDate] = useState(false);
+
+  const [showCustomDestination, setShowCustomDestination] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Get popup title based on type
-  const getPopupTitle = () => {
-    if (!popupSettings || !popupType) return 'Plan Your Dream Trip';
-    
-    const popup = popupSettings[popupType];
-    return popup?.title || 'Plan Your Dream Trip';
-  };
-
   useEffect(() => {
     if (isOpen) {
-      setFormData(prev => ({
-        ...prev,
-        destination: trip?.title || '',
-      }));
+      if (trip) {
+        setFormData(prev => ({
+          ...prev,
+          destination: trip.trip_title || trip.custom_title || trip.title || ''
+        }));
+        setShowCustomDestination(false);
+      } else {
+        setFormData(prev => ({ ...prev, destination: '' }));
+        setShowCustomDestination(false);
+      }
       setShowSuccess(false);
     }
   }, [trip, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'destination' && value === 'other_custom') {
+      setShowCustomDestination(true);
+      setFormData(prev => ({ ...prev, destination: '' }));
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleClose = () => {
     setShowSuccess(false);
-    setIsFlexibleDate(false);
     onClose();
-    
-    setTimeout(() => {
-      setFormData({
-        destination: '',
-        departure_city: '',
-        travel_date: '',
-        adults: 2,
-        hotel_category: '3 Star',
-        full_name: '',
-        contact_number: '',
-        email: '',
-        additional_comments: '',
-        domain_name: DEFAULT_DOMAIN
-      });
-    }, 300);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const finalDepartureCity = formData.departure_city.trim() !== "" 
-      ? formData.departure_city 
-      : "lead from landing page";
-
-    let finalComments = formData.additional_comments;
-    let finalDate = formData.travel_date;
-
-    if (isFlexibleDate) {
-      finalComments = `(Flexible Travel Dates) ${finalComments}`;
-      if (!finalDate) finalDate = new Date().toISOString().split('T')[0]; 
-    }
-
-    const payload = {
-      ...formData,
-      departure_city: finalDepartureCity,
-      additional_comments: finalComments,
-      travel_date: finalDate
-    };
-
     try {
       const response = await fetch(`${API_BASE_URL}/enquires`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY
+        headers: { 
+          'Content-Type': 'application/json', 
+          'x-api-key': API_KEY 
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(formData)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit enquiry');
-      }
-
+      
+      if (!response.ok) throw new Error('Failed to submit');
+      
       setShowSuccess(true);
-
+      toast.success("Request sent successfully!");
+      
+      setTimeout(() => {
+        setFormData({
+          destination: '',
+          full_name: '',
+          contact_number: '',
+          email: '',
+          adults: 2,
+          departure_city: 'Web Modal Lead',
+          travel_date: new Date().toISOString().split('T')[0],
+          hotel_category: '3 Star',
+          additional_comments: '',
+          domain_name: DEFAULT_DOMAIN
+        });
+      }, 3000);
     } catch (error) {
-      console.error('Error submitting enquiry:', error);
-      toast.error('Failed to submit enquiry. Please try again.');
+      console.error('Submission Error:', error);
+      toast.error('Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const getTitle = () => {
+    if (trip) return `Book: ${trip.trip_title || trip.custom_title || trip.title}`;
+    return popupSettings?.[popupType]?.title || 'Plan Your Dream Trip';
+  };
+
+  const shouldShowCountdown = offersConfig?.header?.enabled && 
+                              offersConfig?.end_date && 
+                              new Date(offersConfig.end_date) > new Date();
+
   return (
     <>
       <Toaster richColors position="top-center" style={{ zIndex: 99999 }} />
-
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-            
-            {/* Dark Backdrop */}
+            {/* Backdrop */}
             <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
 
-            {/* Modal Content Wrapper */}
+            {/* Modal */}
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              exit={{ scale: 0.95, opacity: 0, y: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden relative z-10"
+              className="bg-white w-full max-w-[400px] rounded-3xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
             >
               
               {showSuccess ? (
-                // --- SUCCESS VIEW ---
-                <div className="relative overflow-hidden">
-                   <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-[#FF6B35] to-[#FFB800]"></div>
-                   <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full h-24 bg-white rounded-t-[50%]"></div>
-
-                   <div className="relative z-10 p-8 pt-12 flex flex-col items-center text-center">
-                      
-                      <motion.div 
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                        className="w-24 h-24 bg-white rounded-full shadow-xl flex items-center justify-center mb-6 border-4 border-[#FF6B35]"
-                      >
-                         <PhoneCall className="w-10 h-10 text-[#FF6B35]" />
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <h2 className="text-3xl font-extrabold text-slate-800 mb-2">
-                          Thank you, {formData.full_name.split(' ')[0]}! <span className="inline-block"><Sparkles className="w-6 h-6 text-yellow-500 inline" /></span>
-                        </h2>
-                        <p className="text-lg text-slate-500 font-medium mb-1">
-                           We have received your request for <span className="text-[#FF6B35] font-bold">{formData.destination}</span>.
-                        </p>
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-orange-50 border border-orange-100 rounded-xl p-6 mt-6 max-w-md w-full"
-                      >
-                        <p className="text-xl font-bold text-slate-700 leading-relaxed">
-                          "Your dream trip is just a call away!" ✈️
-                        </p>
-                        <p className="text-sm text-slate-500 mt-2">
-                          Our travel expert is reviewing your details and will contact you shortly to finalize your perfect itinerary.
-                        </p>
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="mt-8 w-full max-w-xs"
-                      >
-                         <Button 
-                          onClick={handleClose}
-                          className="w-full bg-gradient-to-r from-[#FF6B35] to-[#FFB800] hover:from-[#FF5722] hover:to-[#FFA000] text-white py-6 text-lg rounded-full font-bold shadow-lg transition-transform hover:scale-[1.02]"
-                        >
-                          Awesome, I'll be waiting!
-                        </Button>
-                      </motion.div>
-                   </div>
+                <div className="flex flex-col items-center justify-center p-10 text-center h-full min-h-[400px]">
+                  <motion.div 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600"
+                  >
+                    <PhoneCall className="w-10 h-10" />
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Received!</h3>
+                  <p className="text-slate-500 mb-8 text-sm">
+                    We'll contact you shortly about your trip to <br/>
+                    <span className="text-[#FF6B35] font-bold">{formData.destination}</span>.
+                  </p>
+                  <Button onClick={handleClose} className="w-full bg-slate-900 text-white rounded-xl py-6">
+                    Close
+                  </Button>
                 </div>
               ) : (
-                // --- FORM VIEW ---
                 <>
-                  <div className="bg-gradient-to-r from-[#FF6B35] to-[#FFB800] p-5 text-white flex justify-between items-center">
-                    <div>
-                      <h2 className="text-xl font-bold">{getPopupTitle()}</h2>
-                      <p className="text-white/90 text-xs mt-1">Get a customized quote within 24 hours</p>
-                    </div>
-                    <button
+                  {/* HEADER */}
+                  <div className="relative bg-gradient-to-br from-[#FF6B35] to-[#FFB800] p-6 text-white shrink-0">
+                    <button 
                       onClick={handleClose}
-                      className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+                      className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 text-white" />
                     </button>
+                    
+                    <div className="mb-4 pr-6">
+                      <h2 className="text-xl font-bold leading-tight mb-1">{getTitle()}</h2>
+                      <p className="text-white/90 text-xs">Unlock exclusive deals now!</p>
+                    </div>
+
+                    {shouldShowCountdown && (
+                      <div className="bg-white/10 border border-white/20 rounded-xl p-3 backdrop-blur-sm flex flex-col items-center">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white/90 mb-1">
+                           <Clock className="w-3 h-3" /> Offer Ends In
+                        </div>
+                        <div className="text-white scale-90">
+                           <CountdownTimer endDate={offersConfig.end_date} compact={true} />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    
-                    {/* Row 1 */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* FORM BODY */}
+                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      
+                      {/* DESTINATION FIELD */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> Destination
                         </label>
-                        <Input
-                          name="destination"
-                          value={formData.destination}
-                          onChange={handleChange}
-                          placeholder="E.g. Manali"
-                          required
-                          className="font-semibold bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Plane className="w-3 h-3" /> Travel From
-                        </label>
-                        <Input
-                          name="departure_city"
-                          value={formData.departure_city}
-                          onChange={handleChange}
-                          placeholder="City (Optional)"
-                          className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> Travel Date
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type="date"
-                            name="travel_date"
-                            value={formData.travel_date}
-                            onChange={handleChange}
-                            disabled={isFlexibleDate}
-                            required={!isFlexibleDate}
-                            min={new Date().toISOString().split('T')[0]}
-                            className={`border-slate-200 transition-colors ${isFlexibleDate ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 focus:bg-white'}`}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => setIsFlexibleDate(!isFlexibleDate)}>
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isFlexibleDate ? 'bg-[#FF6B35] border-[#FF6B35]' : 'border-slate-300 bg-white'}`}>
-                            {isFlexibleDate && <CheckSquare className="w-3 h-3 text-white" />}
+                        
+                        {trip ? (
+                          // 1. Specific Trip Locked Mode
+                          <div className="relative opacity-80">
+                             <Input 
+                               value={formData.destination} 
+                               readOnly 
+                               className="bg-slate-100 border-slate-200 font-semibold text-slate-700 focus-visible:ring-0" 
+                             />
                           </div>
-                          <span className="text-xs text-slate-600 select-none">
-                            Flexible dates
-                          </span>
-                        </div>
+                        ) : !showCustomDestination ? (
+                           // 2. Dropdown Mode (if trips available) OR Text Input (if no trips)
+                           <div className="relative">
+                              {selectedTrips && selectedTrips.length > 0 ? (
+                                <>
+                                  <select
+                                    name="destination"
+                                    value={formData.destination}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full h-10 pl-3 pr-8 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] appearance-none shadow-sm"
+                                  >
+                                    <option value="">Select a destination</option>
+                                    {selectedTrips.map((trip, index) => (
+                                      <option key={index} value={trip.trip_title || trip.custom_title}>
+                                        {trip.trip_title || trip.custom_title}
+                                      </option>
+                                    ))}
+                                    <option value="other_custom" className="font-bold text-[#FF6B35] bg-orange-50">
+                                      + Other / Custom Destination
+                                    </option>
+                                  </select>
+                                  <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                                </>
+                              ) : (
+                                <Input
+                                  name="destination"
+                                  value={formData.destination}
+                                  onChange={handleChange}
+                                  placeholder="Enter your Dream Destination"
+                                  required
+                                  className="h-10 rounded-md border border-slate-200 focus:ring-[#FF6B35]"
+                                />
+                              )}
+                           </div>
+                        ) : (
+                          // 3. Custom Input Mode
+                          <div className="space-y-2">
+                             <Input
+                               name="destination"
+                               value={formData.destination}
+                               onChange={handleChange}
+                               placeholder="Enter your custom destination"
+                               autoFocus
+                               required
+                               className="bg-white border-slate-200 focus:ring-[#FF6B35]"
+                             />
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 setShowCustomDestination(false);
+                                 setFormData(prev => ({ ...prev, destination: '' }));
+                               }}
+                               className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                             >
+                               <ArrowLeft className="w-3 h-3" /> Back to list
+                             </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Row 2 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Name */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Star className="w-3 h-3" /> Hotel Category
-                        </label>
-                        <select
-                          name="hotel_category"
-                          value={formData.hotel_category}
-                          onChange={handleChange}
-                          className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:bg-white transition-colors"
-                        > 
-                          <option>Budget</option>
-                          <option>3 Star</option>
-                          <option>4 Star</option>
-                          <option>5 Star</option>
-                          <option>Luxury</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Users className="w-3 h-3" /> No. of Adults
-                        </label>
-                        <Input
-                          type="number"
-                          name="adults"
-                          value={formData.adults}
-                          onChange={handleChange}
-                          min="1"
-                          required
-                          className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Row 3 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <User className="w-3 h-3" /> Full Name
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                          <User className="w-3 h-3" /> Name
                         </label>
                         <Input
                           name="full_name"
                           value={formData.full_name}
                           onChange={handleChange}
-                          placeholder="Your Name"
+                          placeholder="John Doe"
                           required
-                          className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                          className="bg-white border-slate-200 h-10"
                         />
                       </div>
+
+                      {/* Phone & Pax */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <Phone className="w-3 h-3" /> Phone
+                          </label>
+                          <Input
+                            type="tel"
+                            name="contact_number"
+                            value={formData.contact_number}
+                            onChange={handleChange}
+                            placeholder="+91 98765 43210"
+                            required
+                            className="bg-white border-slate-200 h-10"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <Users className="w-3 h-3" /> Pax
+                          </label>
+                          <Input
+                            type="number"
+                            name="adults"
+                            value={formData.adults}
+                            onChange={handleChange}
+                            min="1"
+                            required
+                            className="bg-white border-slate-200 h-10 text-center font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Email */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> Phone Number
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                          <Mail className="w-3 h-3" /> Email
                         </label>
                         <Input
-                          type="tel"
-                          name="contact_number"
-                          value={formData.contact_number}
+                          type="email"
+                          name="email"
+                          value={formData.email}
                           onChange={handleChange}
-                          placeholder="+91 98765 43210"
+                          placeholder="john@example.com"
                           required
-                          className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                          className="bg-white border-slate-200 h-10"
                         />
                       </div>
-                    </div>
 
-                    {/* Row 4 */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <Mail className="w-3 h-3" /> Email Address
-                      </label>
-                      <Input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="name@example.com"
-                        required
-                        className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-                      />
-                    </div>
-
-                    {/* Row 5 */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <FileText className="w-3 h-3" /> Additional Requirements
-                      </label>
-                      <textarea
-                        name="additional_comments"
-                        value={formData.additional_comments}
-                        onChange={handleChange}
-                        placeholder="Any specific preferences? (Optional)"
-                        rows={2}
-                        className="w-full px-3 py-2 text-sm border rounded-md bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:bg-white transition-colors resize-none"
-                      />
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-[#FF6B35] to-[#FFB800] hover:from-[#FF5722] hover:to-[#FFA000] text-white h-12 text-lg rounded-xl font-bold shadow-lg transform hover:scale-[1.01] transition-all"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2" />
-                          Get Best Quote
-                        </>
-                      )}
-                    </Button>
-
-                  </form>
+                      {/* Submit Button */}
+                      <div className="pt-2">
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 rounded-xl font-bold shadow-lg transform active:scale-[0.98] transition-all"
+                        >
+                          {isSubmitting ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Sending...
+                            </div>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4 mr-2" />
+                              Get Free Quote
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
                 </>
               )}
             </motion.div>
