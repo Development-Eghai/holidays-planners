@@ -87,15 +87,16 @@ export default function Header() {
                 <span>info@holidaysplanners.com</span>
               </a>
 
+              <a href="tel:+919816259997" className="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                <Phone className="h-4 w-4" />
+                <span>+91 98162 59997</span>
+              </a>
+
               <a href="tel:+919805245681" className="flex items-center gap-2 text-gray-700 hover:text-blue-600">
                 <Phone className="h-4 w-4" />
                 <span>+91 98052 45681</span>
               </a>
 
-              <a href="tel:+919816259997" className="flex items-center gap-2 text-gray-700 hover:text-blue-600">
-                <Phone className="h-4 w-4" />
-                <span>+91 98162 59997</span>
-              </a>
 
             </div>
           </div>

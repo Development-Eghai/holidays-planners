@@ -56,10 +56,11 @@ export default function App() {
           <Route path="/destination/:slug/:id" element={<Destinations />} />
           <Route path="/destinfo" element={<Destinations />} />
 
-          {/* CATEGORY ROUTES */}
+          {/* CATEGORY ROUTES - Both old and new paths for compatibility */}
           <Route path="/destinfo/honeymoon" element={<Honeymoon />} />
           <Route path="/destinfo/office" element={<Office />} />
           <Route path="/destinfo/family" element={<Family />} />
+          <Route path="/category/:slug/:id" element={<CategoryDetails />} />
           <Route path="/category-preview/:slug/:id" element={<CategoryDetails />} />
 
           {/* BLOG & STATIC PAGES */}

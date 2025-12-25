@@ -26,6 +26,58 @@ const CategoryPreview = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  // Helper function to transform trip data to match TripCard expectations
+  const transformTripData = (trip) => {
+    // Extract price based on pricing model
+    let finalPrice = null;
+    let discount = 0;
+
+    if (trip.pricing_model === 'customized' || trip.pricing_model === 'custom' || trip.is_custom) {
+      finalPrice = trip.pricing?.customized?.final_price || 
+                   trip.pricing?.customized?.base_price || 
+                   trip.base_price || 
+                   trip.price;
+      
+      const basePrice = trip.pricing?.customized?.base_price || 0;
+      if (basePrice > 0 && finalPrice > 0) {
+        discount = basePrice - finalPrice;
+      }
+    } else if (trip.pricing_model === 'fixed_departure') {
+      const departures = trip.pricing?.fixed_departure || [];
+      if (departures.length > 0) {
+        finalPrice = departures[0]?.final_price || departures[0]?.price;
+        const originalPrice = departures[0]?.price || 0;
+        if (originalPrice > finalPrice) {
+          discount = originalPrice - finalPrice;
+        }
+      }
+    } else {
+      finalPrice = trip.price || trip.base_price;
+    }
+
+    // Format price for display
+    const final_price_display = finalPrice 
+      ? Number(finalPrice).toLocaleString('en-IN')
+      : 'N/A';
+
+    // Extract duration
+    const duration = trip.duration || trip.total_days || 0;
+    const days = duration;
+    const nights = duration > 0 ? duration - 1 : 0;
+
+    // Return transformed trip object
+    return {
+      ...trip,
+      final_price_display,
+      discount: discount > 0 ? discount : 0,
+      days,
+      nights,
+      destination_type: trip.destination || trip.location || trip.pickup_location,
+      _id: trip.id,
+      slug: trip.slug || trip.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    };
+  };
+
   const fetchCategoryDetails = async () => {
     try {
       const res = await axios.get(`${API_URL}categories/${id}`, {
@@ -50,7 +102,12 @@ const CategoryPreview = () => {
       const res = await axios.get(`${API_URL}categories/trip_details/${id}`, {
         headers: { "x-api-key": API_KEY },
       });
-      setTrips(res.data?.data || []);
+      
+      // Transform trips data to match TripCard expectations
+      const rawTrips = res.data?.data || [];
+      const transformedTrips = rawTrips.map(transformTripData);
+      
+      setTrips(transformedTrips);
     } catch (err) {
       console.error("Trips Fetch Error:", err);
       setError("Failed to load trips.");

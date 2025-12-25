@@ -9,8 +9,8 @@ const IMAGE_BASE_URL = "https://api.yaadigo.com/uploads/";
 // ✅ ADD YOUR BACKGROUND IMAGES HERE
 const HERO_IMAGES = [
   './hero-section-banners/hero-bg-kerala-backwaters-holidaysplanners.webp',
-  'public/hero-section-banners/hero-image-kullu-manali-holidays-planners.jpg',
-  'public/hero-section-banners/hero-image-spiti-valley-holidays-planners.jpg',
+  './hero-section-banners/hero-image-kullu-manali-holidays-planners.jpg',
+  './hero-section-banners/hero-image-spiti-valley-holidays-planners.jpg',
 ];
 
 const getFullImageUrl = (path) => {
