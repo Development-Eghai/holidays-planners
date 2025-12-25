@@ -6,6 +6,7 @@ import './styles/global-theme.css';
 // Layout Components
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
+import ScrollToTop from "./components/ScrollToTop"; // Add this import
 
 // --- PUBLIC PAGES ---
 import Home from "./pages/user/Home/Home";
@@ -38,6 +39,9 @@ export default function App() {
 
   return (
     <>
+      {/* ScrollToTop Component - Must be inside Router context */}
+      <ScrollToTop />
+
       {/* Header (Public Only - Hide on Admin & Landing Pages) */}
       {!isAdminRoute && !isLandingPage && <Header />}
 
