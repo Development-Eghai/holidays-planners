@@ -14,7 +14,9 @@ import FloatingCTA from './components/FloatingCTA';
 import UnifiedEnquiryModal from './components/UnifiedEnquiryModal';
 import PopupManager from './components/Popupmanager';
 import TrustBadges from './components/TrustBadges';
+import AboutPage from './components/AboutSection';
 import CountdownTimer from './components/CountdownTimer';
+// import TravelGuidelinesSection from './components/TravelGuidelinesSection'; // Removed as requested
 import FAQSection from './components/FAQSection';
 import AttractionsSection from './components/AttractionsSection';
 import PromoMediaSection from './components/PromoMediaSection';
@@ -119,7 +121,7 @@ export default function ModernTemplate({ pageData }) {
         settings={pageData?.company || {}}
         popupSettings={null}
         popupType={null}
-        selectedTrips={pageData?.packages?.selected_trips || []} // Fixed: Added this prop
+        selectedTrips={pageData?.packages?.selected_trips || []}
       />
 
       <TripModal 
@@ -146,61 +148,18 @@ export default function ModernTemplate({ pageData }) {
           secondaryColor={secondaryColor}
         />
       </div>
+      
+      <TrustBadges />
 
-      <div id="about">
-        <TrustBadges />
-      </div>
-
-      {pageData?.offers?.header?.enabled && pageData?.offers?.end_date && (
-        <section className="relative overflow-hidden">
-          <div 
-            className="py-12 relative"
-            style={{
-              background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
-            }}
-          >
-            <motion.div
-              animate={{ x: ['-100%', '100%'] }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 bg-white/10"
-              style={{ width: '50%', transform: 'skewX(-20deg)' }}
-            />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    <Flame className="w-12 h-12 text-white" />
-                  </motion.div>
-                  <div className="text-white">
-                    <h3 className="text-2xl md:text-3xl font-bold">
-                      {pageData?.offers?.header?.text || 'FLASH SALE - 40% OFF'}
-                    </h3>
-                    <p className="text-white/80">Limited time offer on all destinations!</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-white text-center">
-                    <div className="text-sm opacity-80">Sale ends in:</div>
-                    <CountdownTimer endDate={new Date(pageData.offers.end_date)} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
+      {/* --- PACKAGES SECTION (Reduced padding to py-16) --- */}
       {pageData?.packages?.show_section && (
-        <section id="packages" ref={tripsRef} className="py-24 bg-gradient-to-b from-slate-50 to-white">
+        <section id="packages" ref={tripsRef} className="py-16 bg-gradient-to-b from-slate-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-12" // Reduced margin-bottom
             >
               <div 
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
@@ -256,8 +215,13 @@ export default function ModernTemplate({ pageData }) {
         </section>
       )}
 
-      <PromoMediaSection data={pageData?.offers?.mid_section} />
+      {/* --- PROMO SECTION (Pass onOpenEnquiry) --- */}
+      <PromoMediaSection 
+        data={pageData?.offers?.mid_section} 
+        onOpenEnquiry={handleHeroGetQuote} 
+      />
 
+      {/* --- ATTRACTIONS (Pass onEnquire) --- */}
       {pageData?.attractions?.show_section && pageData?.attractions?.items?.length > 0 && (
         <div id="attractions">
           <AttractionsSection 
@@ -266,10 +230,15 @@ export default function ModernTemplate({ pageData }) {
             sectionSubtitle={pageData.attractions.section_subtitle}
             primaryColor={primaryColor} 
             secondaryColor={secondaryColor} 
+            onEnquire={handleEnquire}
           />
         </div>
       )}
-
+  
+      <div id="about">
+        <AboutPage />
+      </div>
+      
       {pageData?.testimonials?.show_section && pageData?.testimonials?.items?.length > 0 && (
         <TestimonialCarousel 
           testimonials={pageData.testimonials.items}
@@ -278,12 +247,53 @@ export default function ModernTemplate({ pageData }) {
         />
       )}
 
-      {/* Travel Guidelines Section Removed Here */}
+      {/* --- FLASH SALE (Reduced padding to py-10) --- */}
+      {pageData?.offers?.header?.enabled && pageData?.offers?.end_date && (
+        <section className="relative overflow-hidden">
+          <div 
+            className="py-10 relative" // Reduced from py-12
+            style={{
+              background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
+            }}
+          >
+            <motion.div
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 bg-white/10"
+              style={{ width: '50%', transform: 'skewX(-20deg)' }}
+            />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <Flame className="w-12 h-12 text-white" />
+                  </motion.div>
+                  <div className="text-white">
+                    <h3 className="text-2xl md:text-3xl font-bold">
+                      {pageData?.offers?.header?.text || 'FLASH SALE - 40% OFF'}
+                    </h3>
+                    <p className="text-white/80">Limited time offer on all destinations!</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-white text-center">
+                    <div className="text-sm opacity-80">Sale ends in:</div>
+                    <CountdownTimer endDate={new Date(pageData.offers.end_date)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {pageData?.faqs?.show_section && pageData?.faqs?.items?.length > 0 && (
         <FAQSection 
           faqs={pageData.faqs.items} 
-          sectionTitle={pageData.faqs.section_title}
+          sectionTitle={pageData.faqs.section_title} 
           sectionSubtitle={pageData.faqs.section_subtitle}
           primaryColor={primaryColor} 
           secondaryColor={secondaryColor} 
@@ -294,7 +304,7 @@ export default function ModernTemplate({ pageData }) {
         <ContactForm 
           settings={pageData?.company || {}} 
           primaryColor={primaryColor} 
-          secondaryColor={secondaryColor}
+          secondaryColor={secondaryColor} 
           selectedTrips={pageData?.packages?.selected_trips || []}
         />
       </div>

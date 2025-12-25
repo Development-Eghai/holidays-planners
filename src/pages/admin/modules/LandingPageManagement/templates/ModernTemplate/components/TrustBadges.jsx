@@ -1,114 +1,157 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Shield, Award, Clock, CreditCard, Headphones, RefreshCw } from 'lucide-react';
+import { Shield, Award, Clock, CreditCard, RefreshCw, Headphones } from 'lucide-react';
 
+// define the unique color palettes for each badge
 const badges = [
-    { icon: Shield, label: 'Secure Booking', desc: '256-bit SSL encryption' },
-    { icon: Award, label: 'Best Price Guarantee', desc: 'Match or beat any price' },
-    { icon: Clock, label: '24/7 Support', desc: 'Always here for you' },
-    { icon: CreditCard, label: 'Easy Payment', desc: 'Flexible payment options' },
-    { icon: RefreshCw, label: 'Free Cancellation', desc: 'Up to 48 hours before' },
-    { icon: Headphones, label: 'Expert Guides', desc: 'Local knowledge' }
+  {
+    icon: Shield,
+    title: 'Secure Booking',
+    description: '256-bit SSL encryption',
+    // Blue Palette
+    colors: {
+      glow: 'from-blue-400 to-indigo-500',
+      icon: 'text-blue-500',
+      hoverBg: 'group-hover:bg-blue-50',
+    }
+  },
+  {
+    icon: Award,
+    title: 'Best Price',
+    description: 'Price Match Guarantee',
+    // Green Palette
+    colors: {
+      glow: 'from-emerald-400 to-teal-500',
+      icon: 'text-emerald-500',
+      hoverBg: 'group-hover:bg-emerald-50',
+    }
+  },
+  {
+    icon: Clock,
+    title: '24/7 Support',
+    description: 'Always here for you',
+    // Cyan Palette
+    colors: {
+      glow: 'from-cyan-400 to-sky-500',
+      icon: 'text-cyan-500',
+      hoverBg: 'group-hover:bg-cyan-50',
+    }
+  },
+  {
+    icon: CreditCard,
+    title: 'Flexible Pay',
+    description: 'EMI & Split Payment',
+    // Purple Palette
+    colors: {
+      glow: 'from-violet-400 to-fuchsia-500',
+      icon: 'text-violet-500',
+      hoverBg: 'group-hover:bg-violet-50',
+    }
+  },
+  {
+    icon: RefreshCw,
+    title: 'Free Cancel',
+    description: 'Up to 48hrs before',
+    // Rose/Red Palette
+    colors: {
+      glow: 'from-rose-400 to-pink-500',
+      icon: 'text-rose-500',
+      hoverBg: 'group-hover:bg-rose-50',
+    }
+  },
+  {
+    icon: Headphones,
+    title: 'Expert Guides',
+    description: 'Verified Locals',
+    // Amber/Gold Palette
+    colors: {
+      glow: 'from-amber-400 to-orange-500',
+      icon: 'text-amber-500',
+      hoverBg: 'group-hover:bg-amber-50',
+    }
+  },
 ];
 
-const stats = [
-    { label: 'Years Experience', value: '10+' },
-    { label: 'Happy Travelers', value: '15k+' },
-    { label: 'Destinations', value: '250+' },
-    { label: 'Satisfaction', value: '98%' },
-];
+export default function TrustBadgesAttractive() {
+  return (
+    <section className="py-24 bg-white overflow-hidden">
+      {/* Inject custom keyframes for the floating animation */}
+      <style>
+        {`
+          @keyframes subtle-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+          }
+          .animate-float {
+            animation: subtle-float 4s ease-in-out infinite;
+          }
+          /* Pause floating on hover so the scale effect takes over cleanly */
+          .group:hover .animate-float {
+            animation-play-state: paused;
+          }
+        `}
+      </style>
+      
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-20 relative z-10">
+           <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+             Travel With Confidence
+           </h2>
+        </div>
 
-export default function TrustBadges() {
-    return (
-        // Added id="about" here
-        <section id="about" className="py-20 bg-white border-y border-slate-100 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                {/* PART 1: TRUST BADGES GRID */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-20">
-                    {badges.map((badge, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                            className="text-center group"
-                        >
-                            <div className="inline-flex items-center justify-center w-14 h-14 bg-slate-50 rounded-2xl mb-4 group-hover:bg-[#FF6B35]/10 group-hover:scale-110 transition-all duration-300">
-                                <badge.icon className="w-7 h-7 text-slate-400 group-hover:text-[#FF6B35] transition-colors" />
-                            </div>
-                            <h4 className="font-bold text-slate-900 text-sm mb-1">{badge.label}</h4>
-                            <p className="text-xs text-slate-500">{badge.desc}</p>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* PART 2: COMPANY AUTHORITY SECTION */}
-                <div className="bg-slate-50 rounded-3xl p-8 md:p-12 relative overflow-hidden">
-                    {/* Background Decor */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-y-16 gap-x-8">
+          {badges.map((badge, index) => {
+            const Icon = badge.icon;
+            return (
+              // The 'group' container controls hover states
+              <div
+                key={index}
+                className="group flex flex-col items-center text-center relative z-10"
+              >
+                {/* MOVEMENT WRAPPER:
+                    This div has the continuous floating animation.
+                    We use inline styles for animationDelay so they don't all float in sync.
+                */}
+                <div 
+                  className="relative animate-float mb-8 transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2"
+                  style={{ animationDelay: `${index * 0.5}s` }}
+                >
+                  
+                  {/* 1. The Colored Glow (Behind) 
+                      Unique gradient for each badge.
+                  */}
+                  <div className={`absolute inset-0 bg-gradient-to-tr ${badge.colors.glow} rounded-full blur-2xl opacity-30 group-hover:opacity-70 transition-opacity duration-500 scale-125 z-0`}></div>
+                  
+                  {/* 2. The Glass Jewel (Main Shape) 
+                      Semi-transparent white orb that lets the color shine through.
+                  */}
+                  <div className={`relative w-24 h-24 rounded-full bg-white/80 backdrop-blur-md border-2 border-white flex items-center justify-center shadow-xl shadow-slate-200/50 z-10 transition-colors duration-300 ${badge.colors.hoverBg}`}>
                     
-                    <div className="flex flex-col lg:flex-row items-center gap-12 relative z-10">
-                        
-                        {/* Left: Holidays Planners Logo */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="w-full lg:w-1/3 text-center lg:text-left flex justify-center lg:justify-start"
-                        >
-                            <div className="relative inline-block">
-                                {/* Decor behind logo */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-cyan-200 rounded-[2rem] rotate-6 opacity-40 transform scale-105" />
-                                
-                                <div className="relative bg-white p-8 rounded-[2rem] shadow-xl border-4 border-white/50">
-                                    <img 
-                                        src="/holidaysplanners-logo.png" 
-                                        alt="Holidays Planners" 
-                                        className="w-48 h-auto object-contain"
-                                    />
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Right: Content */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="w-full lg:w-2/3"
-                        >
-                            <h3 className="text-3xl font-bold text-slate-900 mb-6">
-                                Your Trusted Travel Companion <span className="text-blue-600">Since 2015</span>
-                            </h3>
-                            
-                            <div className="relative pl-6 border-l-4 border-blue-500 mb-8">
-                                <p className="text-slate-600 text-lg leading-relaxed italic mb-4">
-                                    "At Holidays Planners, we don't just book trips; we craft experiences. Based in Shimla, we specialize in creating personalized journeys across India. Whether it's the peaks of Himachal or the beaches of Goa, we serve as your personal travel investigator to ensure a safe, seamless, and unforgettable adventure."
-                                </p>
-                                
-                                {/* AUTHOR BLOCK */}
-                                <div>
-                                    <h4 className="text-lg font-bold text-slate-900">Poonam Sharma</h4>
-                                    <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">Founder & CEO</p>
-                                </div>
-                            </div>
-
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-slate-200 pt-8">
-                                {stats.map((stat, idx) => (
-                                    <div key={idx}>
-                                        <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{stat.label}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
+                    {/* 3. The Icon 
+                        Unique text color.
+                    */}
+                    <Icon 
+                      className={`w-10 h-10 ${badge.colors.icon} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`} 
+                      strokeWidth={1.5} 
+                    />
+                  </div>
                 </div>
 
-            </div>
-        </section>
-    );
+                {/* TEXT CONTENT */}
+                <h3 className="text-base font-bold text-slate-900 mb-2">
+                  {badge.title}
+                </h3>
+                <p className="text-sm text-slate-500 font-medium leading-relaxed opacity-80 lg:px-2">
+                  {badge.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Background decoration */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl bg-gradient-to-r from-blue-50 via-purple-50 to-rose-50 blur-3xl opacity-30 rounded-full -z-10 pointer-events-none"></div>
+    </section>
+  );
 }

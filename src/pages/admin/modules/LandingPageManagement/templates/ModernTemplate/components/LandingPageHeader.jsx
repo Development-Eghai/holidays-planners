@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Facebook, Twitter, Linkedin, Instagram, Youtube,
-  Mail, Phone, Sparkles, ArrowRight
+  Mail, Phone, Sparkles
 } from 'lucide-react';
 
 export default function LandingPageHeader({ companySettings, promoData, primaryColor, secondaryColor }) {
@@ -65,24 +65,26 @@ export default function LandingPageHeader({ companySettings, promoData, primaryC
       {/* ========================================
           1. TOP BAR (Promo + Socials + Contact)
       ======================================== */}
-      <div className="bg-slate-900 text-white py-2 px-4 relative overflow-hidden z-[1002]">
+      {/* Changed px-4 to px-4 sm:px-6 lg:px-8 for better edge spacing on large screens */}
+      <div className="bg-slate-900 text-white py-4 px-4 sm:px-6 lg:px-8 relative overflow-hidden z-[1002]">
         {/* Shine Effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
         
-        <div className="relative z-10 max-w-7xl mx-auto flex justify-between items-center">
+        {/* Container - REMOVED 'max-w-7xl mx-auto' to allow full width spreading */}
+        <div className="relative z-10 w-full flex justify-between items-center h-full">
             
             {/* LEFT: Social Media (Desktop Only) */}
-            <div className="hidden md:flex items-center gap-4 z-20">
-              {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-500 transition-colors"><Facebook className="h-3.5 w-3.5" /></a>}
-              {socials.twitter && <a href={socials.twitter} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-sky-400 transition-colors"><Twitter className="h-3.5 w-3.5" /></a>}
-              {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-500 transition-colors"><Instagram className="h-3.5 w-3.5" /></a>}
-              {socials.youtube && <a href={socials.youtube} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-red-500 transition-colors"><Youtube className="h-3.5 w-3.5" /></a>}
+            <div className="hidden md:flex items-center gap-4 z-20 relative">
+              {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-500 transition-colors"><Facebook className="h-4 w-4" /></a>}
+              {socials.twitter && <a href={socials.twitter} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-sky-400 transition-colors"><Twitter className="h-4 w-4" /></a>}
+              {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-500 transition-colors"><Instagram className="h-4 w-4" /></a>}
+              {socials.youtube && <a href={socials.youtube} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-red-500 transition-colors"><Youtube className="h-4 w-4" /></a>}
             </div>
 
-            {/* CENTER: Promo Text (If Enabled) */}
-            <div className="flex-1 flex justify-center items-center text-center px-2">
+            {/* CENTER: Promo Text (Absolute Center) */}
+            <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-10">
                 {promoData?.enabled && (
-                    <div className="flex items-center gap-2 text-xs md:text-sm font-medium">
+                    <div className="flex items-center gap-2 text-xs md:text-sm font-medium pointer-events-auto px-2">
                         <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
                         <span className="tracking-wide font-nav text-slate-100">{promoData.text}</span>
                         <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
@@ -90,8 +92,8 @@ export default function LandingPageHeader({ companySettings, promoData, primaryC
                 )}
             </div>
 
-            {/* RIGHT: Contact Info (Desktop Only) */}
-            <div className="hidden md:flex items-center gap-6 text-xs font-medium z-20 font-nav text-slate-300">
+            {/* RIGHT: Contact Info (Desktop Only) - Pushed to the far right */}
+            <div className="hidden md:flex items-center justify-end gap-6 text-sm font-medium z-20 relative font-nav text-slate-300 ml-auto">
               {companySettings?.contact && (
                 <a 
                   href={whatsAppLink} 
@@ -195,15 +197,15 @@ export default function LandingPageHeader({ companySettings, promoData, primaryC
 
                 {/* Mobile WhatsApp */}
                 {companySettings?.contact && (
-                   <a 
-                     href={whatsAppLink}
-                     target="_blank"
-                     rel="noreferrer"
-                     className="flex items-center gap-3 p-3 rounded-xl text-green-600 font-bold hover:bg-green-50 transition-all font-nav"
-                   >
-                     <Phone className="h-5 w-5" />
-                     WhatsApp Us
-                   </a>
+                    <a 
+                      href={whatsAppLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-xl text-green-600 font-bold hover:bg-green-50 transition-all font-nav"
+                    >
+                      <Phone className="h-5 w-5" />
+                      WhatsApp Us
+                    </a>
                 )}
 
                 <button
