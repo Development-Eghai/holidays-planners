@@ -1,18 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { ChevronDown, MapPin, Users, Star, MessageCircle } from 'lucide-react';
+import { ChevronDown, MapPin, Users, Star, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import MediaPlayer from './MediaPlayer';
 
-// Helper to safely encode URLs (handles spaces in filenames)
-const getSafeUrl = (url) => {
-  try {
-    return encodeURI(url);
-  } catch (e) {
-    return url;
-  }
-};
-
-export default function HeroSection({ heroData, primaryColor, secondaryColor, onExploreClick, onGetQuote }) {
+export default function HeroSection({ heroData, primaryColor = '#FF6B35', secondaryColor = '#FFB800', onExploreClick, onGetQuote }) {
   const defaultHero = {
     title: 'Escape to Paradise',
     subtitle: '',
@@ -26,7 +18,6 @@ export default function HeroSection({ heroData, primaryColor, secondaryColor, on
 
   const hero = heroData || defaultHero;
   
-  // Combine images and videos into a single slides array
   const bgImages = hero.background_images?.length > 0 ? hero.background_images : defaultHero.background_images;
   const bgVideos = hero.background_videos?.length > 0 ? hero.background_videos : [];
   
@@ -36,36 +27,48 @@ export default function HeroSection({ heroData, primaryColor, secondaryColor, on
   ];
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const timeoutRef = useRef(null);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const videoRefs = useRef([]);
 
-  // Function to go to next slide
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
-
-  // Logic to control slide duration based on content type
+  // Preload first media to prevent flash
   useEffect(() => {
-    const currentType = slides[currentSlide].type;
+    if (!slides[0]) return;
 
-    // Clear any existing timer when slide changes
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (slides[0].type === 'image') {
+      const img = new Image();
+      img.onload = () => setMediaLoaded(true);
+      img.src = slides[0].url;
+    } else {
+      // For videos, set loaded immediately
+      setMediaLoaded(true);
     }
+  }, []);
 
-    // IF IMAGE: Set fixed duration (e.g., 5 seconds)
-    if (currentType === 'image') {
-      timeoutRef.current = setTimeout(nextSlide, 5000);
+  // Auto-play videos when they become active
+  useEffect(() => {
+    if (slides[currentSlide]?.type === 'video') {
+      const video = videoRefs.current[currentSlide];
+      if (video) {
+        video.play().catch(e => {
+          console.log("Autoplay blocked, retrying:", e);
+          setTimeout(() => video.play().catch(() => {}), 100);
+        });
+      }
     }
-    
-    // IF VIDEO: We do NOTHING here. We rely on the <video onEnded={nextSlide}> 
-    // prop in the JSX to trigger the switch only when playback finishes.
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
   }, [currentSlide, slides]);
 
-  // Handle Button Clicks
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+
+  // Auto-advance for images
+  useEffect(() => {
+    const currentType = slides[currentSlide]?.type;
+    if (currentType === 'image' && slides.length > 1) {
+      const timer = setTimeout(nextSlide, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentSlide, slides]);
+
   const handleCtaClick = (e, link) => {
     if (link === '#packages' && onExploreClick) {
       e.preventDefault();
@@ -77,196 +80,148 @@ export default function HeroSection({ heroData, primaryColor, secondaryColor, on
       onGetQuote();
       return;
     }
-
     if (!link) return;
-    
     if (link.startsWith('#')) {
       e.preventDefault();
       const element = document.querySelector(link);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       window.location.href = link;
     }
   };
 
+  const handleScrollDown = () => {
+    const nextSection = document.querySelector('#packages, section:nth-of-type(2)');
+    if (nextSection) {
+      nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <section id="hero" className="relative h-[85vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-slate-900">
+    <section id="hero" className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-slate-900">
       
+      {/* Loading placeholder */}
+      {!mediaLoaded && (
+        <div className="absolute inset-0 bg-slate-900 z-30 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+        </div>
+      )}
+
       {/* Background Slider */}
       <div className="absolute inset-0 w-full h-full">
         <AnimatePresence mode='wait'>
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: mediaLoaded ? 1 : 0, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="absolute inset-0"
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0 w-full h-full"
           >
-            {slides[currentSlide].type === 'video' ? (
-              <video
-                src={getSafeUrl(slides[currentSlide].url)}
-                autoPlay
-                muted
-                playsInline
-                // KEY FIX: When video ends, go to next slide
-                onEnded={nextSlide} 
-                // Fallback: If video fails, go to next slide immediately to prevent getting stuck
+            <div 
+              className="absolute"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '120vw',
+                height: '120vh',
+                minWidth: '120vw',
+                minHeight: '120vh',
+              }}
+            >
+              <MediaPlayer
+                url={slides[currentSlide]?.url}
+                type="auto"
+                autoplay={true}
+                muted={true}
+                playsInline={true}
+                loop={slides[currentSlide]?.type === 'video' && slides.length === 1}
+                onEnded={slides[currentSlide]?.type === 'video' && slides.length > 1 ? nextSlide : undefined}
                 onError={(e) => {
-                  console.error("Video failed to play, skipping:", slides[currentSlide].url);
-                  nextSlide();
+                  console.error("Media failed to load:", slides[currentSlide]?.url);
+                  if (slides.length > 1) nextSlide();
                 }}
+                videoRef={(el) => (videoRefs.current[currentSlide] = el)}
                 className="w-full h-full object-cover"
+                cover
               />
-            ) : (
-              <img 
-                src={slides[currentSlide].url} 
-                alt="Background"
-                className="w-full h-full object-cover"
-              />
-            )}
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/40 to-slate-900/80" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Animated particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/20 rounded-full"
-            initial={{ 
-              x: Math.random() * 100 + "%", 
-              y: Math.random() * 100 + "%",
-              opacity: 0 
-            }}
-            animate={{ 
-              y: [null, -100],
-              opacity: [0, 0.5, 0]
-            }}
-            transition={{ 
-              duration: 5 + Math.random() * 5,
-              repeat: Infinity,
-              delay: Math.random() * 5
-            }}
-          />
-        ))}
-      </div>
+      {/* Navigation Arrows */}
+      {slides.length > 1 && (
+        <>
+          <button onClick={prevSlide} className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/30 backdrop-blur-md p-3 rounded-full text-white transition-all hover:scale-110" aria-label="Previous">
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button onClick={nextSlide} className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/30 backdrop-blur-md p-3 rounded-full text-white transition-all hover:scale-110" aria-label="Next">
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+
+      {/* Slide Indicators */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {slides.map((_, index) => (
+            <button key={index} onClick={() => setCurrentSlide(index)} className={`transition-all rounded-full ${currentSlide === index ? 'w-8 h-2 bg-white' : 'w-2 h-2 bg-white/50 hover:bg-white/75'}`} aria-label={`Slide ${index + 1}`} />
+          ))}
+        </div>
+      )}
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8">
-        
-        {/* Main heading - Compact Size */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-lg"
-        >
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: mediaLoaded ? 1 : 0, y: mediaLoaded ? 0 : 30 }} transition={{ duration: 0.8, delay: 0.2 }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-6 tracking-tight drop-shadow-2xl leading-[1.1]">
           <span className="block">{hero.title}</span>
           {hero.subtitle && (
-            <span 
-              className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-amber-300"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
-              }}
-            >
+            <span className="block mt-2" style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               {hero.subtitle}
             </span>
           )}
         </motion.h1>
 
-        {/* Description - Compact Size */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto mb-8 leading-relaxed font-medium drop-shadow-md"
-        >
+        <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: mediaLoaded ? 1 : 0, y: mediaLoaded ? 0 : 30 }} transition={{ duration: 0.8, delay: 0.4 }} className="text-base sm:text-lg md:text-xl text-white/95 max-w-3xl mx-auto mb-10 leading-relaxed font-medium drop-shadow-lg">
           {hero.description}
         </motion.p>
 
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
-        >
-          {/* Button 1 (Primary) */}
-          <Button 
-            onClick={(e) => handleCtaClick(e, hero.cta_button_1?.link)}
-            size="lg"
-            className="px-6 py-5 text-base rounded-full shadow-xl transform hover:scale-105 transition-all duration-300 border-none"
-            style={{
-              background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
-              color: 'white'
-            }}
-          >
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: mediaLoaded ? 1 : 0, y: mediaLoaded ? 0 : 30 }} transition={{ duration: 0.8, delay: 0.6 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+          <Button onClick={(e) => handleCtaClick(e, hero.cta_button_1?.link)} size="lg" className="px-8 py-6 text-base sm:text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300 border-none font-bold" style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`, color: 'white' }}>
             {hero.cta_button_1?.text}
-            <motion.span
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="ml-2"
-            >
-              →
-            </motion.span>
+            <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="ml-2">→</motion.span>
           </Button>
-          
-          {/* Button 2 (Secondary) */}
-          {hero.cta_button_2 && hero.cta_button_2.text && (
-            <Button 
-              onClick={(e) => handleCtaClick(e, hero.cta_button_2?.link)}
-              variant="outline"
-              size="lg"
-              className="border-2 border-white/40 text-white bg-white/5 hover:bg-white/20 px-6 py-5 text-base rounded-full backdrop-blur-md"
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              {hero.cta_button_2.text}
+          {hero.cta_button_2?.text && (
+            <Button onClick={(e) => handleCtaClick(e, hero.cta_button_2?.link)} variant="outline" size="lg" className="border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 px-8 py-6 text-base sm:text-lg rounded-full backdrop-blur-md font-bold">
+              <MessageCircle className="w-5 h-5 mr-2" />{hero.cta_button_2.text}
             </Button>
           )}
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="grid grid-cols-3 gap-4 max-w-lg mx-auto border-t border-white/10 pt-6"
-        >
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: mediaLoaded ? 1 : 0, y: mediaLoaded ? 0 : 30 }} transition={{ duration: 0.8, delay: 0.8 }} className="grid grid-cols-3 gap-6 sm:gap-8 max-w-2xl mx-auto border-t border-white/20 pt-8">
           {[
-            { icon: MapPin, value: '150+', label: 'Destinations' },
-            { icon: Users, value: '50K+', label: 'Travelers' },
-            { icon: Star, value: '4.9', label: 'Rating' }
+            { icon: MapPin, value: '150+', label: 'DESTINATIONS' },
+            { icon: Users, value: '50K+', label: 'TRAVELERS' },
+            { icon: Star, value: '4.9', label: 'RATING' }
           ].map((stat, index) => (
             <div key={index} className="text-center">
-              <stat.icon className="w-4 h-4 mx-auto mb-1 text-white/80" />
-              <div className="text-xl sm:text-2xl font-bold text-white">{stat.value}</div>
-              <div className="text-white/60 text-[10px] sm:text-xs uppercase tracking-wide">{stat.label}</div>
+              <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-2 text-white/80" />
+              <div className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</div>
+              <div className="text-white/70 text-[10px] sm:text-xs uppercase tracking-wider font-bold">{stat.label}</div>
             </div>
           ))}
         </motion.div>
       </div>
 
       {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center cursor-pointer"
-          onClick={(e) => handleCtaClick(e, '#packages')}
-        >
-          <span className="text-white/70 text-[10px] mb-1 tracking-wider uppercase">Scroll</span>
-          <ChevronDown className="w-4 h-4 text-white/70" />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: mediaLoaded ? 1 : 0 }} transition={{ delay: 1.5 }} className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+        <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="flex flex-col items-center cursor-pointer" onClick={handleScrollDown}>
+          <span className="text-white/80 text-[10px] sm:text-xs mb-2 tracking-wider uppercase font-bold">SCROLL</span>
+          <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
         </motion.div>
       </motion.div>
     </section>

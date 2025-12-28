@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Send, MapPin, Users, Mail, Phone, User, PhoneCall, ChevronDown, ArrowLeft, Clock } from 'lucide-react';
+import { X, Send, MapPin, Users, Mail, Phone, User, PhoneCall, ChevronDown, ArrowLeft, Clock, Calendar } from 'lucide-react';
 import { toast, Toaster } from "sonner";
 import CountdownTimer from './CountdownTimer'; 
 
@@ -20,10 +20,6 @@ export default function UnifiedEnquiryModal({
   offersConfig 
 }) {
   
-  // DEBUG LOGS
-  console.log('🔍 selectedTrips received:', selectedTrips);
-  console.log('🔍 selectedTrips count:', selectedTrips?.length);
-  
   const [formData, setFormData] = useState({
     destination: '',
     full_name: '',
@@ -32,10 +28,15 @@ export default function UnifiedEnquiryModal({
     adults: 2,
     departure_city: 'Web Modal Lead',
     travel_date: new Date().toISOString().split('T')[0],
+    is_flexible: false,
     hotel_category: '3 Star',
     additional_comments: '',
     domain_name: DEFAULT_DOMAIN
   });
+
+  // Snapshot states to keep the Success Screen populated while form resets
+  const [submittedName, setSubmittedName] = useState('');
+  const [submittedDest, setSubmittedDest] = useState('');
 
   const [showCustomDestination, setShowCustomDestination] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +59,7 @@ export default function UnifiedEnquiryModal({
   }, [trip, isOpen]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     
     if (name === 'destination' && value === 'other_custom') {
       setShowCustomDestination(true);
@@ -66,7 +67,10 @@ export default function UnifiedEnquiryModal({
       return;
     }
     
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   const handleClose = () => {
@@ -78,6 +82,15 @@ export default function UnifiedEnquiryModal({
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Capture values for the success screen before potential reset
+    setSubmittedName(formData.full_name.split(' ')[0]); 
+    setSubmittedDest(formData.destination);
+
+    const submissionData = {
+        ...formData,
+        travel_date: formData.is_flexible ? "Flexible" : formData.travel_date
+    };
+
     try {
       const response = await fetch(`${API_BASE_URL}/enquires`, {
         method: 'POST',
@@ -85,7 +98,7 @@ export default function UnifiedEnquiryModal({
           'Content-Type': 'application/json', 
           'x-api-key': API_KEY 
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submissionData)
       });
       
       if (!response.ok) throw new Error('Failed to submit');
@@ -93,6 +106,7 @@ export default function UnifiedEnquiryModal({
       setShowSuccess(true);
       toast.success("Request sent successfully!");
       
+      // Delay form reset slightly to ensure no UI flickering
       setTimeout(() => {
         setFormData({
           destination: '',
@@ -102,11 +116,12 @@ export default function UnifiedEnquiryModal({
           adults: 2,
           departure_city: 'Web Modal Lead',
           travel_date: new Date().toISOString().split('T')[0],
+          is_flexible: false,
           hotel_category: '3 Star',
           additional_comments: '',
           domain_name: DEFAULT_DOMAIN
         });
-      }, 3000);
+      }, 500);
     } catch (error) {
       console.error('Submission Error:', error);
       toast.error('Failed to submit. Please try again.');
@@ -130,14 +145,12 @@ export default function UnifiedEnquiryModal({
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-            {/* Backdrop */}
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={handleClose}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
 
-            {/* Modal */}
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -154,10 +167,11 @@ export default function UnifiedEnquiryModal({
                   >
                     <PhoneCall className="w-10 h-10" />
                   </motion.div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Received!</h3>
-                  <p className="text-slate-500 mb-8 text-sm">
-                    We'll contact you shortly about your trip to <br/>
-                    <span className="text-[#FF6B35] font-bold">{formData.destination}</span>.
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Thanks, {submittedName}!</h3>
+                  <p className="text-slate-500 mb-8 text-sm leading-relaxed">
+                    We've received your request for <br/>
+                    <span className="text-[#FF6B35] font-bold">{submittedDest}</span>.<br/>
+                    Our team will contact you shortly.
                   </p>
                   <Button onClick={handleClose} className="w-full bg-slate-900 text-white rounded-xl py-6">
                     Close
@@ -202,7 +216,6 @@ export default function UnifiedEnquiryModal({
                         </label>
                         
                         {trip ? (
-                          // 1. Specific Trip Locked Mode
                           <div className="relative opacity-80">
                              <Input 
                                value={formData.destination} 
@@ -211,7 +224,6 @@ export default function UnifiedEnquiryModal({
                              />
                           </div>
                         ) : !showCustomDestination ? (
-                           // 2. Dropdown Mode (if trips available) OR Text Input (if no trips)
                            <div className="relative">
                               {selectedTrips && selectedTrips.length > 0 ? (
                                 <>
@@ -246,7 +258,6 @@ export default function UnifiedEnquiryModal({
                               )}
                            </div>
                         ) : (
-                          // 3. Custom Input Mode
                           <div className="space-y-2">
                              <Input
                                name="destination"
@@ -286,9 +297,9 @@ export default function UnifiedEnquiryModal({
                         />
                       </div>
 
-                      {/* Phone & Pax */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2 space-y-1">
+                      {/* Phone & Pax Row */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                             <Phone className="w-3 h-3" /> Phone
                           </label>
@@ -297,7 +308,7 @@ export default function UnifiedEnquiryModal({
                             name="contact_number"
                             value={formData.contact_number}
                             onChange={handleChange}
-                            placeholder="+91 98765 43210"
+                            placeholder="+91 98765"
                             required
                             className="bg-white border-slate-200 h-10"
                           />
@@ -315,6 +326,36 @@ export default function UnifiedEnquiryModal({
                             required
                             className="bg-white border-slate-200 h-10 text-center font-semibold"
                           />
+                        </div>
+                      </div>
+
+                      {/* Travel Date & Flexible Row */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> Travel Date
+                          </label>
+                          <Input
+                            type="date"
+                            name="travel_date"
+                            disabled={formData.is_flexible}
+                            value={formData.travel_date}
+                            onChange={handleChange}
+                            required={!formData.is_flexible}
+                            className={`bg-white border-slate-200 h-10 text-xs transition-opacity ${formData.is_flexible ? 'opacity-40 cursor-not-allowed' : 'opacity-100'}`}
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end pb-2">
+                           <label className="flex items-center gap-2 cursor-pointer group select-none">
+                             <input 
+                                type="checkbox"
+                                name="is_flexible"
+                                checked={formData.is_flexible}
+                                onChange={handleChange}
+                                className="w-4 h-4 rounded border-slate-300 text-[#FF6B35] focus:ring-[#FF6B35] cursor-pointer"
+                             />
+                             <span className="text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors">Flexible Dates</span>
+                           </label>
                         </div>
                       </div>
 

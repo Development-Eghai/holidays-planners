@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Eye, Edit, Trash2, Copy, MoreVertical, 
-  Search, Star, ExternalLink, BarChart, LayoutGrid, List
+  Search, Star, ExternalLink, BarChart, LayoutGrid, List, AlertCircle
 } from 'lucide-react';
 
 const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
@@ -34,7 +34,6 @@ export default function LandingPageList() {
 
   useEffect(() => { fetchLandingPages(); }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownOpen && !event.target.closest('.dropdown-container')) {
@@ -52,7 +51,7 @@ export default function LandingPageList() {
       if (!response.ok) throw new Error('Failed to fetch pages');
       const data = await response.json();
       setLandingPages(data.pages || data.data || data);
-    } catch (error) { console.error(error); alert('Failed to load landing pages'); }
+    } catch (error) { console.error(error); }
     finally { setIsLoading(false); }
   };
 
@@ -72,10 +71,26 @@ export default function LandingPageList() {
   const handleCreate = () => navigate('/admin/dashboard/landing-pages/create');
   const handleEdit = (id) => navigate(`/admin/dashboard/landing-pages/edit/${id}`);
 
-  // *** FIXED: Opens public route /landing/:slug which renders the appropriate template ***
-  const handleView = (page) => {
-    // Open the public landing page route
-    // The LandingPageRenderer in App.jsx will handle template selection based on the data
+  // *** UPDATED: Preview logic with Warning for unpublished pages ***
+  const handleView = async (page) => {
+    if (!page.is_active) {
+      const confirmPublish = window.confirm(
+        `⚠️ This page is currently Inactive (Unpublished).\n\nTo preview this page, it must be set to Active. Would you like to publish it now to view the preview?`
+      );
+      
+      if (confirmPublish) {
+        setIsLoading(true);
+        try {
+          await handleToggleStatus(page);
+          window.open(`/landing/${page.slug}`, '_blank');
+        } catch (e) {
+          alert("Failed to activate for preview.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      return;
+    }
     window.open(`/landing/${page.slug}`, '_blank');
   };
 
@@ -90,7 +105,7 @@ export default function LandingPageList() {
       const payload = {
         ...cleanedData,
         page_name: `${fullPage.page_name || page.page_name} (Copy)`,
-        slug: `${(fullPage.slug || page.slug).substring(0, 50)}-copy-${Date.now()}`,
+        slug: `${(fullPage.slug || page.slug).substring(0, 40)}-copy-${Math.floor(Math.random() * 1000)}`,
         is_active: false,
         is_default: false
       };
@@ -102,7 +117,6 @@ export default function LandingPageList() {
       });
       if(!createRes.ok) throw new Error('Duplication failed');
       
-      alert('✅ Page duplicated!');
       fetchLandingPages();
     } catch (error) { alert('Duplication failed: ' + error.message); }
     finally { setIsLoading(false); }
@@ -110,137 +124,166 @@ export default function LandingPageList() {
 
   const handleToggleStatus = async (page) => {
     try {
-      await fetch(`${API_BASE_URL}/landing-pages/${page.id}/toggle-active`, { method: 'PATCH', headers: { 'x-api-key': API_KEY } });
+      const res = await fetch(`${API_BASE_URL}/landing-pages/${page.id}/toggle-active`, { 
+        method: 'PATCH', 
+        headers: { 'x-api-key': API_KEY } 
+      });
+      if (!res.ok) throw new Error();
       setLandingPages(prev => prev.map(p => p.id === page.id ? { ...p, is_active: !p.is_active } : p));
-    } catch (e) { alert('Failed to update status'); }
+    } catch (e) { alert('Failed to update status'); throw e; }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this page?')) return;
+    if (!window.confirm('Are you sure?')) return;
     try {
-      await fetch(`${API_BASE_URL}/landing-pages/${id}`, { method: 'DELETE', headers: { 'x-api-key': API_KEY } });
+      await fetch(`${API_BASE_URL}/id/${id}`, { method: 'DELETE', headers: { 'x-api-key': API_KEY } });
       setLandingPages(prev => prev.filter(p => p.id !== id));
-      alert('✅ Deleted successfully');
     } catch (e) { alert('Delete failed'); }
   };
 
   const getPreviewImage = (page) => {
     if (page.hero?.background_images?.length) return page.hero.background_images[0];
-    if (page.gallery?.images?.length) return page.gallery.images[0];
-    return 'https://via.placeholder.com/400x300?text=No+Image';
+    return 'https://via.placeholder.com/400x300?text=No+Preview';
   };
-
-  const getTemplateLabel = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Minimal';
 
   if (isLoading && landingPages.length === 0) return <div className="p-20 text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div></div>;
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div><h1 className="text-3xl font-bold text-slate-900">Landing Pages</h1><p className="text-slate-500">Manage your marketing campaigns</p></div>
         <button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg"><Plus className="w-4 h-4" /> Create New Page</button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center"><div><p className="text-sm text-slate-500">Total Pages</p><p className="text-3xl font-bold">{stats.total}</p></div><BarChart className="text-blue-600 opacity-20 w-10 h-10"/></div>
-        <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center"><div><p className="text-sm text-slate-500">Active</p><p className="text-3xl font-bold text-green-600">{stats.active}</p></div><Eye className="text-green-600 opacity-20 w-10 h-10"/></div>
-        <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center"><div><p className="text-sm text-slate-500">Total Views</p><p className="text-3xl font-bold text-purple-600">{stats.views}</p></div><Eye className="text-purple-600 opacity-20 w-10 h-10"/></div>
-        <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center"><div><p className="text-sm text-slate-500">Leads</p><p className="text-3xl font-bold text-orange-600">{stats.leads}</p></div><Star className="text-orange-600 opacity-20 w-10 h-10"/></div>
+      {/* Stats Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Total Pages', val: stats.total, icon: List, color: 'text-blue-600' },
+          { label: 'Active', val: stats.active, icon: Eye, color: 'text-green-600' },
+          { label: 'Views', val: stats.views, icon: BarChart, color: 'text-purple-600' },
+          { label: 'Leads', val: stats.leads, icon: Star, color: 'text-orange-600' },
+        ].map((s, i) => (
+          <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+            <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{s.label}</p><p className="text-2xl font-bold text-slate-800">{s.val}</p></div>
+            <s.icon className={`${s.color} opacity-20 w-8 h-8`}/>
+          </div>
+        ))}
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between">
-        <div className="relative flex-1 max-w-lg">
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-          <input type="text" placeholder="Search pages..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" placeholder="Search pages..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
-        <div className="flex gap-4">
-          <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
-            {['all', 'active', 'inactive'].map(s => <button key={s} onClick={() => setFilterStatus(s)} className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize ${filterStatus === s ? 'bg-white text-blue-600 shadow' : 'text-slate-600'}`}>{s}</button>)}
+        <div className="flex gap-2">
+          <div className="flex bg-slate-200/50 p-1 rounded-lg">
+            {['all', 'active', 'inactive'].map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)} className={`px-4 py-1.5 rounded-md text-xs font-bold capitalize transition-all ${filterStatus === s ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{s}</button>
+            ))}
           </div>
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-             <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white shadow' : ''}`}><LayoutGrid className="w-5 h-5"/></button>
-             <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white shadow' : ''}`}><List className="w-5 h-5"/></button>
+          <div className="flex bg-slate-200/50 p-1 rounded-lg">
+            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}><LayoutGrid className="w-5 h-5"/></button>
+            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}><List className="w-5 h-5"/></button>
           </div>
         </div>
       </div>
 
-      {/* Grid View */}
-      {viewMode === 'grid' && (
+      {/* Main View Area */}
+      {viewMode === 'grid' ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPages.map(page => (
-            <div key={page.id} className="bg-white rounded-lg shadow hover:shadow-xl transition-all group overflow-hidden border border-slate-100">
-              <div className="relative h-48 bg-slate-100 overflow-hidden">
-                <img src={getPreviewImage(page)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                <div className="absolute top-3 left-3 flex gap-2">
-                  <span className={`px-2 py-1 text-xs rounded-full text-white backdrop-blur-md ${page.is_active ? 'bg-green-500/90' : 'bg-slate-500/90'}`}>{page.is_active ? 'Active' : 'Inactive'}</span>
-                  <span className="px-2 py-1 text-xs rounded-full bg-blue-500/90 text-white backdrop-blur-md">{getTemplateLabel(page.template)}</span>
+            <div key={page.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all group border border-slate-200 relative">
+              <div className="relative h-44 rounded-t-xl overflow-hidden bg-slate-100">
+                <img src={getPreviewImage(page)} className="w-full h-full object-cover" alt="" />
+                <div className="absolute top-2 left-2 flex gap-2">
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full text-white ${page.is_active ? 'bg-green-500' : 'bg-slate-500'}`}>{page.is_active ? 'ACTIVE' : 'DRAFT'}</span>
                 </div>
-                {/* Hover Actions */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button onClick={() => handleView(page)} className="bg-white text-black p-2 rounded-lg hover:bg-slate-200"><Eye className="w-5 h-5" /></button>
-                  <button onClick={() => handleEdit(page.id)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"><Edit className="w-5 h-5" /></button>
+                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                  <button onClick={() => handleView(page)} className="bg-white p-2 rounded-full hover:scale-110 transition-transform"><Eye className="w-5 h-5 text-slate-700"/></button>
+                  <button onClick={() => handleEdit(page.id)} className="bg-blue-600 p-2 rounded-full hover:scale-110 transition-transform"><Edit className="w-5 h-5 text-white"/></button>
                 </div>
               </div>
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-bold text-slate-900 truncate">{page.page_name}</h3>
-                    <p className="text-xs text-slate-500">/{page.slug}</p>
+
+              <div className="p-4 relative">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-800 truncate pr-4">{page.page_name}</h3>
+                    <p className="text-xs text-slate-400 truncate tracking-tight">/landing/{page.slug}</p>
                   </div>
+                  
+                  {/* DROP_DOWN CONTAINER: Removed overflow-hidden from parent so this shows */}
                   <div className="relative dropdown-container">
-                    <button onClick={() => setDropdownOpen(dropdownOpen === page.id ? null : page.id)} className="p-1 hover:bg-slate-100 rounded"><MoreVertical className="w-4 h-4"/></button>
+                    <button 
+                      onClick={() => setDropdownOpen(dropdownOpen === page.id ? null : page.id)} 
+                      className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5 text-slate-400"/>
+                    </button>
                     {dropdownOpen === page.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg border py-1 z-10">
-                        <button onClick={() => handleDuplicate(page)} className="w-full text-left px-4 py-2 hover:bg-slate-50 flex gap-2 text-sm"><Copy className="w-4 h-4"/> Duplicate</button>
-                        <button onClick={() => handleDelete(page.id)} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex gap-2 text-sm"><Trash2 className="w-4 h-4"/> Delete</button>
+                      <div className="absolute right-0 bottom-full mb-2 w-44 bg-white shadow-2xl rounded-xl border border-slate-100 py-1 z-[100] animate-in fade-in slide-in-from-bottom-2">
+                        <button onClick={() => handleDuplicate(page)} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-sm text-slate-700"><Copy className="w-4 h-4"/> Duplicate</button>
+                        <hr className="my-1 border-slate-50" />
+                        <button onClick={() => handleDelete(page.id)} className="w-full text-left px-4 py-2.5 hover:bg-red-50 flex items-center gap-2 text-sm text-red-600 font-medium"><Trash2 className="w-4 h-4"/> Delete Page</button>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500 mt-4 pt-3 border-t">
-                  <span className="flex items-center gap-1"><Eye className="w-3 h-3"/> {page.views || 0}</span>
-                  <span className="flex items-center gap-1"><Star className="w-3 h-3"/> {page.leads || 0}</span>
-                  <span className="ml-auto">{new Date(page.updated_at).toLocaleDateString()}</span>
+                
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50 text-[10px] font-bold text-slate-400">
+                   <div className="flex gap-3">
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3"/> {page.views || 0}</span>
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3"/> {page.leads || 0}</span>
+                   </div>
+                   <span>UPDATED {new Date(page.updated_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b">
-              <tr>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Page Name</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Template</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Stats</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+      ) : (
+        /* List view code follows similar logic ... */
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
+          <table className="w-full">
+            <thead className="bg-slate-50/50 border-b border-slate-100">
+              <tr className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <th className="px-6 py-4">Page Information</th>
+                <th className="px-6 py-4">Performance</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-100">
               {filteredPages.map(page => (
-                <tr key={page.id} className="hover:bg-slate-50">
+                <tr key={page.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900">{page.page_name}</p>
-                    <p className="text-xs text-slate-500">/{page.slug}</p>
+                    <p className="font-bold text-slate-800">{page.page_name}</p>
+                    <p className="text-xs text-slate-400">/{page.slug}</p>
                   </td>
-                  <td className="px-6 py-4"><span className="bg-slate-100 px-2 py-1 rounded text-xs">{getTemplateLabel(page.template)}</span></td>
-                  <td className="px-6 py-4 text-xs text-slate-600">{page.views || 0} Views</td>
                   <td className="px-6 py-4">
-                    <button onClick={() => handleToggleStatus(page)} className={`px-2 py-1 rounded-full text-xs font-bold ${page.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {page.is_active ? 'Active' : 'Inactive'}
+                    <div className="flex gap-4 text-xs font-bold text-slate-500">
+                      <span>{page.views || 0} Views</span>
+                      <span>{page.leads || 0} Leads</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button onClick={() => handleToggleStatus(page)} className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${page.is_active ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+                      {page.is_active ? 'Published' : 'Draft'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-2">
-                    <button onClick={() => handleView(page)} title="View" className="p-1.5 hover:bg-slate-200 rounded text-slate-600"><Eye className="w-4 h-4"/></button>
-                    <button onClick={() => handleEdit(page.id)} title="Edit" className="p-1.5 hover:bg-blue-100 rounded text-blue-600"><Edit className="w-4 h-4"/></button>
-                    <button onClick={() => handleDelete(page.id)} title="Delete" className="p-1.5 hover:bg-red-100 rounded text-red-600"><Trash2 className="w-4 h-4"/></button>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end gap-1 relative dropdown-container">
+                      <button onClick={() => handleView(page)} className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 shadow-sm border border-transparent hover:border-slate-100"><Eye className="w-4 h-4"/></button>
+                      <button onClick={() => handleEdit(page.id)} className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 shadow-sm border border-transparent hover:border-slate-100"><Edit className="w-4 h-4"/></button>
+                      <button onClick={() => setDropdownOpen(dropdownOpen === page.id ? null : page.id)} className="p-2 hover:bg-white rounded-lg text-slate-400 shadow-sm border border-transparent hover:border-slate-100"><MoreVertical className="w-4 h-4"/></button>
+                      
+                      {dropdownOpen === page.id && (
+                        <div className="absolute right-0 top-full mt-2 w-40 bg-white shadow-2xl rounded-xl border border-slate-100 py-1 z-[100]">
+                          <button onClick={() => handleDuplicate(page)} className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-xs text-slate-600"><Copy className="w-3 h-3"/> Duplicate</button>
+                          <button onClick={() => handleDelete(page.id)} className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-xs text-red-600"><Trash2 className="w-3 h-3"/> Delete</button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

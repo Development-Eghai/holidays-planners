@@ -21,7 +21,7 @@ import FAQSection from './components/FAQSection';
 import AttractionsSection from './components/AttractionsSection';
 import PromoMediaSection from './components/PromoMediaSection';
 import Footer from '../../../../../../components/layout/Footer'; 
-import { Flame, TrendingUp } from 'lucide-react';
+import { Flame, TrendingUp, Compass } from 'lucide-react';
 
 const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
 const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
@@ -30,13 +30,21 @@ export default function ModernTemplate({ pageData }) {
   const [selectedTrip, setSelectedTrip] = useState(null); 
   const [viewDetailsTrip, setViewDetailsTrip] = useState(null); 
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
-  const [trips, setTrips] = useState([]);
+  
+  // Trips State
+  const [mainSectionTrips, setMainSectionTrips] = useState([]); // For "Popular Packages"
+  const [allTripsData, setAllTripsData] = useState([]); // Raw list for "Custom Packages"
   const [loading, setLoading] = useState(true);
+  
   const tripsRef = useRef(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
-      if (!pageData?.packages?.selected_trips || pageData.packages.selected_trips.length === 0) {
+      // Check if we have ANY trips to show (Main or Custom)
+      const hasMainTrips = pageData?.packages?.selected_trips?.length > 0;
+      const hasCustomPackages = pageData?.packages?.custom_packages?.length > 0;
+
+      if (!hasMainTrips && !hasCustomPackages) {
         setLoading(false);
         return;
       }
@@ -47,21 +55,27 @@ export default function ModernTemplate({ pageData }) {
         });
         const data = await response.json();
         const allTrips = data.data || data;
+        
+        // Store all trips to use for custom packages filtering later
+        setAllTripsData(allTrips);
 
-        const selectedTripIds = pageData.packages.selected_trips.map(st => st.trip_id);
-        const filteredTrips = allTrips.filter(trip => selectedTripIds.includes(trip.id));
+        // --- Process Main Section Trips ("Popular Packages") ---
+        if (hasMainTrips) {
+          const selectedTripIds = pageData.packages.selected_trips.map(st => st.trip_id);
+          const filteredTrips = allTrips.filter(trip => selectedTripIds.includes(trip.id));
 
-        const enrichedTrips = filteredTrips.map(trip => {
-          const selectedTripData = pageData.packages.selected_trips.find(st => st.trip_id === trip.id);
-          return {
-            ...trip,
-            badge: selectedTripData?.badge || '',
-            custom_title: selectedTripData?.trip_title || trip.title,
-            custom_price: selectedTripData?.price || null
-          };
-        });
+          const enrichedTrips = filteredTrips.map(trip => {
+            const selectedTripData = pageData.packages.selected_trips.find(st => st.trip_id === trip.id);
+            return {
+              ...trip,
+              badge: selectedTripData?.badge || '',
+              custom_title: selectedTripData?.trip_title || trip.title,
+              custom_price: selectedTripData?.price || null
+            };
+          });
+          setMainSectionTrips(enrichedTrips);
+        }
 
-        setTrips(enrichedTrips);
       } catch (error) {
         console.error('Error fetching trips:', error);
       } finally {
@@ -72,8 +86,8 @@ export default function ModernTemplate({ pageData }) {
     fetchTrips();
   }, [pageData]);
 
-  const primaryColor = '#FF6B35';
-  const secondaryColor = '#FFB800';
+  const primaryColor = pageData?.theme_colors?.primary_color || '#FF6B35';
+  const secondaryColor = pageData?.theme_colors?.secondary_color || '#FFB800';
 
   const scrollToTrips = () => {
     const element = document.getElementById('packages');
@@ -102,15 +116,18 @@ export default function ModernTemplate({ pageData }) {
         <meta name="keywords" content={pageData?.seo?.meta_tags || ''} />
       </Helmet>
 
+      {/* --- POPUPS & NOTIFICATIONS --- */}
       <PopupManager offersConfig={pageData?.offers} />
-      <BookingNotification />
-      
+      <BookingNotification pageData={pageData} />
+
+      {/* --- FLOATING CTA --- */}
       <FloatingCTA 
         settings={pageData?.company || {}} 
         offersConfig={pageData?.offers}
         onOpenEnquiry={handleHeroGetQuote}
       />
       
+      {/* --- MODALS --- */}
       <UnifiedEnquiryModal 
         trip={selectedTrip}
         isOpen={isEnquiryOpen}
@@ -132,6 +149,7 @@ export default function ModernTemplate({ pageData }) {
         primaryColor={primaryColor}
       />
 
+      {/* --- HEADER --- */}
       <LandingPageHeader 
         companySettings={pageData?.company} 
         promoData={pageData?.offers?.header} 
@@ -139,6 +157,7 @@ export default function ModernTemplate({ pageData }) {
         secondaryColor={secondaryColor} 
       />
 
+      {/* --- HERO --- */}
       <div id="hero">
         <HeroSection 
           onExploreClick={scrollToTrips} 
@@ -151,7 +170,9 @@ export default function ModernTemplate({ pageData }) {
       
       <TrustBadges />
 
-      {/* --- PACKAGES SECTION (Reduced padding to py-16) --- */}
+      {/* ================================================================== */}
+      {/* SECTION 1: POPULAR PACKAGES (Standard Selection)                   */}
+      {/* ================================================================== */}
       {pageData?.packages?.show_section && (
         <section id="packages" ref={tripsRef} className="py-16 bg-gradient-to-b from-slate-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -159,7 +180,7 @@ export default function ModernTemplate({ pageData }) {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-12" // Reduced margin-bottom
+              className="text-center mb-12"
             >
               <div 
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
@@ -192,9 +213,9 @@ export default function ModernTemplate({ pageData }) {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-4 text-slate-600">Loading amazing destinations...</p>
               </div>
-            ) : trips.length > 0 ? (
+            ) : mainSectionTrips.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {trips.map((trip, index) => (
+                {mainSectionTrips.map((trip, index) => (
                   <TripCard 
                     key={trip.id} 
                     trip={trip} 
@@ -208,20 +229,83 @@ export default function ModernTemplate({ pageData }) {
               </div>
             ) : (
               <div className="text-center py-12 text-slate-500">
-                <p className="text-xl">No trips available at the moment.</p>
+                {/* Only show "No trips" if NO custom packages exist either */}
+                {pageData?.packages?.custom_packages?.length === 0 && (
+                   <p className="text-xl">No trips available at the moment.</p>
+                )}
               </div>
             )}
           </div>
         </section>
       )}
 
-      {/* --- PROMO SECTION (Pass onOpenEnquiry) --- */}
+      {/* ================================================================== */}
+      {/* SECTION 2: CUSTOM PACKAGES (Dynamic Sections)                      */}
+      {/* ================================================================== */}
+      {pageData?.packages?.show_section && pageData?.packages?.custom_packages?.map((pkg, idx) => {
+        // Filter trips for this specific custom package
+        const pkgTrips = allTripsData.filter(t => pkg.trip_ids?.includes(t.id));
+        
+        // Don't render empty sections
+        if (pkgTrips.length === 0) return null;
+
+        return (
+          <section key={idx} className="py-16 bg-white border-t border-slate-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-12"
+              >
+                {/* Optional Badge for the Section */}
+                {pkg.badge && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 bg-slate-100 text-slate-600">
+                    <Compass className="w-4 h-4" />
+                    <span className="text-sm font-bold uppercase">{pkg.badge}</span>
+                  </div>
+                )}
+                
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                  {pkg.title}
+                </h2>
+                
+                {pkg.description && (
+                  <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+                    {pkg.description}
+                  </p>
+                )}
+              </motion.div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {pkgTrips.map((trip, tIdx) => (
+                  <TripCard 
+                    key={trip.id} 
+                    trip={{
+                      ...trip,
+                      // Allow custom overrides per section if data structure supports it later
+                      // Currently just using raw trip data for custom packages
+                    }}
+                    index={tIdx}
+                    onEnquire={handleEnquire}
+                    onViewDetails={handleViewDetails}
+                    primaryColor={primaryColor}
+                    secondaryColor={secondaryColor}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      })}
+
+      {/* --- PROMO SECTION --- */}
       <PromoMediaSection 
         data={pageData?.offers?.mid_section} 
         onOpenEnquiry={handleHeroGetQuote} 
       />
 
-      {/* --- ATTRACTIONS (Pass onEnquire) --- */}
+      {/* --- ATTRACTIONS --- */}
       {pageData?.attractions?.show_section && pageData?.attractions?.items?.length > 0 && (
         <div id="attractions">
           <AttractionsSection 
@@ -247,11 +331,11 @@ export default function ModernTemplate({ pageData }) {
         />
       )}
 
-      {/* --- FLASH SALE (Reduced padding to py-10) --- */}
+      {/* --- FLASH SALE --- */}
       {pageData?.offers?.header?.enabled && pageData?.offers?.end_date && (
         <section className="relative overflow-hidden">
           <div 
-            className="py-10 relative" // Reduced from py-12
+            className="py-10 relative" 
             style={{
               background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
             }}
