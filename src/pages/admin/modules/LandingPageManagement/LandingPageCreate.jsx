@@ -2207,7 +2207,7 @@ export default function LandingPageCreate() {
                 </div>
 
                 {/* Mid Section Banner */}
-                <div className="p-6 border rounded-2xl bg-slate-50">
+                <div className="p-6 border rounded-2xl bg-slate-900">
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-3">
                       <input
@@ -2218,7 +2218,7 @@ export default function LandingPageCreate() {
                       />
                       <h4 className="font-bold text-lg">In-Page Banner (Mid Section)</h4>
                     </div>
-                    <div className="flex p-1 bg-white border rounded-xl">
+                    <div className="flex p-1 bg-black border rounded-xl">
                       {['image', 'video'].map(t => (
                         <button
                           key={t}
