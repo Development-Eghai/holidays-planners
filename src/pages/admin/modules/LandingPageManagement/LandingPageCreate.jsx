@@ -487,31 +487,110 @@ export default function LandingPageCreate() {
   /**
    * Fetch existing landing page data for editing
    */
-  const fetchLandingPage = async (pageId) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/landing-pages/${pageId}`, { headers: { 'x-api-key': API_KEY } });
-      if (!response.ok) throw new Error('Failed to fetch landing page');
-      const data = await response.json();
-
-      setFormData(prev => ({
-        ...prev,
-        ...data.data || data,
-        company: { ...prev.company, ...(data.data?.company || data.company) },
-        theme_colors: { ...prev.theme_colors, ...(data.data?.theme_colors || data.theme_colors) },
-        company_about: { ...prev.company_about, ...(data.data?.company_about || data.company_about) },
-        packages: { ...prev.packages, ...(data.data?.packages || data.packages) },
-        live_notifications: { ...prev.live_notifications, ...(data.data?.live_notifications || data.live_notifications) },
-        seo: { ...prev.seo, ...(data.data?.seo || data.seo) },
-        hero: { ...prev.hero, ...(data.data?.hero || data.hero) },
-        offers: { ...prev.offers, ...(data.data?.offers || data.offers) }
-      }));
-    } catch (error) {
-      console.error('Error loading page:', error);
-      alert('Error loading landing page data');
-    }
-    finally { setIsLoading(false); }
-  };
+  /**
+ * Fetch existing landing page data for editing
+ */
+const fetchLandingPage = async (pageId) => {
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_BASE_URL}/landing-pages/${pageId}`, {
+      headers: { 'x-api-key': API_KEY }
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch landing page');
+    
+    const data = await response.json();
+    const pageData = data.data || data;
+    
+    // Helper function to ensure arrays
+    const ensureArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value === null || value === undefined) return [];
+      // If it's an object, try to convert to array or return empty
+      return [];
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      ...pageData,
+      company: {
+        ...prev.company,
+        ...(pageData.company || {}),
+        // Ensure these are always arrays
+        emails: ensureArray(pageData.company?.emails),
+        phones: ensureArray(pageData.company?.phones),
+        addresses: ensureArray(pageData.company?.addresses),
+        social_media: ensureArray(pageData.company?.social_media),
+      },
+      theme_colors: {
+        ...prev.theme_colors,
+        ...(pageData.theme_colors || {})
+      },
+      company_about: {
+        ...prev.company_about,
+        ...(pageData.company_about || {}),
+        highlights: ensureArray(pageData.company_about?.highlights),
+        team_members: ensureArray(pageData.company_about?.team_members),
+      },
+      packages: {
+        ...prev.packages,
+        ...(pageData.packages || {}),
+        selected_trips: ensureArray(pageData.packages?.selected_trips),
+        custom_packages: ensureArray(pageData.packages?.custom_packages),
+      },
+      live_notifications: {
+        ...prev.live_notifications,
+        ...(pageData.live_notifications || {}),
+        notifications: ensureArray(pageData.live_notifications?.notifications),
+      },
+      seo: {
+        ...prev.seo,
+        ...(pageData.seo || {})
+      },
+      hero: {
+        ...prev.hero,
+        ...(pageData.hero || {}),
+        background_images: ensureArray(pageData.hero?.background_images),
+        background_videos: ensureArray(pageData.hero?.background_videos),
+      },
+      attractions: {
+        ...prev.attractions,
+        ...(pageData.attractions || {}),
+        items: ensureArray(pageData.attractions?.items),
+      },
+      gallery: {
+        ...prev.gallery,
+        ...(pageData.gallery || {}),
+        images: ensureArray(pageData.gallery?.images),
+        videos: ensureArray(pageData.gallery?.videos),
+      },
+      testimonials: {
+        ...prev.testimonials,
+        ...(pageData.testimonials || {}),
+        items: ensureArray(pageData.testimonials?.items),
+      },
+      faqs: {
+        ...prev.faqs,
+        ...(pageData.faqs || {}),
+        items: ensureArray(pageData.faqs?.items),
+      },
+      offers: {
+        ...prev.offers,
+        ...(pageData.offers || {}),
+        mid_section: {
+          ...prev.offers.mid_section,
+          ...(pageData.offers?.mid_section || {}),
+          media_urls: ensureArray(pageData.offers?.mid_section?.media_urls),
+        }
+      }
+    }));
+  } catch (error) {
+    console.error('Error loading page:', error);
+    alert('Error loading landing page data');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // -------------------------------------------------------------------------
   // STATE UPDATE HANDLERS
