@@ -154,8 +154,7 @@ const LeadManagement = () => {
           assigned_to: 'Unassigned',
           follow_up_date: null,
           created_at: item.created_at || new Date().toISOString(),
-          source: 'Website Enquiry',
-          type: 'enquiry',
+          source: item.departure_city || 'Website Enquiry',  // ✅ CORRECT - Read from API
           table: 'enquire_form',
           additional_info: {
             departure_city: item.departure_city,

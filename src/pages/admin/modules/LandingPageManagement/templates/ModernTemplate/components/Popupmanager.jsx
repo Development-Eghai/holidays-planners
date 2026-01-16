@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import UnifiedEnquiryModal from './UnifiedEnquiryModal';
 
-export default function PopupManager({ offersConfig }) {
+// ✅ FIXED VERSION - Added pageName and pageSlug props
+export default function PopupManager({ offersConfig, pageName = null, pageSlug = null }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPopupType, setCurrentPopupType] = useState(null);
   const [popupsShown, setPopupsShown] = useState({
@@ -81,6 +82,7 @@ export default function PopupManager({ offersConfig }) {
     setCurrentPopupType(null);
   }, []);
 
+  // ✅ FIXED - Pass pageName and pageSlug to UnifiedEnquiryModal
   return (
     <UnifiedEnquiryModal
       trip={null}
@@ -88,6 +90,8 @@ export default function PopupManager({ offersConfig }) {
       onClose={handleCloseModal}
       popupSettings={popupSettings}
       popupType={currentPopupType}
+      pageName={pageName}      // ✅ ADDED THIS
+      pageSlug={pageSlug}      // ✅ ADDED THIS
     />
   );
 }

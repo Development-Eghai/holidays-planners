@@ -9,12 +9,29 @@ export default function FloatingCTA({ settings, offersConfig, onOpenEnquiry }) {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
     useEffect(() => {
-        // Show sticky banner after scrolling
+        // Show sticky banner after scrolling BUT hide when footer is visible
         const handleScroll = () => {
-            setShowBanner(window.scrollY > 500);
+            const footer = document.querySelector('footer');
+            if (footer) {
+                const footerRect = footer.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                
+                // Show banner only if scrolled past 500px AND footer is not in viewport
+                const isFooterVisible = footerRect.top < windowHeight;
+                setShowBanner(window.scrollY > 500 && !isFooterVisible);
+            } else {
+                setShowBanner(window.scrollY > 500);
+            }
         };
+        
+        handleScroll(); // Initial check
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('resize', handleScroll); // Also check on resize
+        
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
     }, []);
 
     // Countdown timer
@@ -71,33 +88,37 @@ export default function FloatingCTA({ settings, offersConfig, onOpenEnquiry }) {
                                 <p className="text-sm opacity-90">We're here to assist you!</p>
                             </div>
                             <div className="p-4 space-y-3">
-                                <a
-                                    href={`tel:${settings?.contact || '+919876543210'}`}
-                                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                                >
-                                    <div className="p-2 rounded-full bg-[#FF6B35]">
-                                        <Phone className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold text-slate-900">Call Us</div>
-                                        <div className="text-sm text-slate-500">{settings?.contact || '+91 98765 43210'}</div>
-                                    </div>
-                                </a>
-                                <a
-                                    href={`https://wa.me/${(settings?.contact || '919876543210').replace(/[^0-9]/g, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                                >
-                                    <div className="p-2 rounded-full bg-[#25D366]">
-                                        <MessageCircle className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold text-slate-900">WhatsApp</div>
-                                        <div className="text-sm text-slate-500">Chat with us</div>
-                                    </div>
-                                </a>
-                            </div>
+    <a
+        href={`tel:${settings?.contact || '+919876543210'}`}
+        className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+    >
+        <div className="p-2 rounded-full bg-[#FF6B35]">
+            <Phone className="w-4 h-4 text-white" />
+        </div>
+        <div>
+            <div className="font-semibold text-slate-900">Call Us</div>
+            <div className="text-sm text-slate-500">
+                {settings?.contact || '+91 98765 43210'}
+            </div>
+        </div>
+    </a>
+
+    <a
+        href={`https://wa.me/${(settings?.contact || '919876543210').replace(/[^0-9]/g, '')}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+    >
+        <div className="p-2 rounded-full bg-[#25D366]">
+            <MessageCircle className="w-4 h-4 text-white" />
+        </div>
+        <div>
+            <div className="font-semibold text-slate-900">WhatsApp</div>
+            <div className="text-sm text-slate-500">Chat with us</div>
+        </div>
+    </a>
+</div>
+
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -122,7 +143,7 @@ export default function FloatingCTA({ settings, offersConfig, onOpenEnquiry }) {
                 </motion.button>
             </div>
 
-            {/* Sticky Bottom Banner */}
+            {/* Sticky Bottom Banner - Hides when footer is visible */}
             <AnimatePresence>
                 {showBanner && showFooterBanner && (
                     <motion.div
@@ -131,44 +152,46 @@ export default function FloatingCTA({ settings, offersConfig, onOpenEnquiry }) {
                         exit={{ y: 100 }}
                         className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-slate-900 to-slate-800 border-t border-slate-700"
                     >
-                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <motion.div
-                                    animate={{ rotate: [0, 15, -15, 0] }}
-                                    transition={{ duration: 1, repeat: Infinity }}
-                                >
-                                    <Sparkles className="w-5 h-5 text-[#FFB800]" />
-                                </motion.div>
-                                <span className="text-white font-medium text-sm sm:text-base">
-                                    🔥 <span className="text-[#FF6B35]">{offersConfig.footer.text}</span>
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {offersConfig?.end_date && (
-                                    <div className="hidden sm:flex items-center gap-2 text-white/80 text-sm">
-                                        <span>Ends in:</span>
-                                        <div className="flex items-center gap-1 font-mono font-bold">
-                                            {timeLeft.days > 0 && (
-                                                <>
-                                                    <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.days).padStart(2, '0')}d</span>
-                                                    <span>:</span>
-                                                </>
-                                            )}
-                                            <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}h</span>
-                                            <span>:</span>
-                                            <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-                                            <span>:</span>
-                                            <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+                        <div className="max-w-7xl mx-auto px-4 py-3">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <motion.div
+                                        animate={{ rotate: [0, 15, -15, 0] }}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                    >
+                                        <Sparkles className="w-5 h-5 text-[#FFB800]" />
+                                    </motion.div>
+                                    <span className="text-white font-medium text-sm sm:text-base">
+                                        🔥 <span className="text-[#FF6B35]">{offersConfig.footer.text}</span>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {offersConfig?.end_date && (
+                                        <div className="hidden sm:flex items-center gap-2 text-white/80 text-sm">
+                                            <span>Ends in:</span>
+                                            <div className="flex items-center gap-1 font-mono font-bold">
+                                                {timeLeft.days > 0 && (
+                                                    <>
+                                                        <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.days).padStart(2, '0')}d</span>
+                                                        <span>:</span>
+                                                    </>
+                                                )}
+                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}h</span>
+                                                <span>:</span>
+                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+                                                <span>:</span>
+                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                <Button
-                                    size="sm"
-                                    className="bg-gradient-to-r from-[#FF6B35] to-[#FFB800] text-white rounded-full px-6 hover:shadow-lg transition-all"
-                                    onClick={handleGetQuote}
-                                >
-                                    Get Quote
-                                </Button>
+                                    )}
+                                    <Button
+                                        size="sm"
+                                        className="bg-gradient-to-r from-[#FF6B35] to-[#FFB800] text-white rounded-full px-6 hover:shadow-lg transition-all"
+                                        onClick={handleGetQuote}
+                                    >
+                                        Get Quote
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </motion.div>

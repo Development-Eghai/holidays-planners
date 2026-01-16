@@ -117,8 +117,14 @@ export default function ModernTemplate({ pageData }) {
       </Helmet>
 
       {/* --- POPUPS & NOTIFICATIONS --- */}
-      <PopupManager offersConfig={pageData?.offers} />
+      <PopupManager 
+        offersConfig={pageData?.offers} 
+        pageName={pageData?.page_name}   // ADD THIS
+        pageSlug={pageData?.slug}        // ADD THIS
+      />
+      
       <BookingNotification pageData={pageData} />
+      
 
       {/* --- FLOATING CTA --- */}
       <FloatingCTA 
@@ -128,6 +134,11 @@ export default function ModernTemplate({ pageData }) {
       />
       
       {/* --- MODALS --- */}
+      {console.log('🎯 Passing to UnifiedEnquiryModal:', {
+  pageName: pageData?.page_name,
+  pageSlug: pageData?.slug
+})}
+
       <UnifiedEnquiryModal 
         trip={selectedTrip}
         isOpen={isEnquiryOpen}
@@ -139,6 +150,9 @@ export default function ModernTemplate({ pageData }) {
         popupSettings={null}
         popupType={null}
         selectedTrips={pageData?.packages?.selected_trips || []}
+        // TO PASS PAGE TITLE 
+        pageName={pageData?.page_name}      
+        pageSlug={pageData?.slug}           
       />
 
       <TripModal 
@@ -390,6 +404,8 @@ export default function ModernTemplate({ pageData }) {
           primaryColor={primaryColor} 
           secondaryColor={secondaryColor} 
           selectedTrips={pageData?.packages?.selected_trips || []}
+          pageName={pageData?.page_name}      // ADD THIS
+          pageSlug={pageData?.slug}           // ADD THIS
         />
       </div>
 

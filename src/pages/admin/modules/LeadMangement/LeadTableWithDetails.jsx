@@ -1,67 +1,60 @@
-// fileName: LeadTableWithDetails.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  Box,
-  Button,
-  Paper,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Checkbox,
-  Chip,
-  Tooltip,
-  IconButton,
-  Menu,
-  MenuItem,
+  Box, Button, Paper, Typography, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Checkbox, Chip, IconButton, Menu, MenuItem,
+  Stack, TextField, InputAdornment, FormControl, Select, InputLabel
 } from '@mui/material';
-import { Delete, Download, Edit, MoreVert as MoreVertIcon, Visibility, Email, WhatsApp } from '@mui/icons-material';
-import LeadDetailsDialog from './LeadDetailsDialog'; 
+import {
+  Delete, Download, Edit, MoreVert as MoreVertIcon, Visibility,
+  Email, WhatsApp, Search
+} from '@mui/icons-material';
+import LeadDetailsDialog from './LeadDetailsDialog';
 
-const LeadTableWithDetails = ({ 
-  leads, 
-  selectedLeads, 
-  toggleSelectLead, 
-  onDeleteLead,
-  onRefresh,
-  onLocalUpdate 
-}) => {
+const LeadTableWithDetails = ({ leads, selectedLeads, toggleSelectLead, onDeleteLead, onRefresh, onLocalUpdate }) => {
   const [openDetails, setOpenDetails] = useState(false);
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuLead, setMenuLead] = useState(null);
-  const isMenuOpen = Boolean(anchorEl);
+  
+  // Filtering States
+  const [filterType, setFilterType] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const isMenuOpen = Boolean(anchorEl);
   const isSelected = (id) => selectedLeads.includes(id);
 
-  const handleExport = () => {
-    const csv = [
-      ['Name', 'Email', 'Mobile', 'Destination', 'Trip Type', 'Status', 'Priority', 'Source', 'Created'],
-      ...leads.map(lead => [
-        lead.name,
-        lead.email,
-        lead.mobile,
-        lead.destination_type,
-        lead.trip_type,
-        lead.status,
-        lead.priority,
-        lead.source,
-        new Date(lead.created_at).toLocaleDateString(),
-      ])
-    ].map(row => row.join(',')).join('\n');
+  // --- Calculations for Top Cards (Separate Enquiries & Bookings) ---
+  const stats = useMemo(() => {
+    return {
+      total: leads.length,
+      landingPage: leads.filter(l => l.source?.toLowerCase().includes('landing page')).length,
+      manual: leads.filter(l => l.type === 'lead' || l.source?.toLowerCase().includes('manual')).length,
+      websiteEnquiry: leads.filter(l => l.source?.toLowerCase().includes('website')).length,
+      bookingRequest: leads.filter(l => l.source?.toLowerCase().includes('booking')).length,
+    };
+  }, [leads]);
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-  
-  // --- Menu Handlers ---
+  // --- Filtering Logic ---
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      const matchesSearch = 
+        lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.mobile?.includes(searchQuery);
+
+      const source = lead.source?.toLowerCase() || '';
+      const type = lead.type?.toLowerCase() || '';
+
+      if (filterType === 'All') return matchesSearch;
+      if (filterType === 'Landing Page') return matchesSearch && source.includes('landing page');
+      if (filterType === 'Booking Request') return matchesSearch && source.includes('booking');
+      if (filterType === 'Website Enquiry') return matchesSearch && source.includes('website');
+      if (filterType === 'Manual Leads') return matchesSearch && (type === 'lead' || source.includes('manual'));
+      
+      return matchesSearch;
+    });
+  }, [leads, filterType, searchQuery]);
+
   const handleMenuClick = (event, lead) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -72,177 +65,154 @@ const LeadTableWithDetails = ({
     setAnchorEl(null);
     setMenuLead(null);
   };
-  
-  // --- Detail Dialog Handlers ---
+
   const handleViewDetails = (lead) => {
     setSelectedLeadForDetails(lead);
     setOpenDetails(true);
     handleMenuClose();
   };
 
-  const handleDetailsClose = () => {
-    setOpenDetails(false);
-    setSelectedLeadForDetails(null);
-  };
-
-  // --- Quick Action Handlers ---
-  const handleWhatsApp = (lead) => {
-    const phoneNumber = lead.mobile.replace(/[^0-9]/g, '');
-    const message = encodeURIComponent(`Hello ${lead.name}, Thank you for your interest!`);
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
-    handleMenuClose();
-  };
-
-  const handleEmail = (lead) => {
-    const subject = encodeURIComponent('Regarding Your Travel Enquiry');
-    const body = encodeURIComponent(`Dear ${lead.name},\n\nThank you for contacting us.\n\nBest regards,\nHolidays Planners`);
-    window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`, '_blank');
-    handleMenuClose();
-  };
-
-
   return (
-    <>
-      <TableContainer component={Paper}>
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-           <Button
-              variant="outlined"
-              startIcon={<Download />}
-              onClick={handleExport}
-            >
-              Export CSV
-            </Button>
-        </Box>
-        <Table sx={{ minWidth: 650 }} aria-label="lead table">
-          <TableHead>
+    <Box sx={{ width: '100%', mb: 4 }}>
+      {/* Top Stats Cards - Separated Enquiries and Bookings */}
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <StatCard label="Total Leads" count={stats.total} color="#7b1fa2" />
+        <StatCard label="Landing Page" count={stats.landingPage} color="#2e7d32" />
+        <StatCard label="Website Enquiries" count={stats.websiteEnquiry} color="#0288d1" />
+        <StatCard label="Booking Requests" count={stats.bookingRequest} color="#ed6c02" />
+        <StatCard label="Manual Entries" count={stats.manual} color="#d32f2f" />
+      </Stack>
+
+      {/* Filter Toolbar */}
+      <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, alignItems: 'center', backgroundColor: '#fff' }}>
+        <TextField
+          size="small"
+          placeholder="Search name, email, mobile..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
+          }}
+          sx={{ minWidth: 280 }}
+        />
+
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Filter By Source</InputLabel>
+          <Select
+            label="Filter By Source"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <MenuItem value="All">All Leads</MenuItem>
+            <MenuItem value="Landing Page">Landing Page</MenuItem>
+            <MenuItem value="Booking Request">Booking Request</MenuItem>
+            <MenuItem value="Website Enquiry">Website Enquiry</MenuItem>
+            <MenuItem value="Manual Leads">Manual Leads</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Box sx={{ flexGrow: 1 }} />
+
+        <Button variant="outlined" startIcon={<Download />} size="medium">
+          EXPORT CSV
+        </Button>
+      </Paper>
+
+      {/* Leads Table */}
+      <TableContainer component={Paper} sx={{ borderRadius: 1, border: '1px solid #e0e0e0' }}>
+        <Table>
+          <TableHead sx={{ backgroundColor: '#f9fafb' }}>
             <TableRow>
-              <TableCell padding="checkbox">
-                {/* Individual row checkbox */}
-              </TableCell>
-              <TableCell>Lead Info</TableCell>
-              <TableCell>Destination</TableCell>
-              <TableCell>Trip Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Priority</TableCell>
-              <TableCell>Source</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell padding="checkbox"><Checkbox /></TableCell>
+              {/* Fix: Darker, bold headers */}
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Lead Info</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Destination</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Trip Type</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Priority</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Source</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Created</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {leads.map((lead) => {
-              const isItemSelected = isSelected(lead.id);
-              const isManualLead = lead.type === 'lead';
-
-              return (
-                <TableRow
-                  hover
-                  role="checkbox"
-                  aria-checked={isItemSelected}
-                  tabIndex={-1}
-                  key={lead.id}
-                  selected={isItemSelected}
-                  onClick={isManualLead ? () => toggleSelectLead(lead.id) : () => handleViewDetails(lead)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox 
-                      color="primary"
-                      checked={isItemSelected}
-                      disabled={!isManualLead}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleSelectLead(lead.id);
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell component="th" scope="row">
-                    <Typography variant="subtitle1">{lead.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{lead.email}</Typography>
-                    <Typography variant="body2" color="text.secondary">{lead.mobile}</Typography>
-                  </TableCell>
-                  <TableCell>{lead.destination_type}</TableCell>
-                  <TableCell>{lead.trip_type}</TableCell>
-                  <TableCell>
-                    <Chip label={lead.status} size="small" color={
-                      lead.status === 'new' ? 'primary' : 
-                      lead.status === 'booked' ? 'success' : 
-                      'default'
-                    } />
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={lead.priority} size="small" color={
-                      lead.priority === 'high' ? 'error' : 
-                      lead.priority === 'medium' ? 'warning' : 
-                      'default'
-                    } />
-                  </TableCell>
-                  <TableCell>{lead.source}</TableCell>
-                  <TableCell>{new Date(lead.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <IconButton
-                      aria-label="more"
-                      aria-controls="long-menu"
-                      aria-haspopup="true"
-                      onClick={(e) => handleMenuClick(e, lead)}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {filteredLeads.map((lead) => (
+              <TableRow key={lead.id} hover onClick={() => handleViewDetails(lead)} sx={{ cursor: 'pointer' }}>
+                <TableCell padding="checkbox">
+                  <Checkbox 
+                    checked={isSelected(lead.id)} 
+                    onClick={(e) => { e.stopPropagation(); toggleSelectLead(lead.id); }} 
+                  />
+                </TableCell>
+                <TableCell>
+                  {/* Fix: Lead Name is now explicitly dark and prominent */}
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+                    {lead.name || "No Name"}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                    {lead.email}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    {lead.mobile}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ fontSize: '0.875rem', maxWidth: 250 }}>
+                  {lead.destination_type || lead.pickup || 'Not Specified'}
+                </TableCell>
+                <TableCell>{lead.trip_type || 'General'}</TableCell>
+                <TableCell>
+                  <Chip label={lead.status || 'new'} size="small" variant="outlined" color="primary" />
+                </TableCell>
+                <TableCell>
+                  <Chip label={lead.priority || 'medium'} size="small" sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }} />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {lead.type === 'lead' ? 'Manual' : (lead.source || 'Not Specified')}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  {new Date(lead.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={(e) => handleMenuClick(e, lead)}>
+                    <MoreVertIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
-        {leads.length === 0 && (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography color="text.secondary">No leads matching the current filters.</Typography>
-          </Box>
-        )}
       </TableContainer>
 
       {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={isMenuOpen}
-        onClose={handleMenuClose}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <MenuItem onClick={() => handleViewDetails(menuLead)}>
-          <Visibility sx={{ mr: 1 }} fontSize="small" /> View Details
-        </MenuItem>
-        
-        {menuLead?.type === 'lead' && (
-          <MenuItem onClick={() => { handleViewDetails(menuLead); }}> 
-            <Edit sx={{ mr: 1 }} fontSize="small" /> Edit Lead 
-          </MenuItem>
-        )}
-        
-        <MenuItem onClick={() => onDeleteLead(menuLead)} disabled={menuLead?.type !== 'lead'}>
-          <Delete sx={{ mr: 1 }} fontSize="small" /> Delete (Manual only)
-        </MenuItem>
-        
-        {/* Quick Actions */}
-        <MenuItem onClick={() => handleWhatsApp(menuLead)}>
-          <WhatsApp sx={{ mr: 1 }} fontSize="small" /> Send WhatsApp
-        </MenuItem>
-        <MenuItem onClick={() => handleEmail(menuLead)}>
-          <Email sx={{ mr: 1 }} fontSize="small" /> Send Email
-        </MenuItem>
+      <Menu anchorEl={anchorEl} open={isMenuOpen} onClose={handleMenuClose}>
+        <MenuItem onClick={() => handleViewDetails(menuLead)}><Visibility sx={{ mr: 1 }} /> View</MenuItem>
+        <MenuItem onClick={handleMenuClose}><WhatsApp sx={{ mr: 1, color: '#25D366' }} /> WhatsApp</MenuItem>
+        <MenuItem onClick={handleMenuClose}><Email sx={{ mr: 1, color: '#1976d2' }} /> Email</MenuItem>
       </Menu>
 
-      {/* Lead Details Dialog */}
       {selectedLeadForDetails && (
-        <LeadDetailsDialog
-          open={openDetails}
-          onClose={handleDetailsClose}
-          lead={selectedLeadForDetails}
-          onRefresh={onRefresh}
-          onLocalUpdate={onLocalUpdate}
+        <LeadDetailsDialog 
+            open={openDetails} 
+            lead={selectedLeadForDetails} 
+            onClose={() => setOpenDetails(false)} 
         />
       )}
-    </>
+    </Box>
   );
 };
+
+// Helper Component for the Top Cards
+const StatCard = ({ label, count, color }) => (
+  <Paper sx={{ p: 2, flex: 1, borderLeft: `4px solid ${color}`, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+      {label}
+    </Typography>
+    <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }}>
+      {count}
+    </Typography>
+  </Paper>
+);
 
 export default LeadTableWithDetails;

@@ -17,9 +17,10 @@ export default function UnifiedEnquiryModal({
   popupSettings, 
   popupType, 
   selectedTrips = [], 
-  offersConfig 
+  offersConfig,
+  pageName = null,
+  pageSlug = null 
 }) {
-  
   const [formData, setFormData] = useState({
     destination: '',
     full_name: '',
@@ -34,10 +35,8 @@ export default function UnifiedEnquiryModal({
     domain_name: DEFAULT_DOMAIN
   });
 
-  // Snapshot states to keep the Success Screen populated while form resets
   const [submittedName, setSubmittedName] = useState('');
   const [submittedDest, setSubmittedDest] = useState('');
-
   const [showCustomDestination, setShowCustomDestination] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -49,28 +48,22 @@ export default function UnifiedEnquiryModal({
           ...prev,
           destination: trip.trip_title || trip.custom_title || trip.title || ''
         }));
-        setShowCustomDestination(false);
       } else {
         setFormData(prev => ({ ...prev, destination: '' }));
-        setShowCustomDestination(false);
       }
+      setShowCustomDestination(false);
       setShowSuccess(false);
     }
   }, [trip, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
     if (name === 'destination' && value === 'other_custom') {
       setShowCustomDestination(true);
       setFormData(prev => ({ ...prev, destination: '' }));
       return;
     }
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleClose = () => {
@@ -81,49 +74,37 @@ export default function UnifiedEnquiryModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    // Capture values for the success screen before potential reset
     setSubmittedName(formData.full_name.split(' ')[0]); 
     setSubmittedDest(formData.destination);
 
+    let leadSource = pageName ? `Landing Page: ${pageName}` : 'Website Enquiry';
+
     const submissionData = {
-        ...formData,
-        travel_date: formData.is_flexible ? "Flexible" : formData.travel_date
+      ...formData,
+      travel_date: formData.is_flexible ? "Flexible" : formData.travel_date,
+      departure_city: leadSource,
+      source: leadSource
     };
 
     try {
       const response = await fetch(`${API_BASE_URL}/enquires`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-api-key': API_KEY 
-        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
         body: JSON.stringify(submissionData)
       });
-      
       if (!response.ok) throw new Error('Failed to submit');
+      
+      if (window.gtag) {
+        window.gtag('event', 'ads_conversion_submit_lead_form', {
+          destination: formData.destination,
+          lead_source: leadSource,
+          page_name: pageName || 'Direct Website'
+        });
+      }
       
       setShowSuccess(true);
       toast.success("Request sent successfully!");
-      
-      // Delay form reset slightly to ensure no UI flickering
-      setTimeout(() => {
-        setFormData({
-          destination: '',
-          full_name: '',
-          contact_number: '',
-          email: '',
-          adults: 2,
-          departure_city: 'Web Modal Lead',
-          travel_date: new Date().toISOString().split('T')[0],
-          is_flexible: false,
-          hotel_category: '3 Star',
-          additional_comments: '',
-          domain_name: DEFAULT_DOMAIN
-        });
-      }, 500);
     } catch (error) {
-      console.error('Submission Error:', error);
       toast.error('Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -131,7 +112,8 @@ export default function UnifiedEnquiryModal({
   };
 
   const getTitle = () => {
-    if (trip) return `Book: ${trip.trip_title || trip.custom_title || trip.title}`;
+    if (trip) return `${trip.trip_title || trip.custom_title || trip.title}`;
+    if (pageName) return pageName;
     return popupSettings?.[popupType]?.title || 'Plan Your Dream Trip';
   };
 
@@ -148,253 +130,102 @@ export default function UnifiedEnquiryModal({
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 30 }}
+              initial={{ scale: 0.98, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 30 }}
+              exit={{ scale: 0.98, opacity: 0, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-[400px] rounded-3xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
+              className="bg-white w-full max-w-[380px] rounded-2xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[95vh]"
             >
-              
               {showSuccess ? (
-                <div className="flex flex-col items-center justify-center p-10 text-center h-full min-h-[400px]">
-                  <motion.div 
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600"
-                  >
-                    <PhoneCall className="w-10 h-10" />
+                <div className="flex flex-col items-center justify-center p-8 text-center h-full min-h-[350px]">
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600">
+                    <PhoneCall className="w-8 h-8" />
                   </motion.div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Thanks, {submittedName}!</h3>
-                  <p className="text-slate-500 mb-8 text-sm leading-relaxed">
-                    We've received your request for <br/>
-                    <span className="text-[#FF6B35] font-bold">{submittedDest}</span>.<br/>
-                    Our team will contact you shortly.
-                  </p>
-                  <Button onClick={handleClose} className="w-full bg-slate-900 text-white rounded-xl py-6">
-                    Close
-                  </Button>
+                  <h3 className="text-xl font-bold text-slate-800 mb-1">Thanks, {submittedName}!</h3>
+                  <p className="text-slate-500 mb-6 text-sm">Request received for <span className="text-[#FF6B35] font-bold">{submittedDest}</span>. Our team will call you shortly.</p>
+                  <Button onClick={handleClose} className="w-full bg-slate-900 text-white rounded-lg h-11">Close</Button>
                 </div>
               ) : (
                 <>
-                  {/* HEADER */}
-                  <div className="relative bg-gradient-to-br from-[#FF6B35] to-[#FFB800] p-6 text-white shrink-0">
-                    <button 
-                      onClick={handleClose}
-                      className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-                    >
-                      <X className="w-4 h-4 text-white" />
+                  <div className="relative bg-gradient-to-br from-[#FF6B35] to-[#FF9F00] px-5 py-4 text-white shrink-0">
+                    <button onClick={handleClose} className="absolute top-3 right-3 p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                      <X className="w-3.5 h-3.5" />
                     </button>
-                    
-                    <div className="mb-4 pr-6">
-                      <h2 className="text-xl font-bold leading-tight mb-1">{getTitle()}</h2>
-                      <p className="text-white/90 text-xs">Unlock exclusive deals now!</p>
+                    <div className={shouldShowCountdown ? 'mb-3' : 'mb-0'}>
+                      <p className="text-[10px] uppercase tracking-wider font-bold opacity-80 mb-0.5">Enquiry For</p>
+                      <h2 className="text-lg font-bold leading-tight line-clamp-1">{getTitle()}</h2>
                     </div>
-
                     {shouldShowCountdown && (
-                      <div className="bg-white/10 border border-white/20 rounded-xl p-3 backdrop-blur-sm flex flex-col items-center">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white/90 mb-1">
-                           <Clock className="w-3 h-3" /> Offer Ends In
-                        </div>
-                        <div className="text-white scale-90">
-                           <CountdownTimer endDate={offersConfig.end_date} compact={true} />
-                        </div>
+                      <div className="bg-black/10 border border-white/20 rounded-lg p-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest"><Clock className="w-3 h-3" /> Offer Ends In</span>
+                        <div className="scale-75 origin-right"><CountdownTimer endDate={offersConfig.end_date} compact={true} /></div>
                       </div>
                     )}
                   </div>
 
-                  {/* FORM BODY */}
-                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      
-                      {/* DESTINATION FIELD */}
+                  <div className="flex-1 overflow-y-auto p-5 bg-white">
+                    <form onSubmit={handleSubmit} className="space-y-3">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> Destination
-                        </label>
-                        
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><MapPin className="w-3 h-3" /> Destination</label>
                         {trip ? (
-                          <div className="relative opacity-80">
-                             <Input 
-                               value={formData.destination} 
-                               readOnly 
-                               className="bg-slate-100 border-slate-200 font-semibold text-slate-700 focus-visible:ring-0" 
-                             />
-                          </div>
+                          <Input value={formData.destination} readOnly className="bg-slate-50 border-slate-200 h-9 text-sm font-medium text-slate-600 focus-visible:ring-0" />
                         ) : !showCustomDestination ? (
-                           <div className="relative">
-                              {selectedTrips && selectedTrips.length > 0 ? (
-                                <>
-                                  <select
-                                    name="destination"
-                                    value={formData.destination}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full h-10 pl-3 pr-8 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] appearance-none shadow-sm"
-                                  >
-                                    <option value="">Select a destination</option>
-                                    {selectedTrips.map((trip, index) => (
-                                      <option key={index} value={trip.trip_title || trip.custom_title}>
-                                        {trip.trip_title || trip.custom_title}
-                                      </option>
-                                    ))}
-                                    <option value="other_custom" className="font-bold text-[#FF6B35] bg-orange-50">
-                                      + Other / Custom Destination
-                                    </option>
-                                  </select>
-                                  <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                                </>
-                              ) : (
-                                <Input
-                                  name="destination"
-                                  value={formData.destination}
-                                  onChange={handleChange}
-                                  placeholder="Enter your Dream Destination"
-                                  required
-                                  className="h-10 rounded-md border border-slate-200 focus:ring-[#FF6B35]"
-                                />
-                              )}
-                           </div>
+                          <div className="relative">
+                            <select name="destination" value={formData.destination} onChange={handleChange} required className="w-full h-9 pl-3 pr-8 rounded-md border border-slate-200 bg-white text-sm font-medium focus:ring-1 focus:ring-[#FF6B35] appearance-none outline-none">
+                              <option value="">Select destination</option>
+                              {selectedTrips.map((t, i) => <option key={i} value={t.trip_title || t.custom_title}>{t.trip_title || t.custom_title}</option>)}
+                              <option value="other_custom" className="text-[#FF6B35] font-bold">+ Other Destination</option>
+                            </select>
+                            <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                          </div>
                         ) : (
-                          <div className="space-y-2">
-                             <Input
-                               name="destination"
-                               value={formData.destination}
-                               onChange={handleChange}
-                               placeholder="Enter your custom destination"
-                               autoFocus
-                               required
-                               className="bg-white border-slate-200 focus:ring-[#FF6B35]"
-                             />
-                             <button
-                               type="button"
-                               onClick={() => {
-                                 setShowCustomDestination(false);
-                                 setFormData(prev => ({ ...prev, destination: '' }));
-                               }}
-                               className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                             >
-                               <ArrowLeft className="w-3 h-3" /> Back to list
-                             </button>
+                          <div className="space-y-1.5">
+                            <Input name="destination" value={formData.destination} onChange={handleChange} placeholder="Type destination..." autoFocus required className="h-9 text-sm" />
+                            <button type="button" onClick={() => setShowCustomDestination(false)} className="text-[10px] text-blue-600 hover:underline flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back to list</button>
                           </div>
                         )}
                       </div>
 
-                      {/* Name */}
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <User className="w-3 h-3" /> Name
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><User className="w-3 h-3" /> Full Name</label>
+                        <Input name="full_name" value={formData.full_name} onChange={handleChange} placeholder="Enter your name" required className="h-9 text-sm" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</label>
+                          <Input type="tel" name="contact_number" value={formData.contact_number} onChange={handleChange} placeholder="Phone number" required className="h-9 text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Users className="w-3 h-3" /> Pax</label>
+                          <Input type="number" name="adults" value={formData.adults} onChange={handleChange} min="1" required className="h-9 text-sm text-center" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 items-end">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" /> Travel Date</label>
+                          <Input type="date" name="travel_date" disabled={formData.is_flexible} value={formData.travel_date} onChange={handleChange} className={`h-9 text-xs ${formData.is_flexible ? 'opacity-30' : 'opacity-100'}`} />
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer pb-2.5 select-none">
+                          <input type="checkbox" name="is_flexible" checked={formData.is_flexible} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300 text-[#FF6B35] focus:ring-0" />
+                          <span className="text-[11px] font-medium text-slate-500">I'm Flexible</span>
                         </label>
-                        <Input
-                          name="full_name"
-                          value={formData.full_name}
-                          onChange={handleChange}
-                          placeholder="John Doe"
-                          required
-                          className="bg-white border-slate-200 h-10"
-                        />
                       </div>
 
-                      {/* Phone & Pax Row */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <Phone className="w-3 h-3" /> Phone
-                          </label>
-                          <Input
-                            type="tel"
-                            name="contact_number"
-                            value={formData.contact_number}
-                            onChange={handleChange}
-                            placeholder="+91 98765"
-                            required
-                            className="bg-white border-slate-200 h-10"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <Users className="w-3 h-3" /> Pax
-                          </label>
-                          <Input
-                            type="number"
-                            name="adults"
-                            value={formData.adults}
-                            onChange={handleChange}
-                            min="1"
-                            required
-                            className="bg-white border-slate-200 h-10 text-center font-semibold"
-                          />
-                        </div>
+                      <div className="space-y-1 pb-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Mail className="w-3 h-3" /> Email Address</label>
+                        <Input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@example.com" required className="h-9 text-sm" />
                       </div>
 
-                      {/* Travel Date & Flexible Row */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> Travel Date
-                          </label>
-                          <Input
-                            type="date"
-                            name="travel_date"
-                            disabled={formData.is_flexible}
-                            value={formData.travel_date}
-                            onChange={handleChange}
-                            required={!formData.is_flexible}
-                            className={`bg-white border-slate-200 h-10 text-xs transition-opacity ${formData.is_flexible ? 'opacity-40 cursor-not-allowed' : 'opacity-100'}`}
-                          />
-                        </div>
-                        <div className="flex flex-col justify-end pb-2">
-                           <label className="flex items-center gap-2 cursor-pointer group select-none">
-                             <input 
-                                type="checkbox"
-                                name="is_flexible"
-                                checked={formData.is_flexible}
-                                onChange={handleChange}
-                                className="w-4 h-4 rounded border-slate-300 text-[#FF6B35] focus:ring-[#FF6B35] cursor-pointer"
-                             />
-                             <span className="text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors">Flexible Dates</span>
-                           </label>
-                        </div>
-                      </div>
-
-                      {/* Email */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <Mail className="w-3 h-3" /> Email
-                        </label>
-                        <Input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          placeholder="john@example.com"
-                          required
-                          className="bg-white border-slate-200 h-10"
-                        />
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="pt-2">
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 rounded-xl font-bold shadow-lg transform active:scale-[0.98] transition-all"
-                        >
-                          {isSubmitting ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Sending...
-                            </div>
-                          ) : (
-                            <>
-                              <Send className="w-4 h-4 mr-2" />
-                              Get Free Quote
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      <Button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 text-white h-11 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200">
+                        {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send className="w-3.5 h-3.5" /> Get Free Quote</>}
+                      </Button>
+                      <p className="text-center text-[9px] text-slate-400">By clicking, you agree to be contacted for travel quotes.</p>
                     </form>
                   </div>
                 </>

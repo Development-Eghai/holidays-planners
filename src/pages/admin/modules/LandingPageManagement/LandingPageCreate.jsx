@@ -17,6 +17,7 @@ import 'react-quill/dist/quill.snow.css';
 
 // Template Imports
 import ModernTemplate from './templates/ModernTemplate/ModernTemplate';
+import MinimalTemplate from './templates/MinimalTemplate/MinimalTemplate'; 
 
 // =============================================================================
 // CONFIGURATION
@@ -421,7 +422,7 @@ export default function LandingPageCreate() {
   ];
 
   const templateMap = {
-    'template-one': 'Minimal',
+    'template-one': 'Minimal / Directory',
     'template-two': 'Classic',
     'template-three': 'Modern'
   };
@@ -487,110 +488,105 @@ export default function LandingPageCreate() {
   /**
    * Fetch existing landing page data for editing
    */
-  /**
- * Fetch existing landing page data for editing
- */
-const fetchLandingPage = async (pageId) => {
-  setIsLoading(true);
-  try {
-    const response = await fetch(`${API_BASE_URL}/landing-pages/${pageId}`, {
-      headers: { 'x-api-key': API_KEY }
-    });
-    
-    if (!response.ok) throw new Error('Failed to fetch landing page');
-    
-    const data = await response.json();
-    const pageData = data.data || data;
-    
-    // Helper function to ensure arrays
-    const ensureArray = (value) => {
-      if (Array.isArray(value)) return value;
-      if (value === null || value === undefined) return [];
-      // If it's an object, try to convert to array or return empty
-      return [];
-    };
-    
-    setFormData(prev => ({
-      ...prev,
-      ...pageData,
-      company: {
-        ...prev.company,
-        ...(pageData.company || {}),
-        // Ensure these are always arrays
-        emails: ensureArray(pageData.company?.emails),
-        phones: ensureArray(pageData.company?.phones),
-        addresses: ensureArray(pageData.company?.addresses),
-        social_media: ensureArray(pageData.company?.social_media),
-      },
-      theme_colors: {
-        ...prev.theme_colors,
-        ...(pageData.theme_colors || {})
-      },
-      company_about: {
-        ...prev.company_about,
-        ...(pageData.company_about || {}),
-        highlights: ensureArray(pageData.company_about?.highlights),
-        team_members: ensureArray(pageData.company_about?.team_members),
-      },
-      packages: {
-        ...prev.packages,
-        ...(pageData.packages || {}),
-        selected_trips: ensureArray(pageData.packages?.selected_trips),
-        custom_packages: ensureArray(pageData.packages?.custom_packages),
-      },
-      live_notifications: {
-        ...prev.live_notifications,
-        ...(pageData.live_notifications || {}),
-        notifications: ensureArray(pageData.live_notifications?.notifications),
-      },
-      seo: {
-        ...prev.seo,
-        ...(pageData.seo || {})
-      },
-      hero: {
-        ...prev.hero,
-        ...(pageData.hero || {}),
-        background_images: ensureArray(pageData.hero?.background_images),
-        background_videos: ensureArray(pageData.hero?.background_videos),
-      },
-      attractions: {
-        ...prev.attractions,
-        ...(pageData.attractions || {}),
-        items: ensureArray(pageData.attractions?.items),
-      },
-      gallery: {
-        ...prev.gallery,
-        ...(pageData.gallery || {}),
-        images: ensureArray(pageData.gallery?.images),
-        videos: ensureArray(pageData.gallery?.videos),
-      },
-      testimonials: {
-        ...prev.testimonials,
-        ...(pageData.testimonials || {}),
-        items: ensureArray(pageData.testimonials?.items),
-      },
-      faqs: {
-        ...prev.faqs,
-        ...(pageData.faqs || {}),
-        items: ensureArray(pageData.faqs?.items),
-      },
-      offers: {
-        ...prev.offers,
-        ...(pageData.offers || {}),
-        mid_section: {
-          ...prev.offers.mid_section,
-          ...(pageData.offers?.mid_section || {}),
-          media_urls: ensureArray(pageData.offers?.mid_section?.media_urls),
+  const fetchLandingPage = async (pageId) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/landing-pages/${pageId}`, {
+        headers: { 'x-api-key': API_KEY }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch landing page');
+      
+      const data = await response.json();
+      const pageData = data.data || data;
+      
+      // Helper function to ensure arrays
+      const ensureArray = (value) => {
+        if (Array.isArray(value)) return value;
+        if (value === null || value === undefined) return [];
+        return [];
+      };
+      
+      setFormData(prev => ({
+        ...prev,
+        ...pageData,
+        company: {
+          ...prev.company,
+          ...(pageData.company || {}),
+          emails: ensureArray(pageData.company?.emails),
+          phones: ensureArray(pageData.company?.phones),
+          addresses: ensureArray(pageData.company?.addresses),
+          social_media: ensureArray(pageData.company?.social_media),
+        },
+        theme_colors: {
+          ...prev.theme_colors,
+          ...(pageData.theme_colors || {})
+        },
+        company_about: {
+          ...prev.company_about,
+          ...(pageData.company_about || {}),
+          highlights: ensureArray(pageData.company_about?.highlights),
+          team_members: ensureArray(pageData.company_about?.team_members),
+        },
+        packages: {
+          ...prev.packages,
+          ...(pageData.packages || {}),
+          selected_trips: ensureArray(pageData.packages?.selected_trips),
+          custom_packages: ensureArray(pageData.packages?.custom_packages),
+        },
+        live_notifications: {
+          ...prev.live_notifications,
+          ...(pageData.live_notifications || {}),
+          notifications: ensureArray(pageData.live_notifications?.notifications),
+        },
+        seo: {
+          ...prev.seo,
+          ...(pageData.seo || {})
+        },
+        hero: {
+          ...prev.hero,
+          ...(pageData.hero || {}),
+          background_images: ensureArray(pageData.hero?.background_images),
+          background_videos: ensureArray(pageData.hero?.background_videos),
+        },
+        attractions: {
+          ...prev.attractions,
+          ...(pageData.attractions || {}),
+          items: ensureArray(pageData.attractions?.items),
+        },
+        gallery: {
+          ...prev.gallery,
+          ...(pageData.gallery || {}),
+          images: ensureArray(pageData.gallery?.images),
+          videos: ensureArray(pageData.gallery?.videos),
+        },
+        testimonials: {
+          ...prev.testimonials,
+          ...(pageData.testimonials || {}),
+          items: ensureArray(pageData.testimonials?.items),
+        },
+        faqs: {
+          ...prev.faqs,
+          ...(pageData.faqs || {}),
+          items: ensureArray(pageData.faqs?.items),
+        },
+        offers: {
+          ...prev.offers,
+          ...(pageData.offers || {}),
+          mid_section: {
+            ...prev.offers.mid_section,
+            ...(pageData.offers?.mid_section || {}),
+            media_urls: ensureArray(pageData.offers?.mid_section?.media_urls),
+          }
         }
-      }
-    }));
-  } catch (error) {
-    console.error('Error loading page:', error);
-    alert('Error loading landing page data');
-  } finally {
-    setIsLoading(false);
-  }
-};
+      }));
+    } catch (error) {
+      console.error('Error loading page:', error);
+      alert('Error loading landing page data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // -------------------------------------------------------------------------
   // STATE UPDATE HANDLERS
@@ -726,45 +722,43 @@ const fetchLandingPage = async (pageId) => {
    * Save landing page data to API
    */
   const handleSave = async (shouldRedirect = true) => {
-  // ... validation code ...
+    setIsSaving(true);
+    try {
+      const url = id ? `${API_BASE_URL}/landing-pages/${id}/` : `${API_BASE_URL}/landing-pages/`;
+      const method = id ? 'PUT' : 'POST';
 
-  setIsSaving(true);
-  try {
-    const url = id ? `${API_BASE_URL}/landing-pages/${id}/` : `${API_BASE_URL}/landing-pages/`;
-    const method = id ? 'PUT' : 'POST';
+      const payload = { ...formData };
 
-    const payload = { ...formData };
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
+        body: JSON.stringify(payload)
+      });
 
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || errorData.message || 'Failed to save');
-    }
-
-    // For first save (create mode), always redirect to avoid duplicate slug issues
-    if (!id || shouldRedirect) {
-      alert(id ? 'Updated successfully!' : 'Created successfully!');
-      navigate('/admin/dashboard/landing-pages');
-    } else {
-      // Only show toast if in edit mode
-      const toast = document.getElementById('save-toast');
-      if (toast) {
-        toast.classList.remove('-translate-y-24', 'opacity-0');
-        setTimeout(() => toast.classList.add('-translate-y-24', 'opacity-0'), 3000);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || errorData.message || 'Failed to save');
       }
+
+      // For first save (create mode), always redirect to avoid duplicate slug issues
+      if (!id || shouldRedirect) {
+        alert(id ? 'Updated successfully!' : 'Created successfully!');
+        navigate('/admin/dashboard/landing-pages');
+      } else {
+        // Only show toast if in edit mode
+        const toast = document.getElementById('save-toast');
+        if (toast) {
+          toast.classList.remove('-translate-y-24', 'opacity-0');
+          setTimeout(() => toast.classList.add('-translate-y-24', 'opacity-0'), 3000);
+        }
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Failed to save: ' + error.message);
+    } finally {
+      setIsSaving(false);
     }
-  } catch (error) {
-    console.error('Save error:', error);
-    alert('Failed to save: ' + error.message);
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
 
   // -------------------------------------------------------------------------
   // UI HELPER FUNCTIONS
@@ -788,10 +782,12 @@ const fetchLandingPage = async (pageId) => {
    */
   const renderTemplatePreview = () => {
     switch (formData.template) {
+      case 'template-one':
+        return <MinimalTemplate pageData={formData} />; // Map 'template-one' to Minimal
       case 'template-three':
         return <ModernTemplate pageData={formData} />;
       default:
-        return <div className="p-20 text-center text-slate-500">Preview available for Modern Template</div>;
+        return <div className="p-20 text-center text-slate-500">Preview not available</div>;
     }
   };
 
