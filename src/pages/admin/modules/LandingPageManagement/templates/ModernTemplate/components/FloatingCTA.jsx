@@ -1,202 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Phone, X, Sparkles } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import React from "react";
 
-export default function FloatingCTA({ settings, offersConfig, onOpenEnquiry }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [showBanner, setShowBanner] = useState(false);
-    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+export default function FloatingCTA() {
+  const whatsappLink = "https://wa.me/919816259997";
 
-    useEffect(() => {
-        // Show sticky banner after scrolling BUT hide when footer is visible
-        const handleScroll = () => {
-            const footer = document.querySelector('footer');
-            if (footer) {
-                const footerRect = footer.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                
-                // Show banner only if scrolled past 500px AND footer is not in viewport
-                const isFooterVisible = footerRect.top < windowHeight;
-                setShowBanner(window.scrollY > 500 && !isFooterVisible);
-            } else {
-                setShowBanner(window.scrollY > 500);
-            }
-        };
-        
-        handleScroll(); // Initial check
-        window.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll); // Also check on resize
-        
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('resize', handleScroll);
-        };
-    }, []);
-
-    // Countdown timer
-    useEffect(() => {
-        if (!offersConfig?.end_date) return;
-
-        const calculateTimeLeft = () => {
-            const endDate = new Date(offersConfig.end_date);
-            const now = new Date();
-            const difference = endDate - now;
-
-            if (difference > 0) {
-                return {
-                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                    minutes: Math.floor((difference / 1000 / 60) % 60),
-                    seconds: Math.floor((difference / 1000) % 60)
-                };
-            }
-            return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-        };
-
-        setTimeLeft(calculateTimeLeft());
-        const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft());
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [offersConfig?.end_date]);
-
-    const handleGetQuote = () => {
-        if (onOpenEnquiry) {
-            onOpenEnquiry();
+  return (
+    <>
+      {/* Animation CSS */}
+      <style>{`
+        @keyframes pulseRing {
+          0% { transform: scale(0.95); opacity: 0.9; }
+          70% { transform: scale(1.4); opacity: 0; }
+          100% { transform: scale(1.4); opacity: 0; }
         }
-    };
 
-    // Check if footer banner should be shown
-    const showFooterBanner = offersConfig?.footer?.enabled && offersConfig?.footer?.text;
+        @keyframes floatUpDown {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+      `}</style>
 
-    return (
-        <>
-            {/* Floating Chat Button */}
-            <div className="fixed bottom-6 right-6 z-50">
-                <AnimatePresence>
-                    {isOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                            className="absolute bottom-20 right-0 w-72 bg-white rounded-2xl shadow-2xl overflow-hidden mb-4"
-                        >
-                            <div className="bg-gradient-to-r from-[#FF6B35] to-[#FFB800] p-4 text-white">
-                                <h4 className="font-bold">Need Help?</h4>
-                                <p className="text-sm opacity-90">We're here to assist you!</p>
-                            </div>
-                            <div className="p-4 space-y-3">
-    <a
-        href={`tel:${settings?.contact || '+919876543210'}`}
-        className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-    >
-        <div className="p-2 rounded-full bg-[#FF6B35]">
-            <Phone className="w-4 h-4 text-white" />
-        </div>
-        <div>
-            <div className="font-semibold text-slate-900">Call Us</div>
-            <div className="text-sm text-slate-500">
-                {settings?.contact || '+91 98765 43210'}
-            </div>
-        </div>
-    </a>
-
-    <a
-        href={`https://wa.me/${(settings?.contact || '919876543210').replace(/[^0-9]/g, '')}`}
+      <a
+        href={whatsappLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-    >
-        <div className="p-2 rounded-full bg-[#25D366]">
-            <MessageCircle className="w-4 h-4 text-white" />
+        aria-label="Chat on WhatsApp"
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          zIndex: 999999,
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: "64px",
+            height: "64px",
+            borderRadius: "999px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#25D366",
+            boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
+            animation: "floatUpDown 1.8s ease-in-out infinite",
+          }}
+        >
+          {/* Pulse Ring */}
+          <span
+            style={{
+              position: "absolute",
+              width: "64px",
+              height: "64px",
+              borderRadius: "999px",
+              background: "rgba(37, 211, 102, 0.35)",
+              animation: "pulseRing 1.4s ease-out infinite",
+            }}
+          />
+
+          {/* WhatsApp SVG Icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="white"
+            style={{ position: "relative", zIndex: 2 }}
+          >
+            <path d="M20.52 3.48A11.91 11.91 0 0 0 12.01 0C5.39 0 .01 5.38.01 12c0 2.11.55 4.17 1.6 5.98L0 24l6.2-1.63a11.98 11.98 0 0 0 5.81 1.48h.01c6.62 0 12-5.38 12-12a11.9 11.9 0 0 0-3.5-8.37Zm-8.51 18.4h-.01a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.97.98-3.59-.24-.37A9.91 9.91 0 0 1 2.1 12c0-5.46 4.44-9.9 9.9-9.9a9.84 9.84 0 0 1 7.01 2.9 9.85 9.85 0 0 1 2.9 7.01c0 5.46-4.44 9.9-9.9 9.9Zm5.43-7.41c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.38-1.46-.88-.79-1.47-1.77-1.64-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.08-.15-.66-1.6-.91-2.2-.24-.58-.48-.5-.66-.5h-.56c-.2 0-.52.07-.8.37-.27.3-1.05 1.03-1.05 2.52 0 1.48 1.08 2.92 1.23 3.12.15.2 2.12 3.23 5.14 4.53.72.31 1.29.5 1.72.64.72.23 1.37.2 1.88.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.08-.12-.27-.2-.57-.35Z" />
+          </svg>
         </div>
-        <div>
-            <div className="font-semibold text-slate-900">WhatsApp</div>
-            <div className="text-sm text-slate-500">Chat with us</div>
-        </div>
-    </a>
-</div>
-
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="relative p-4 text-white rounded-full shadow-xl bg-gradient-to-r from-[#FF6B35] to-[#FFB800]"
-                    style={{
-                        boxShadow: '0 20px 25px -5px rgba(255, 107, 53, 0.3)'
-                    }}
-                >
-                    {isOpen ? (
-                        <X className="w-6 h-6" />
-                    ) : (
-                        <MessageCircle className="w-6 h-6" />
-                    )}
-                    {!isOpen && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping" />
-                    )}
-                </motion.button>
-            </div>
-
-            {/* Sticky Bottom Banner - Hides when footer is visible */}
-            <AnimatePresence>
-                {showBanner && showFooterBanner && (
-                    <motion.div
-                        initial={{ y: 100 }}
-                        animate={{ y: 0 }}
-                        exit={{ y: 100 }}
-                        className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-slate-900 to-slate-800 border-t border-slate-700"
-                    >
-                        <div className="max-w-7xl mx-auto px-4 py-3">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                    <motion.div
-                                        animate={{ rotate: [0, 15, -15, 0] }}
-                                        transition={{ duration: 1, repeat: Infinity }}
-                                    >
-                                        <Sparkles className="w-5 h-5 text-[#FFB800]" />
-                                    </motion.div>
-                                    <span className="text-white font-medium text-sm sm:text-base">
-                                        🔥 <span className="text-[#FF6B35]">{offersConfig.footer.text}</span>
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {offersConfig?.end_date && (
-                                        <div className="hidden sm:flex items-center gap-2 text-white/80 text-sm">
-                                            <span>Ends in:</span>
-                                            <div className="flex items-center gap-1 font-mono font-bold">
-                                                {timeLeft.days > 0 && (
-                                                    <>
-                                                        <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.days).padStart(2, '0')}d</span>
-                                                        <span>:</span>
-                                                    </>
-                                                )}
-                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}h</span>
-                                                <span>:</span>
-                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-                                                <span>:</span>
-                                                <span className="bg-white/10 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}s</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <Button
-                                        size="sm"
-                                        className="bg-gradient-to-r from-[#FF6B35] to-[#FFB800] text-white rounded-full px-6 hover:shadow-lg transition-all"
-                                        onClick={handleGetQuote}
-                                    >
-                                        Get Quote
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </>
-    );
+      </a>
+    </>
+  );
 }

@@ -23,6 +23,7 @@ import About from "./pages/user/About/About";
 import Terms from "./pages/user/Terms/Terms";
 import Privacy from "./pages/user/Privacy/Privacy";
 import CategoryDetails from "./pages/user/Category/CategoryPreview";
+import ThankYouPageRoute from "./pages/admin/modules/LandingPageManagement/templates/MinimalTemplate/components/Thankyoupage";
 
 // --- LANDING PAGE ---
 import LandingPageRenderer from "./pages/admin/modules/LandingPageManagement/templates/Landingpagerenderer";
@@ -76,6 +77,8 @@ export default function App() {
 
           {/* --- LANDING PAGE ROUTE (Public, No Header/Footer) --- */}
           <Route path="/landing/:slug" element={<LandingPageRenderer />} />
+            {/* ✅ THANK YOU PAGE ROUTE (FIXED) */}
+          <Route path="/thank-you" element={<ThankYouPageRoute />} />
     
           {/* --- ADMIN ROUTES --- */}
           

@@ -85,21 +85,21 @@ export default function PromoMediaSection({ data, primaryColor = '#FF6B35', seco
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-xs font-bold uppercase tracking-widest mb-4">
+          {/* <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-xs font-bold uppercase tracking-widest mb-4">
             <Sparkles className="w-3.5 h-3.5" /> Visual Stories
-          </div>
+          </div> */}
           
-          <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-4 tracking-tight">
+          {/* <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-4 tracking-tight">
             <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` }}>
               Witness
             </span> the Magic
-          </h2>
+          </h2> */}
           
-          <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+          {/* <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
             Don't just take our word for it. Watch the breathtaking landscapes and vibrant cultures waiting for you.
-          </p>
+          </p> */}
         </motion.div>
 
         {/* --- CINEMATIC SLIDER --- */}

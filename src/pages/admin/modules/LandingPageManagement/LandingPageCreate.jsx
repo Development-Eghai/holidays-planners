@@ -422,8 +422,8 @@ export default function LandingPageCreate() {
   ];
 
   const templateMap = {
-    'template-one': 'Minimal / Directory',
-    'template-two': 'Classic',
+    'template-one': 'Minimal',
+    // 'template-two': 'Classic',
     'template-three': 'Modern'
   };
 

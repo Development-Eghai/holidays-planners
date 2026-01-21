@@ -1,137 +1,299 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { X, Send, User, Phone, Mail, Calendar, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Send, MapPin, Users, Mail, Phone, User, PhoneCall, Clock, Calendar } from 'lucide-react';
-import { toast, Toaster } from "sonner";
-import CountdownTimer from './CountdownTimer'; 
+import { toast } from "sonner";
 
-const API_BASE_URL = 'https://api.yaadigo.com/secure/api';
-const API_KEY = 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ';
+const API_BASE_URL = "https://api.yaadigo.com/secure/api";
+const API_KEY = "x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ";
 
-// Helper Component for Cleaner Form Code
-const FormField = ({ icon: Icon, label, children }) => (
+/**
+ * ✅ Logo-matched shades (picked from your logo)
+ * Blue: deep royal blue
+ * Gold: warm yellow
+ * Green: leaf green
+ */
+const BRAND = {
+  BLUE: "#0B2F9D",
+  GOLD: "#F6C33B",
+  GREEN: "#2E7D32",
+  DARK: "#0B1220",
+  TEXT: "#1A1A1A",
+  MUTED: "#64748B",
+  BORDER: "#E5E7EB",
+  BG_SOFT: "#F8FAFC",
+};
+
+const Field = ({ icon: Icon, label, className = "", ...props }) => (
   <div className="space-y-1">
-    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-      <Icon className="w-3 h-3" /> {label}
+    <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+      <Icon className="w-3.5 h-3.5" style={{ color: BRAND.BLUE }} />
+      {label}
     </label>
-    {children}
+
+    <Input
+      {...props}
+      className={
+        "h-11 rounded-xl border-2 bg-white text-[14px] font-semibold focus-visible:ring-0 " +
+        className
+      }
+      style={{
+        borderColor: BRAND.BORDER,
+      }}
+    />
   </div>
 );
 
-export default function UnifiedEnquiryModal({ trip, isOpen, onClose, popupSettings, popupType, offersConfig, pageName, pageSlug }) {
+export default function UnifiedEnquiryModal({ trip, isOpen, onClose, pageName }) {
+  const [submitting, setSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
-    destination: '', full_name: '', contact_number: '', email: '', adults: 2,
-    departure_city: 'Web Modal Lead', travel_date: new Date().toISOString().split('T')[0],
-    is_flexible: false, hotel_category: '3 Star', domain_name: 'https://www.holidaysplanners.com'
+    destination: "",
+    travel_date: new Date().toISOString().split("T")[0],
+    adults: 2,
+    full_name: "",
+    contact_number: "",
+    email: "",
   });
-  const [status, setStatus] = useState({ submitting: false, success: false, name: '' });
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(prev => ({ ...prev, destination: trip?.trip_title || trip?.title || '' }));
-      setStatus({ ...status, success: false });
+      setFormData((prev) => ({
+        ...prev,
+        destination:
+          trip?.trip_title || trip?.title || pageName || "Himachal Package",
+      }));
     }
-  }, [trip, isOpen]);
+  }, [isOpen, trip, pageName]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus({ ...status, submitting: true });
-    
+    if (submitting) return;
+    setSubmitting(true);
+
     try {
+      const submissionData = {
+        destination: formData.destination,
+        departure_city: "Landing Page Modal",
+        travel_date: formData.travel_date,
+        adults: parseInt(formData.adults) || 2,
+        children: 0,
+        infants: 0,
+        hotel_category: "3 Star",
+        full_name: formData.full_name,
+        contact_number: formData.contact_number,
+        email: formData.email,
+        additional_comments: `Modal Enquiry: ${pageName || "Landing Page"}`,
+        domain_name: "https://www.holidaysplanners.com",
+      };
+
       const res = await fetch(`${API_BASE_URL}/enquires`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
-        body: JSON.stringify({
-          ...formData,
-          travel_date: formData.is_flexible ? "Flexible" : formData.travel_date,
-          departure_city: pageName ? `Landing Page: ${pageName}` : 'Website Enquiry'
-        })
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+        body: JSON.stringify(submissionData),
       });
-      if (!res.ok) throw new Error();
-      setStatus({ submitting: false, success: true, name: formData.full_name.split(' ')[0] });
-      toast.success("Request sent!");
-    } catch {
-      toast.error('Failed to submit.');
-      setStatus(prev => ({ ...prev, submitting: false }));
+
+      if (!res.ok) throw new Error("Submit failed");
+
+      const firstName = formData.full_name.trim().split(" ")[0] || "Traveler";
+
+      toast.success(`Thanks ${firstName}! We'll call you shortly.`);
+
+      const params = new URLSearchParams({
+        name: firstName,
+        destination: formData.destination,
+      });
+
+      window.open(`/thank-you?${params.toString()}`, "_blank");
+      onClose?.();
+    } catch (err) {
+      toast.error("Failed to submit enquiry. Try again!");
+    } finally {
+      setSubmitting(false);
     }
   };
-
-  const getTitle = () => trip ? (trip.trip_title || trip.title) : (pageName || popupSettings?.[popupType]?.title || 'Plan Your Trip');
-  const showTimer = offersConfig?.header?.enabled && offersConfig?.end_date && new Date(offersConfig.end_date) > new Date();
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-            onClick={e => e.stopPropagation()}
-            className="bg-white w-full max-w-[360px] rounded-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]"
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.97 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden border"
+            style={{ borderColor: "rgba(255,255,255,0.25)" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {status.success ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center min-h-[350px]">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600"><PhoneCall className="w-8 h-8" /></div>
-                <h3 className="text-xl font-bold text-slate-800">Thanks, {status.name}!</h3>
-                <p className="text-slate-500 mb-6 text-sm mt-1">We received your request. calling you shortly.</p>
-                <Button onClick={onClose} className="w-full bg-slate-900 text-white rounded-lg">Close</Button>
+            {/* ✅ HEADER - Solid Brand Blue (No Gradient) */}
+            <div
+              className="relative px-6 py-5 text-white border-b"
+              style={{
+                backgroundColor: BRAND.BLUE,
+                borderColor: "rgba(255,255,255,0.15)",
+              }}
+            >
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 p-2 rounded-full transition"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.14)",
+                }}
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-extrabold opacity-90 uppercase tracking-widest">
+                    Holidays Planners
+                  </p>
+                  <h2 className="text-lg font-black leading-tight mt-1">
+                    Get Free Quote
+                  </h2>
+                </div>
+
+                {/* ✅ Small Badge - Solid Gold */}
+                <div
+                  className="px-3 py-1 rounded-full text-[11px] font-black border"
+                  style={{
+                    backgroundColor: BRAND.GOLD,
+                    color: BRAND.DARK,
+                    borderColor: "rgba(0,0,0,0.15)",
+                  }}
+                >
+                  5 Min Call Back
+                </div>
               </div>
-            ) : (
-              <>
-                <div className="relative bg-gradient-to-br from-[#FF6B35] to-[#FF9F00] px-5 py-4 text-white">
-                  <button onClick={onClose} className="absolute top-3 right-3 p-1.5 bg-white/20 hover:bg-white/30 rounded-full"><X className="w-4 h-4" /></button>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold opacity-90">Enquiry For</p>
-                    <h2 className="text-lg font-bold line-clamp-1">{getTitle()}</h2>
+            </div>
+
+            {/* BODY */}
+            <div className="p-6" style={{ backgroundColor: BRAND.BG_SOFT }}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="bg-white rounded-2xl p-4 border shadow-sm">
+                  <Field
+                    icon={User}
+                    label="Full Name"
+                    placeholder="Enter your name"
+                    required
+                    value={formData.full_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
+                    }
+                  />
+
+                  <div className="mt-4">
+                    <Field
+                      icon={Phone}
+                      label="Mobile Number"
+                      placeholder="WhatsApp number"
+                      required
+                      type="tel"
+                      value={formData.contact_number}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contact_number: e.target.value,
+                        })
+                      }
+                    />
                   </div>
-                  {showTimer && (
-                    <div className="mt-3 bg-black/20 border border-white/20 rounded-lg p-2 flex justify-between items-center">
-                      <span className="flex gap-1.5 text-[9px] font-bold uppercase"><Clock className="w-3 h-3" /> Offer Ends In</span>
-                      <div className="scale-75 origin-right"><CountdownTimer endDate={offersConfig.end_date} compact /></div>
-                    </div>
-                  )}
-                </div>
 
-                <div className="p-5 bg-white flex-1 overflow-y-auto">
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    <FormField icon={MapPin} label="Destination">
-                      <Input value={formData.destination} readOnly={!!trip} onChange={e => setFormData({...formData, destination: e.target.value})} placeholder="Where do you want to go?" required className={`h-10 text-sm ${trip ? 'bg-slate-50 text-slate-500' : ''}`} />
-                    </FormField>
+                  <div className="mt-4">
+                    <Field
+                      icon={Mail}
+                      label="Email"
+                      placeholder="Enter email"
+                      required
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                    />
+                  </div>
 
-                    <FormField icon={User} label="Full Name">
-                      <Input value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} placeholder="Enter name" required className="h-10 text-sm" />
-                    </FormField>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <Field
+                      icon={Calendar}
+                      label="Travel Date"
+                      type="date"
+                      value={formData.travel_date}
+                      onChange={(e) =>
+                        setFormData({ ...formData, travel_date: e.target.value })
+                      }
+                    />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField icon={Phone} label="Phone">
-                        <Input type="tel" value={formData.contact_number} onChange={e => setFormData({...formData, contact_number: e.target.value})} placeholder="Mobile No." required className="h-10 text-sm" />
-                      </FormField>
-                      <FormField icon={Users} label="Travelers">
-                        <Input type="number" value={formData.adults} onChange={e => setFormData({...formData, adults: e.target.value})} min="1" required className="h-10 text-sm text-center" />
-                      </FormField>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 items-end">
-                      <FormField icon={Calendar} label="Date">
-                        <Input type="date" disabled={formData.is_flexible} value={formData.travel_date} onChange={e => setFormData({...formData, travel_date: e.target.value})} className={`h-10 text-xs ${formData.is_flexible ? 'opacity-40' : ''}`} />
-                      </FormField>
-                      <label className="flex items-center gap-2 cursor-pointer pb-3 select-none">
-                        <input type="checkbox" checked={formData.is_flexible} onChange={e => setFormData({...formData, is_flexible: e.target.checked})} className="w-4 h-4 rounded text-[#FF6B35] focus:ring-[#FF6B35]" />
-                        <span className="text-xs font-semibold text-slate-600">Flexible?</span>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide">
+                        Adults
                       </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.adults}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            adults: parseInt(e.target.value || "1"),
+                          })
+                        }
+                        className="h-11 rounded-xl border-2 text-center font-black focus-visible:ring-0"
+                        style={{ borderColor: BRAND.BORDER }}
+                      />
                     </div>
+                  </div>
 
-                    <FormField icon={Mail} label="Email">
-                      <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="Email ID" required className="h-10 text-sm" />
-                    </FormField>
-
-                    <Button type="submit" disabled={status.submitting} className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 rounded-xl font-bold mt-2">
-                      {status.submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Get Free Quote</>}
-                    </Button>
-                  </form>
+                  {/* ✅ Trust box */}
+                  <div
+                    className="mt-4 flex items-center gap-2 text-[12px] font-semibold px-3 py-2 rounded-xl border"
+                    style={{
+                      backgroundColor: "#ECFDF5",
+                      borderColor: "#BBF7D0",
+                      color: "#065F46",
+                    }}
+                  >
+                    <ShieldCheck size={16} />
+                    <span>100% Safe • No Spam • Call Back in 5 Minutes</span>
+                  </div>
                 </div>
-              </>
-            )}
+
+                {/* ✅ CTA - Solid Green (No Gradient) */}
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full h-12 rounded-xl font-black text-white shadow-lg hover:shadow-xl transition"
+                  style={{
+                    backgroundColor: submitting ? "#94A3B8" : BRAND.GREEN,
+                  }}
+                >
+                  {submitting ? (
+                    <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Get Quote
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-[11px] text-center font-medium text-slate-500">
+                  No spam. Our team will contact you within{" "}
+                  <span className="font-black" style={{ color: BRAND.BLUE }}>
+                    5 minutes
+                  </span>
+                  .
+                </p>
+              </form>
+            </div>
           </motion.div>
         </div>
       )}
