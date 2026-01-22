@@ -76,11 +76,10 @@ const LeadTableWithDetails = ({ leads, selectedLeads, toggleSelectLead, onDelete
     <Box sx={{ width: '100%', mb: 4 }}>
       {/* Top Stats Cards - Separated Enquiries and Bookings */}
       <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-        <StatCard label="Total Leads" count={stats.total} color="#7b1fa2" />
-        <StatCard label="Landing Page" count={stats.landingPage} color="#2e7d32" />
-        <StatCard label="Website Enquiries" count={stats.websiteEnquiry} color="#0288d1" />
-        <StatCard label="Booking Requests" count={stats.bookingRequest} color="#ed6c02" />
-        <StatCard label="Manual Entries" count={stats.manual} color="#d32f2f" />
+      <StatCard label="Landing Page" count={<span style={{ color: '#2e7d32' }}>{stats.landingPage}</span>} color="#2e7d32" />
+      <StatCard label="Website Enquiries" count={<span style={{ color: '#0288d1' }}>{stats.websiteEnquiry}</span>} color="#0288d1" />
+      <StatCard label="Booking Requests" count={<span style={{ color: '#ed6c02' }}>{stats.bookingRequest}</span>} color="#ed6c02" />
+      <StatCard label="Manual Entries" count={<span style={{ color: '#d32f2f' }}>{stats.manual}</span>} color="#d32f2f" />
       </Stack>
 
       {/* Filter Toolbar */}
@@ -146,7 +145,7 @@ const LeadTableWithDetails = ({ leads, selectedLeads, toggleSelectLead, onDelete
                 </TableCell>
                 <TableCell>
                   {/* Fix: Lead Name is now explicitly dark and prominent */}
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'green' }}>
                     {lead.name || "No Name"}
                   </Typography>
                   <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
