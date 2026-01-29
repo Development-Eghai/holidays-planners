@@ -90,49 +90,71 @@ const DEFAULT_TRUST_BADGES = [
 // HELPERS
 // =============================================================================
 
+// =============================================================================
+// HELPERS - FIXED IMAGE HANDLING
+// =============================================================================
+
 const toAbsoluteUrl = (url) => {
   if (!url) return null;
   if (typeof url !== "string") return null;
-  if (url.startsWith("http")) return url;
 
-  // ✅ if backend returns /uploads/xyz.jpg
-  return `https://api.yaadigo.com${url}`;
+  // Already absolute URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    // Encode spaces and special characters in the path part only
+    try {
+      const urlObj = new URL(url);
+      const encodedPath = urlObj.pathname.split('/').map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+      return `${urlObj.origin}${encodedPath}${urlObj.search}${urlObj.hash}`;
+    } catch {
+      return url;
+    }
+  }
+
+  // Relative path from uploads (e.g., /uploads/xyz.jpg or uploads/xyz.jpg)
+  if (url.startsWith("/uploads/") || url.startsWith("uploads/")) {
+    const cleanPath = url.startsWith("/") ? url : `/${url}`;
+    // Encode each path segment
+    const encodedPath = cleanPath.split('/').map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+    return `https://api.yaadigo.com${encodedPath}`;
+  }
+
+  // Any other relative path
+  if (url.startsWith("/")) {
+    const encodedPath = url.split('/').map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+    return `https://api.yaadigo.com${encodedPath}`;
+  }
+
+  // Fallback: assume it's a relative upload path
+  const encoded = encodeURIComponent(url);
+  return `https://api.yaadigo.com/uploads/${encoded}`;
 };
 
 const normalizeMediaArray = (arr) => {
+  if (!arr) return [];
   if (!Array.isArray(arr)) return [];
+
   return arr
     .map((item) => {
       if (!item) return null;
-      if (typeof item === "string") return item;
-      if (typeof item === "object") return item.url || item.path || item.src || null;
+
+      // String URL
+      if (typeof item === "string") {
+        return toAbsoluteUrl(item);
+      }
+
+      // Object with various possible keys
+      if (typeof item === "object") {
+        const possibleKeys = ["url", "path", "src", "image", "file", "media_url"];
+        for (const key of possibleKeys) {
+          if (item[key]) {
+            return toAbsoluteUrl(item[key]);
+          }
+        }
+      }
+
       return null;
     })
-    .map(toAbsoluteUrl)
-    .filter(Boolean);
-};
-
-const getVideoType = (url) => {
-  if (!url) return "unknown";
-  const lowerUrl = url.toLowerCase();
-  if (lowerUrl.includes("youtube.com") || lowerUrl.includes("youtu.be")) return "youtube";
-  if (lowerUrl.match(/\.(mp4|webm|ogg|mov)$/)) return "file";
-  return "file";
-};
-
-const getYouTubeEmbedUrl = (url) => {
-  try {
-    let videoId = null;
-    if (url.includes("youtube.com/watch?v=")) videoId = url.split("v=")[1].split("&")[0];
-    else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
-    else if (url.includes("youtube.com/embed/")) videoId = url.split("embed/")[1].split("?")[0];
-
-    return videoId
-      ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0`
-      : url;
-  } catch (e) {
-    return url;
-  }
+    .filter(Boolean); // Remove nulls
 };
 
 const getTripPrice = (trip) => {
@@ -213,14 +235,12 @@ const HeroSlider = ({ images = [], overlayOpacity = 0.4 }) => {
       ))}
 
       {/* overlay */}
+      {/* Overlay */}
       <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(135deg, rgba(26,26,26,${overlayOpacity + 0.3}) 0%, rgba(30,91,168,${overlayOpacity}) 50%, rgba(0,0,0,${Math.max(
-            overlayOpacity - 0.1,
-            0.1
-          )}) 100%)`,
-        }}
+      className="absolute inset-0"
+      style={{
+      background: `linear-gradient(135deg, rgba(0,0,0,${Math.min(overlayOpacity + 0.4, 0.9)}) 0%, rgba(30,91,168,${Math.min(overlayOpacity + 0.3, 0.8)}) 50%, rgba(0,0,0,${Math.min(overlayOpacity + 0.2, 0.7)}) 100%)`,
+      }}
       />
 
       {/* arrows */}
@@ -295,13 +315,10 @@ const HeroVideo = ({ videos = [], overlayOpacity = 0.4 }) => {
           style={{ backgroundImage: `url(${DEFAULT_HERO_IMAGE})`, backgroundAttachment: "fixed" }}
         />
         <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, rgba(26,26,26,${overlayOpacity + 0.3}) 0%, rgba(30,91,168,${overlayOpacity}) 50%, rgba(0,0,0,${Math.max(
-              overlayOpacity - 0.1,
-              0.1
-            )}) 100%)`,
-          }}
+        className="absolute inset-0"
+        style={{
+        background: `linear-gradient(135deg, rgba(0,0,0,${Math.min(overlayOpacity + 0.4, 0.9)}) 0%, rgba(30,91,168,${Math.min(overlayOpacity + 0.3, 0.8)}) 50%, rgba(0,0,0,${Math.min(overlayOpacity + 0.2, 0.7)}) 100%)`,
+        }}
         />
       </div>
     );
@@ -617,27 +634,38 @@ export default function MinimalTemplate({ pageData }) {
 
   // ✅ FIXED hero config (handles any schema + uploads) - with proper fallbacks
   const heroConfig = useMemo(() => {
-    const hero = pageData?.hero || {};
+  const hero = pageData?.hero || {};
 
-    // Normalize media arrays - handle both string URLs and object formats
-    const images = normalizeMediaArray(hero?.background_images);
-    const videos = normalizeMediaArray(hero?.background_videos);
+  console.log("=== HERO DEBUG START ===");
+  console.log("background_type:", hero.background_type);
+  console.log("background_images RAW:", hero.background_images);
+  console.log("background_videos RAW:", hero.background_videos);
+  
+  // Normalize media arrays
+  const images = normalizeMediaArray(hero.background_images);
+  const videos = normalizeMediaArray(hero.background_videos);
 
-    // Ensure we have at least one image if slider type and no images provided
-    const finalImages = images.length > 0 ? images : [DEFAULT_HERO_IMAGE];
-    
-    return {
-      type: hero?.background_type || "slider",
-      images: finalImages,
-      videos: videos.length > 0 ? videos : [],
-      overlayOpacity: hero?.overlay_opacity ?? 0.4,
-      title: hero?.title || pageData?.page_name || "Welcome to Your Dream Destination",
-      subtitle: hero?.subtitle || "",
-      description: hero?.description || "",
-      cta1: hero?.cta_button_1 || { text: "Explore Destinations", link: "#packages" },
-      cta2: hero?.cta_button_2 || { text: "Get Quote", link: "#contact" },
-    };
-  }, [pageData]);
+  console.log("AFTER normalization - images:");
+  images.forEach((img, i) => console.log(`  [${i}]:`, img));
+  console.log("AFTER normalization - videos:");
+  videos.forEach((vid, i) => console.log(`  [${i}]:`, vid));
+  console.log("=== HERO DEBUG END ===");
+
+  // Use normalized images or fallback
+  const finalImages = images.length > 0 ? images : [DEFAULT_HERO_IMAGE];
+
+  return {
+    type: hero.background_type || "slider",
+    images: finalImages,
+    videos: videos,
+    overlayOpacity: hero.overlay_opacity ?? 0.4,
+    title: hero.title || pageData?.page_name || "Welcome to Your Dream Destination",
+    subtitle: hero.subtitle || "",
+    description: hero.description || "",
+    cta1: hero.cta_button_1 || { text: "Explore Destinations", link: "#packages" },
+    cta2: hero.cta_button_2 || { text: "Get Quote", link: "#contact" },
+  };
+}, [pageData]);
 
   const showHeaderAlert = pageData?.offers?.header?.enabled;
   const showFooterAlert = pageData?.offers?.footer?.enabled;
@@ -886,7 +914,7 @@ export default function MinimalTemplate({ pageData }) {
                 <div className="border-l-4 border-[#F4C430] pl-6 py-2 bg-white/5 backdrop-blur-sm rounded-r-lg max-w-md">
                   <h4 className="text-lg font-light text-slate-200">Grab the Exciting</h4>
                   <h4 className="text-2xl font-bold text-white">
-                    Deals upto <span className="text-[#F4C430]">35% OFF</span>
+                    Deals upto <span className="text-[#F4C430]">50% OFF</span>
                   </h4>
                 </div>
               </motion.div>
@@ -1023,7 +1051,7 @@ export default function MinimalTemplate({ pageData }) {
             <div className="text-center md:text-left text-white">
               <h2 className="text-2xl md:text-3xl font-black mb-2">Ready for Your Adventure?</h2>
               <p className="text-lg opacity-90">
-                Book now and save up to <span className="text-[#F4C430] font-black">35%</span>
+                Book now and save up to <span className="text-[#F4C430] font-black">50%</span>
               </p>
             </div>
 
