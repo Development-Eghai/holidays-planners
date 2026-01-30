@@ -65,6 +65,8 @@ const TRAVELER_AVATARS = [
   "https://randomuser.me/api/portraits/women/22.jpg",
 ];
 
+const discountText = "50%";
+
 const DEFAULT_TRUST_BADGES = [
   {
     id: "trust-security",
@@ -473,11 +475,11 @@ const TripCard = ({ trip, onEnquire }) => {
         />
         <div className="absolute inset-0 bg-[#1E5BA8]/20 group-hover:bg-[#1E5BA8]/30 transition-colors" />
 
-        {price > 0 && (
+        {/* {price > 0 && (
           <div className="absolute top-3 left-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black animate-pulse shadow-lg">
             SAVE {Math.round(((price * 1.4 - price) / (price * 1.4)) * 100)}%
           </div>
-        )}
+        )} */}
 
         <div className="absolute bottom-[-20px] right-4 bg-white p-2 rounded-full shadow-lg border-2 border-[#F4C430] z-10 w-12 h-12 flex items-center justify-center">
           <Star className="text-[#F4C430] w-6 h-6 fill-current" />
@@ -583,9 +585,9 @@ const TripCard = ({ trip, onEnquire }) => {
             </div>
 
             {price > 0 && (
-              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                SAVE {Math.round(((price * 1.4 - price) / (price * 1.4)) * 100)}%
-              </div>
+            <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+            SAVE UPTO {discountText}
+            </div>
             )}
           </div>
 
@@ -1025,6 +1027,128 @@ export default function MinimalTemplate({ pageData }) {
           </div>
         </div>
       </section>
+
+      {/* --- ABOUT US (AS YOU HAD) --- */}
+      <section id="about" className="py-16 bg-gradient-to-br from-white to-blue-50 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-[#1E5BA8] rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#F4C430] rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="absolute top-10 right-10 opacity-5 hidden lg:block">
+          <BadgeCheck size={300} className="text-[#2D5D3F]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+            <div className="flex flex-col justify-center order-2 md:order-1">
+              <div className="inline-flex items-center gap-2 bg-[#1E5BA8]/10 text-[#1E5BA8] px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider mb-4 w-fit">
+                <Award size={14} /> Local Himachal Experts
+              </div>
+
+              <h2 className="text-4xl font-black text-[#1A1A1A] mb-4">
+                Why Choose <span className="text-[#1E5BA8]">Holidays Planners</span>?
+              </h2>
+
+              <p className="text-[#4A5568] leading-relaxed mb-6 text-base">
+                <span className="font-bold text-[#1E5BA8]">Based in Himachal Pradesh</span>, we're locals who know every hidden gem and secret route.
+                With over <span className="font-bold text-[#1E5BA8]">15 years of experience</span> and{" "}
+                <span className="font-bold text-[#2D5D3F]">Government Tourism approval</span>, we guarantee the best prices and authentic experiences.
+                No middlemen, just direct local expertise.
+              </p>
+
+              <ul className="space-y-3 mb-8 font-bold text-[#1A1A1A] text-base">
+                {[
+                  { icon: Target, text: 'Himachal Locals - Best Insider Knowledge' },
+                  { icon: BadgeCheck, text: 'Govt. Approved by Tourism India' },
+                  { icon: Wallet, text: 'Lowest Prices - Direct Local Rates' },
+                  { icon: Headphones, text: '24×7 Support - On-Trip Assistance' }
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 group">
+                    <div className="w-10 h-10 bg-[#F4C430] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <item.icon size={20} className="text-[#1A1A1A]" />
+                    </div>
+                    <span>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => setIsEnquiryOpen(true)}
+                  className="bg-[#1E5BA8] hover:bg-[#164a8a] text-white px-8 py-4 rounded-lg shadow-lg font-bold uppercase text-sm tracking-wider transition-all flex items-center justify-center gap-2 group"
+                >
+                  Get Custom Package <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <a
+                  href={`tel:${CONTACT_NUMBER}`}
+                  className="border-2 border-[#1E5BA8] text-[#1E5BA8] hover:bg-[#1E5BA8] hover:text-white px-8 py-4 rounded-lg font-bold uppercase text-sm tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  <Phone size={18} /> Call Now
+                </a>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 order-1 md:order-2">
+              <div className="space-y-4">
+                <div className="relative rounded-2xl overflow-hidden shadow-xl group">
+                  <img src="https://images.travelandleisureasia.com/wp-content/uploads/sites/2/2024/03/15143552/Kalpa.jpg?w=400&h=300&fit=crop" alt="Himachal Mountains" className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <span className="text-white font-bold text-sm">Breathtaking Views</span>
+                  </div>
+                </div>
+
+                <div className="relative rounded-2xl overflow-hidden shadow-xl group">
+                  <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=400&fit=crop" alt="Luxury Hotels" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <span className="text-white font-bold text-sm">Premium Hotels</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-8">
+                <div className="relative rounded-2xl overflow-hidden shadow-xl group">
+                  <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400&h=400&fit=crop" alt="Adventure Activities" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <span className="text-white font-bold text-sm">Adventure Awaits</span>
+                  </div>
+                </div>
+
+                <div className="relative rounded-2xl overflow-hidden shadow-xl group">
+                  <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=300&fit=crop" alt="Happy Travelers" className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <span className="text-white font-bold text-sm">Happy Travelers</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { title: "Govt. Approved", sub: "Himachal Tourism", icon: BadgeCheck, color: "#2D5D3F", bg: "from-green-50 to-emerald-50", iconBg: "bg-white" },
+              { title: "15+ Years", sub: "Industry Experience", icon: Award, color: "#F4C430", bg: "from-yellow-50 to-amber-50", iconBg: "bg-white" },
+              { title: "4.9/5 Rating", sub: "10,000+ Reviews", icon: Star, color: "#F4C430", bg: "from-yellow-50 to-orange-50", iconBg: "bg-white" },
+              { title: "24/7 Support", sub: "On-Trip Assistance", icon: Headphones, color: "#1E5BA8", bg: "from-blue-50 to-sky-50", iconBg: "bg-white" },
+            ].map((card, idx) => (
+              <div
+                key={idx}
+                className={`bg-gradient-to-br ${card.bg} p-6 rounded-2xl shadow-md border border-slate-100 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl group`}
+                style={{ minHeight: '180px' }}
+              >
+                <div className={`w-16 h-16 ${card.iconBg} rounded-full flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform`}>
+                  <card.icon size={32} style={{ color: card.color }} strokeWidth={1.5} />
+                </div>
+                <h4 className="font-bold text-[#1A1A1A] text-lg mb-1">{card.title}</h4>
+                <p className="text-xs text-[#4A5568] font-semibold">{card.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
 
       {/* Promo Banner */}
       {pageData?.offers?.mid_section?.enabled && (
