@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "node scripts/generate-sitemap.js && vite build",
     "prerender": "node scripts/prerender.js",
-    "build:ssr": "npm run build && npm run prerender",
+    "build:ssr": "npm run build",
     "serve:ssr": "node server.js",
     "sitemap": "node scripts/generate-sitemap.js",
     "lint": "eslint .",
