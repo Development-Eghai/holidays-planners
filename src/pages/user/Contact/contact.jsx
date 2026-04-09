@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { STATIC_SEO } from '../../../utils/seo';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 
 export default function ContactPage() {
@@ -78,18 +79,59 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <Helmet>
-        <title>Contact Holidays Planners | Shimla, Himachal Pradesh | +91-98162-59997</title>
-        <meta name="description" content="Get in touch with Holidays Planners — Shimla's trusted travel agency. Call +91-98162-59997 or email info@holidaysplanners.com. Personalised tour planning for India." />
-        <meta name="keywords" content="contact Holidays Planners, travel agency Shimla, tour operator Himachal Pradesh, book holiday package India" />
-        <link rel="canonical" href="https://www.holidaysplanners.com/contact" />
+        <title>{STATIC_SEO.contact.title}</title>
+        <meta name="description" content={STATIC_SEO.contact.desc} />
+        <meta name="keywords" content={STATIC_SEO.contact.keywords} />
+        <link rel="canonical" href={STATIC_SEO.contact.canonical} />
+
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.holidaysplanners.com/contact" />
-        <meta property="og:title" content="Contact Holidays Planners | Shimla, Himachal Pradesh" />
-        <meta property="og:description" content="Get in touch with Holidays Planners. Personalised tour planning for India — call +91-98162-59997." />
-        <meta property="og:image" content="/HolidaysPlanners-Logo-HP.png" />
+        <meta property="og:url" content={STATIC_SEO.contact.canonical} />
+        <meta property="og:title" content={STATIC_SEO.contact.title} />
+        <meta property="og:description" content={STATIC_SEO.contact.desc} />
+        <meta property="og:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+        <meta property="og:image:alt" content={STATIC_SEO.contact.imageAlt} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="Contact Holidays Planners | Shimla, Himachal Pradesh" />
-        <meta name="twitter:description" content="Personalised tour planning for India. Call +91-98162-59997." />
+        <meta name="twitter:title" content={STATIC_SEO.contact.title} />
+        <meta name="twitter:description" content={STATIC_SEO.contact.desc} />
+
+        {/* LocalBusiness + ContactPoint schema for rich results */}
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': ['TravelAgency', 'LocalBusiness'],
+          '@id': 'https://www.holidaysplanners.com/#organization',
+          name: 'Holidays Planners',
+          url: 'https://www.holidaysplanners.com',
+          telephone: '+91-98162-59997',
+          email: 'info@holidaysplanners.com',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Kapil Niwas, Bye Pass Road, Chakkar',
+            addressLocality: 'Shimla',
+            addressRegion: 'Himachal Pradesh',
+            postalCode: '171005',
+            addressCountry: 'IN',
+          },
+          openingHoursSpecification: [
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday'], opens: '09:00', closes: '18:00' },
+            { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '10:00', closes: '16:00' },
+          ],
+          contactPoint: [
+            { '@type': 'ContactPoint', telephone: '+91-98162-59997', contactType: 'customer service', areaServed: 'IN', availableLanguage: ['English', 'Hindi'] },
+            { '@type': 'ContactPoint', email: 'info@holidaysplanners.com', contactType: 'sales', areaServed: 'IN' },
+          ],
+        })}</script>
+
+        {/* BreadcrumbList */}
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.holidaysplanners.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Contact Us', item: 'https://www.holidaysplanners.com/contact' },
+          ],
+        })}</script>
       </Helmet>
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white py-20">

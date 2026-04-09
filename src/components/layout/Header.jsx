@@ -110,7 +110,7 @@ export default function Header() {
 
             {/* LOGO */}
             <a href="/" className="flex items-center gap-3">
-              <motion.img src="/holidaysplanners-logo.png" alt="Logo" className="h-auto w-24" />
+              <motion.img src="/holidaysplanners-logo.png" alt="Holidays Planners — India travel and tour packages agency since 2015 from Shimla, Himachal Pradesh" className="h-auto w-24" />
             </a>
 
             {/* DESKTOP NAV */}

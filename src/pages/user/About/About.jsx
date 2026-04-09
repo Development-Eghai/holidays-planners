@@ -1,6 +1,7 @@
 import { Users, Award, Globe, Shield, MapPin, Heart, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { STATIC_SEO, PROVIDER } from '../../../utils/seo';
 
 // --- DATA ---
 
@@ -99,18 +100,48 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Helmet>
-        <title>About Holidays Planners | Trusted Travel Agency Since 2015 | Shimla</title>
-        <meta name="description" content="Holidays Planners — Shimla's trusted travel agency since 2015. 15,000+ happy travellers, 250+ destinations, 10+ years of personalised tour planning across India. Meet our team." />
-        <meta name="keywords" content="about Holidays Planners, travel agency Shimla, Poonam Sharma travel, Himachal Pradesh tour operator, India travel company" />
-        <link rel="canonical" href="https://www.holidaysplanners.com/about" />
+        <title>{STATIC_SEO.about.title}</title>
+        <meta name="description" content={STATIC_SEO.about.desc} />
+        <meta name="keywords" content={STATIC_SEO.about.keywords} />
+        <link rel="canonical" href={STATIC_SEO.about.canonical} />
+
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.holidaysplanners.com/about" />
-        <meta property="og:title" content="About Holidays Planners | Trusted Travel Agency Since 2015" />
-        <meta property="og:description" content="15,000+ happy travellers, 250+ destinations, 10+ years of personalised tour planning across India." />
-        <meta property="og:image" content="/HolidaysPlanners-Logo-HP.png" />
+        <meta property="og:url" content={STATIC_SEO.about.canonical} />
+        <meta property="og:title" content={STATIC_SEO.about.title} />
+        <meta property="og:description" content={STATIC_SEO.about.desc} />
+        <meta property="og:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+        <meta property="og:image:alt" content={STATIC_SEO.about.imageAlt} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="en_IN" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="About Holidays Planners | Trusted Travel Agency Since 2015" />
-        <meta name="twitter:description" content="15,000+ happy travellers, 250+ destinations. Your trusted India travel agency since 2015." />
+        <meta name="twitter:title" content={STATIC_SEO.about.title} />
+        <meta name="twitter:description" content={STATIC_SEO.about.desc} />
+        <meta name="twitter:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+        <meta name="twitter:image:alt" content={STATIC_SEO.about.imageAlt} />
+
+        {/* Person schema — E-E-A-T: identified author/founder */}
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          '@id': 'https://www.holidaysplanners.com/#poonam-sharma',
+          name: 'Poonam Sharma',
+          jobTitle: 'CEO & Founder',
+          worksFor: { '@id': 'https://www.holidaysplanners.com/#organization' },
+          url: 'https://www.holidaysplanners.com/about',
+          description: 'Poonam Sharma is the founder and CEO of Holidays Planners, a leading travel agency based in Shimla, Himachal Pradesh, established in 2015.',
+          knowsAbout: ['India Travel', 'Himachal Pradesh Tourism', 'Kashmir Packages', 'Leh Ladakh Tours', 'Travel Planning'],
+        })}</script>
+
+        {/* BreadcrumbList */}
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.holidaysplanners.com/' },
+            { '@type': 'ListItem', position: 2, name: 'About Us', item: 'https://www.holidaysplanners.com/about' },
+          ],
+        })}</script>
       </Helmet>
       {/* Hero Section */}
       <div

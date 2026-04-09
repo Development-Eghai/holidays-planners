@@ -243,7 +243,7 @@ export default function HeroSection() {
           className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 text-center leading-tight"
           variants={itemVariants}
         >
-          Your Journey Begins Here
+          Explore India's Best Tour Packages
         </motion.h1>
 
         <motion.p

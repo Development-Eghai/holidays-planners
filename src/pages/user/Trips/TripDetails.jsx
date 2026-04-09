@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { buildTripSEO } from "../../../utils/seo";
 import TripHero from "../../../components/trips/TripHero";
 import TripOverview from "../../../components/trips/TripOverview";
 import TripTab from "../../../components/trips/TripTab";
@@ -40,88 +41,44 @@ const TripDetails = () => {
     }
   }, [id]);
 
-  // Generate SEO-friendly page title and description
-  const pageTitle = tripData?.meta_title || tripData?.title || "Trip Details";
-  const pageDescription = tripData?.meta_description || tripData?.overview || "Discover amazing travel experiences";
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+  // Build SEO from utility — unique per trip, data-driven
+  const seo = buildTripSEO(tripData, slug, id);
 
   return (
     <>
-      {/* SEO Meta Tags + JSON-LD Schema */}
+      {/* ✅ SEO: unique per-trip meta tags, schema, canonical */}
       <Helmet>
-        <title>{tripData?.meta_title || `${tripData?.title || 'Trip Details'} | Holidays Planners`}</title>
-        <meta name="description" content={tripData?.meta_description || tripData?.overview?.substring(0, 160) || 'Discover amazing travel experiences with Holidays Planners.'} />
-        {tripData?.meta_tags && <meta name="keywords" content={tripData.meta_tags} />}
-        <link rel="canonical" href={pageUrl} />
+        {/* Unique title: trip name + destination + duration */}
+        <title>{seo?.title || `${tripData?.title || 'Trip Details'} | Holidays Planners`}</title>
+        <meta name="description" content={seo?.desc || tripData?.meta_description || 'Discover amazing travel experiences with Holidays Planners.'} />
+        <meta name="keywords" content={seo?.keywords || tripData?.meta_tags || 'India tour packages'} />
+        <link rel="canonical" href={seo?.canonical || window.location.href} />
 
-        {/* Open Graph / Facebook */}
+        {/* Open Graph — absolute image URL with descriptive alt */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={pageUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        {tripData?.hero_image && <meta property="og:image" content={tripData.hero_image} />}
+        <meta property="og:url" content={seo?.canonical || window.location.href} />
+        <meta property="og:title" content={seo?.title || tripData?.title} />
+        <meta property="og:description" content={seo?.desc} />
+        {seo?.heroImg && <meta property="og:image" content={seo.heroImg} />}
+        {seo?.heroImg && <meta property="og:image:alt" content={seo.imageAlt} />}
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="en_IN" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content={pageUrl} />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
-        {tripData?.hero_image && <meta name="twitter:image" content={tripData.hero_image} />}
+        <meta name="twitter:title" content={seo?.title || tripData?.title} />
+        <meta name="twitter:description" content={seo?.desc} />
+        {seo?.heroImg && <meta name="twitter:image" content={seo.heroImg} />}
+        {seo?.heroImg && <meta name="twitter:image:alt" content={seo.imageAlt} />}
 
-        {/* ✅ JSON-LD: TouristTrip Schema */}
-        {tripData && (
-          <script type="application/ld+json">{JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "TouristTrip",
-            "name": tripData.title || tripData.name,
-            "description": tripData.overview || tripData.meta_description || '',
-            "image": tripData.hero_image ? [tripData.hero_image] : [],
-            "url": pageUrl,
-            "provider": {
-              "@type": "TravelAgency",
-              "name": "Holidays Planners",
-              "url": "https://www.holidaysplanners.com",
-              "telephone": "+91-98162-59997",
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Kapil Niwas Bye Pass Road Chakkar",
-                "addressLocality": "Shimla",
-                "addressRegion": "Himachal Pradesh",
-                "postalCode": "171005",
-                "addressCountry": "IN"
-              }
-            },
-            ...(tripData.pricing?.customized?.final_price || tripData.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price ? {
-              "offers": {
-                "@type": "AggregateOffer",
-                "priceCurrency": "INR",
-                "lowPrice": tripData.pricing?.customized?.final_price || tripData.pricing?.fixed_departure?.[0]?.costingPackages?.[0]?.final_price || 0,
-                "offerCount": tripData.pricing?.fixed_departure?.length || 1,
-                "availability": "https://schema.org/InStock"
-              }
-            } : {}),
-            ...(tripData.rating ? {
-              "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": tripData.rating,
-                "bestRating": "5",
-                "ratingCount": tripData.review_count || 10
-              }
-            } : {})
-          })}</script>
+        {/* JSON-LD: TouristTrip — unique per trip, derived from API */}
+        {seo?.schema && (
+          <script type="application/ld+json">{JSON.stringify(seo.schema)}</script>
         )}
-
-        {/* ✅ JSON-LD: BreadcrumbList */}
-        {tripData && (
-          <script type="application/ld+json">{JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.holidaysplanners.com/" },
-              { "@type": "ListItem", "position": 2, "name": "Tour Packages", "item": "https://www.holidaysplanners.com/triplist" },
-              { "@type": "ListItem", "position": 3, "name": tripData.title || "Trip Details", "item": pageUrl }
-            ]
-          })}</script>
+        {/* JSON-LD: BreadcrumbList — destination-aware path */}
+        {seo?.breadcrumb && (
+          <script type="application/ld+json">{JSON.stringify(seo.breadcrumb)}</script>
         )}
       </Helmet>
 

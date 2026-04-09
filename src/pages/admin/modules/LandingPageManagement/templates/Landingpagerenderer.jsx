@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { buildLandingPageSEO } from '../../../../../utils/seo';
 import { Loader2 } from 'lucide-react';
 
 // Template Imports
@@ -87,109 +88,58 @@ export default function LandingPageRenderer() {
     );
   }
 
-  // ✅ Build canonical URL: always point to /tours/ (the SEO-clean path)
-  const canonicalUrl = `https://www.holidaysplanners.com/tours/${slug}`;
-
-  // ✅ Build SEO values from pageData
-  const pageTitle = pageData.meta_title || pageData.title || 'Tour Package | Holidays Planners';
-  const pageDesc  = pageData.meta_description || pageData.description || 'Explore this exclusive tour package with Holidays Planners. Best prices, customised itineraries. Book now!';
-  const pageImage = pageData.hero_image || '/HolidaysPlanners-Logo-HP.png';
-
-  // ✅ JSON-LD: TouristTrip schema
-  const touristTripSchema = {
-    "@context": "https://schema.org",
-    "@type": "TouristTrip",
-    "name": pageData.title || slug,
-    "description": pageData.description || pageData.meta_description || '',
-    "url": canonicalUrl,
-    "image": pageImage ? [pageImage] : [],
-    "provider": {
-      "@type": "TravelAgency",
-      "name": "Holidays Planners",
-      "url": "https://www.holidaysplanners.com",
-      "telephone": "+91-98162-59997",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Kapil Niwas Bye Pass Road Chakkar",
-        "addressLocality": "Shimla",
-        "addressRegion": "Himachal Pradesh",
-        "postalCode": "171005",
-        "addressCountry": "IN"
-      }
-    },
-    ...(pageData.price || pageData.base_price ? {
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "INR",
-        "lowPrice": pageData.discount_price || pageData.price || pageData.base_price,
-        "highPrice": pageData.base_price || pageData.price,
-        "offerCount": 1,
-        "availability": "https://schema.org/InStock"
-      }
-    } : {})
-  };
-
-  // ✅ JSON-LD: BreadcrumbList
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.holidaysplanners.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Tour Packages", "item": "https://www.holidaysplanners.com/triplist" },
-      { "@type": "ListItem", "position": 3, "name": pageData.title || slug, "item": canonicalUrl }
-    ]
-  };
+  // ✅ Build unique SEO per landing page from API data
+  const seo = buildLandingPageSEO(pageData, slug);
 
   // --- UPDATED TEMPLATE SWITCHER LOGIC ---
   const renderTemplate = () => {
-    // Ensure this matches the string saved in your database (e.g., 'template-one')
     const template = pageData.template || 'template-three';
-    
     switch (template) {
-      case 'template-one': // 2. MAP MINIMAL TEMPLATE
-        return <MinimalTemplate pageData={pageData} />;
-      
-      case 'template-two': // Classic (if you have one, otherwise fallback)
-        return <ModernTemplate pageData={pageData} />; 
-      
-      case 'template-three': // Modern
-        return <ModernTemplate pageData={pageData} />;
-      
-      default:
-        return <ModernTemplate pageData={pageData} />;
+      case 'template-one': return <MinimalTemplate pageData={pageData} />;
+      case 'template-two': return <ModernTemplate pageData={pageData} />;
+      case 'template-three': return <ModernTemplate pageData={pageData} />;
+      default:              return <ModernTemplate pageData={pageData} />;
     }
   };
 
   return (
     <div className="landing-page-wrapper font-sans text-slate-900">
-      {/* ✅ Dynamic SEO: title, description, canonical, OG, schema */}
+      {/* ✅ Fully dynamic SEO — unique per landing page, from API data */}
       <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDesc} />
-        {pageData.meta_keywords && <meta name="keywords" content={pageData.meta_keywords} />}
+        {/* Unique title — admin can override with meta_title field */}
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.desc} />
+        <meta name="keywords" content={seo.keywords} />
 
-        {/* Canonical: always /tours/ path — tells Google to index the clean URL */}
-        <link rel="canonical" href={canonicalUrl} />
+        {/* Canonical: always /tours/ — tells Google to index the clean URL */}
+        <link rel="canonical" href={seo.canonical} />
 
-        {/* Open Graph */}
+        {/* Open Graph — absolute URL + descriptive alt for WhatsApp/FB/Instagram */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDesc} />
-        <meta property="og:image" content={pageImage} />
+        <meta property="og:url" content={seo.canonical} />
+        <meta property="og:title" content={seo.title} />
+        <meta property="og:description" content={seo.desc} />
+        <meta property="og:image" content={seo.heroImg} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={seo.imageAlt} />
+        <meta property="og:locale" content="en_IN" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDesc} />
-        <meta name="twitter:image" content={pageImage} />
+        <meta name="twitter:title" content={seo.title} />
+        <meta name="twitter:description" content={seo.desc} />
+        <meta name="twitter:image" content={seo.heroImg} />
+        <meta name="twitter:image:alt" content={seo.imageAlt} />
 
-        {/* JSON-LD Structured Data */}
-        <script type="application/ld+json">{JSON.stringify(touristTripSchema)}</script>
-        <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
+        {/* JSON-LD: TouristTrip — unique per landing page */}
+        <script type="application/ld+json">{JSON.stringify(seo.schema)}</script>
+        {/* JSON-LD: BreadcrumbList */}
+        <script type="application/ld+json">{JSON.stringify(seo.breadcrumb)}</script>
       </Helmet>
 
       {renderTemplate()}
     </div>
   );
-}
+}
+

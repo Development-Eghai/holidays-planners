@@ -36,7 +36,7 @@ const DestinationCard = ({ dest, onClick, index }) => {
     >
       <img
         src={dest.image}
-        alt={dest.name}
+        alt={`${dest.name} tour packages | ${dest.tourCount} destinations | Holidays Planners`}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
       />
       {/* Gradient Overlay */}
