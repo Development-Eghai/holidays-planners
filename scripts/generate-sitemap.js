@@ -25,7 +25,23 @@ const headers = { 'x-api-key': API_KEY, 'Content-Type': 'application/json' };
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function slugify(str = '') {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return str
+    .toLowerCase()
+    .replace(/&/g, 'and')           // "Shimla & Manali" → "shimla-and-manali"
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+/**
+ * XML requires & < > " ' to be entity-escaped inside element content.
+ * Sitemap <loc> values MUST use &amp; for any & that appears in a URL.
+ */
+function xmlEscape(str = '') {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 async function safeFetch(url) {
@@ -41,7 +57,8 @@ async function safeFetch(url) {
 }
 
 function urlEntry(loc, { changefreq = 'weekly', priority = '0.5', lastmod = TODAY } = {}) {
-  return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+  // xmlEscape is mandatory — bare & in URLs breaks XML parsers
+  return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
 }
 
 // ─── Static pages ───────────────────────────────────────────────────────────
