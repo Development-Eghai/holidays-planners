@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronRight, Calendar, User, Eye, Heart, ArrowLeft, Clock } from 'lucide-react';
 import axios from 'axios';
@@ -418,14 +419,30 @@ export default function Blog() {
     return (
         <div>
             {viewMode === 'list' ? (
-                <BlogListComponent 
-                    onBlogSelect={handleBlogSelect}
-                    selectedBlogId={blogId}
-                    posts={posts}
-                    loading={loading}
-                    error={error}
-                    categories={categories}
-                />
+                <>
+                    <Helmet>
+                        <title>Travel Blog — Tips, Guides & Stories | Holidays Planners</title>
+                        <meta name="description" content="Read inspiring travel stories, destination guides, and expert tips from Holidays Planners. Discover hidden gems, travel hacks & adventure ideas across India." />
+                        <meta name="keywords" content="travel blog India, travel tips, destination guides, travel stories, Himachal Pradesh travel guide, Kashmir travel blog" />
+                        <link rel="canonical" href="https://www.holidaysplanners.com/blog" />
+                        <meta property="og:type" content="website" />
+                        <meta property="og:url" content="https://www.holidaysplanners.com/blog" />
+                        <meta property="og:title" content="Travel Blog — Tips, Guides & Stories | Holidays Planners" />
+                        <meta property="og:description" content="Read inspiring travel stories, destination guides, and expert tips from Holidays Planners." />
+                        <meta property="og:image" content="/HolidaysPlanners-Logo-HP.png" />
+                        <meta name="twitter:card" content="summary_large_image" />
+                        <meta name="twitter:title" content="Travel Blog — Tips, Guides & Stories | Holidays Planners" />
+                        <meta name="twitter:description" content="Read inspiring travel stories, destination guides, and expert tips from Holidays Planners." />
+                    </Helmet>
+                    <BlogListComponent 
+                        onBlogSelect={handleBlogSelect}
+                        selectedBlogId={blogId}
+                        posts={posts}
+                        loading={loading}
+                        error={error}
+                        categories={categories}
+                    />
+                </>
             ) : (
                 <BlogDetailsComponent 
                     blogId={blogId}

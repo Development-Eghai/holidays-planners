@@ -1,0 +1,39 @@
+# Holidays Planners — robots.txt
+# https://www.holidaysplanners.com
+
+User-agent: *
+Allow: /
+
+# Block admin panel from all crawlers
+Disallow: /admin/
+Disallow: /admin/login
+Disallow: /admin/dashboard/
+
+# Block query-string-only pages that create thin duplicates
+Disallow: /blog?blogId=
+
+# ─── Sitemaps ──────────────────────────────────────────────────────────────
+Sitemap: https://www.holidaysplanners.com/sitemap.xml
+
+# ─── AI / LLM Crawlers ────────────────────────────────────────────────────
+# llms.txt: structured reference for AI tools (ChatGPT, Perplexity, Gemini)
+# https://www.holidaysplanners.com/llms.txt
+
+# Allow major AI training bots — remove any you want to block
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /

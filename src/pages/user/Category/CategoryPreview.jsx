@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TripCard from "../../../components/trips/TripCard";
@@ -170,8 +171,67 @@ const CategoryPreview = () => {
   if (error)
     return <p className="text-center text-red-500 py-20">{error}</p>;
 
+  const catSlug  = categoryData.slug || id;
+  const catName  = categoryData.name || 'Tour Packages';
+  const catDesc  = categoryData.description || '';
+  const catImage = categoryData.image?.[0]
+    ? (categoryData.image[0].startsWith('http') ? categoryData.image[0] : `https://api.yaadigo.com/uploads/${categoryData.image[0]}`)
+    : 'https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png';
+  const canonicalUrl = `https://www.holidaysplanners.com/category/${catSlug}/${id}`;
+
+  const seoTitle = `${catName} Tour Packages 2025 | Holidays Planners`;
+  const seoDesc  = catDesc
+    ? `${catDesc.substring(0, 140)} Book with Holidays Planners — trusted since 2015.`
+    : `Explore ${catName} tour packages across India. Fixed & customised departures. Best prices, expert planning. Book with Holidays Planners.`;
+
+  // ItemList schema — list of trips in this category
+  const itemListSchema = trips.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": `${catName} Tour Packages`,
+    "description": seoDesc,
+    "url": canonicalUrl,
+    "numberOfItems": trips.length,
+    "itemListElement": trips.slice(0, 10).map((trip, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": trip.title || trip.name,
+      "url": `https://www.holidaysplanners.com/trip-preview/${trip.slug || id}/${trip.id || trip._id}`
+    }))
+  } : null;
+
   return (
     <div className="category-preview">
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDesc} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDesc} />
+        <meta property="og:image" content={catImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDesc} />
+        <meta name="twitter:image" content={catImage} />
+        {itemListSchema && (
+          <script type="application/ld+json">{JSON.stringify(itemListSchema)}</script>
+        )}
+        {/* BreadcrumbList */}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.holidaysplanners.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Tour Packages", "item": "https://www.holidaysplanners.com/triplist" },
+            { "@type": "ListItem", "position": 3, "name": catName, "item": canonicalUrl }
+          ]
+        })}</script>
+      </Helmet>
+
       {/* --- Hero Section --- */}
       {images.length > 0 && (
         <section className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-black">

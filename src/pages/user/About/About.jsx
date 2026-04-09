@@ -1,5 +1,6 @@
 import { Users, Award, Globe, Shield, MapPin, Heart, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 
 // --- DATA ---
 
@@ -97,6 +98,20 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <Helmet>
+        <title>About Holidays Planners | Trusted Travel Agency Since 2015 | Shimla</title>
+        <meta name="description" content="Holidays Planners — Shimla's trusted travel agency since 2015. 15,000+ happy travellers, 250+ destinations, 10+ years of personalised tour planning across India. Meet our team." />
+        <meta name="keywords" content="about Holidays Planners, travel agency Shimla, Poonam Sharma travel, Himachal Pradesh tour operator, India travel company" />
+        <link rel="canonical" href="https://www.holidaysplanners.com/about" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.holidaysplanners.com/about" />
+        <meta property="og:title" content="About Holidays Planners | Trusted Travel Agency Since 2015" />
+        <meta property="og:description" content="15,000+ happy travellers, 250+ destinations, 10+ years of personalised tour planning across India." />
+        <meta property="og:image" content="/HolidaysPlanners-Logo-HP.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="About Holidays Planners | Trusted Travel Agency Since 2015" />
+        <meta name="twitter:description" content="15,000+ happy travellers, 250+ destinations. Your trusted India travel agency since 2015." />
+      </Helmet>
       {/* Hero Section */}
       <div
         className="h-screen relative overflow-hidden"

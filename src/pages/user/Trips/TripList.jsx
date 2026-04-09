@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams, Link } from 'react-router-dom';
 import { MapPin, Sliders, Star, X, ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 // --- External Component Import ---
 import TripCard from "../../../components/trips/TripCard";
@@ -323,7 +325,25 @@ export default function ToursListingPage() {
     // --- MAIN RENDER ---
     return (
         <div className="min-h-screen bg-gray-50">
+            <Helmet>
+                <title>Himachal Pradesh Tour Packages 2025 | Shimla Manali, Spiti, Kashmir Trips | Holidays Planners</title>
+                <meta name="description" content="Browse all India tour packages — Shimla Manali 5-night, Spiti Valley 7-day, Kashmir honeymoon, Leh Ladakh, Goa &amp; Kerala. Filter by destination, duration or budget. Book with Holidays Planners." />
+                <meta name="keywords" content="Shimla Manali tour package, Spiti Valley trip itinerary, Kashmir honeymoon package, Leh Ladakh bike trip, family tour Himachal Pradesh, budget tour packages India 2025" />
+                <link rel="canonical" href="https://www.holidaysplanners.com/triplist" />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://www.holidaysplanners.com/triplist" />
+                <meta property="og:title" content="Tour Packages India 2025 | Browse All Trips | Holidays Planners" />
+                <meta property="og:description" content="Shimla Manali, Spiti Valley, Kashmir &amp; Leh Ladakh packages. Filter by destination or budget." />
+                <meta property="og:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+                <meta property="og:image:width" content="1200" />
+                <meta property="og:image:height" content="630" />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Tour Packages India 2025 | Holidays Planners" />
+                <meta name="twitter:description" content="Shimla Manali, Spiti Valley, Kashmir &amp; Leh Ladakh packages. Best prices, free customisation." />
+                <meta name="twitter:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+            </Helmet>
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+
                 
                 <div className="mb-4 sm:mb-8 bg-white rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6">
                     

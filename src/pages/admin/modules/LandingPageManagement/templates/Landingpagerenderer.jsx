@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
 
 // Template Imports
@@ -86,6 +87,59 @@ export default function LandingPageRenderer() {
     );
   }
 
+  // ✅ Build canonical URL: always point to /tours/ (the SEO-clean path)
+  const canonicalUrl = `https://www.holidaysplanners.com/tours/${slug}`;
+
+  // ✅ Build SEO values from pageData
+  const pageTitle = pageData.meta_title || pageData.title || 'Tour Package | Holidays Planners';
+  const pageDesc  = pageData.meta_description || pageData.description || 'Explore this exclusive tour package with Holidays Planners. Best prices, customised itineraries. Book now!';
+  const pageImage = pageData.hero_image || '/HolidaysPlanners-Logo-HP.png';
+
+  // ✅ JSON-LD: TouristTrip schema
+  const touristTripSchema = {
+    "@context": "https://schema.org",
+    "@type": "TouristTrip",
+    "name": pageData.title || slug,
+    "description": pageData.description || pageData.meta_description || '',
+    "url": canonicalUrl,
+    "image": pageImage ? [pageImage] : [],
+    "provider": {
+      "@type": "TravelAgency",
+      "name": "Holidays Planners",
+      "url": "https://www.holidaysplanners.com",
+      "telephone": "+91-98162-59997",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Kapil Niwas Bye Pass Road Chakkar",
+        "addressLocality": "Shimla",
+        "addressRegion": "Himachal Pradesh",
+        "postalCode": "171005",
+        "addressCountry": "IN"
+      }
+    },
+    ...(pageData.price || pageData.base_price ? {
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "INR",
+        "lowPrice": pageData.discount_price || pageData.price || pageData.base_price,
+        "highPrice": pageData.base_price || pageData.price,
+        "offerCount": 1,
+        "availability": "https://schema.org/InStock"
+      }
+    } : {})
+  };
+
+  // ✅ JSON-LD: BreadcrumbList
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.holidaysplanners.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Tour Packages", "item": "https://www.holidaysplanners.com/triplist" },
+      { "@type": "ListItem", "position": 3, "name": pageData.title || slug, "item": canonicalUrl }
+    ]
+  };
+
   // --- UPDATED TEMPLATE SWITCHER LOGIC ---
   const renderTemplate = () => {
     // Ensure this matches the string saved in your database (e.g., 'template-one')
@@ -108,7 +162,34 @@ export default function LandingPageRenderer() {
 
   return (
     <div className="landing-page-wrapper font-sans text-slate-900">
+      {/* ✅ Dynamic SEO: title, description, canonical, OG, schema */}
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        {pageData.meta_keywords && <meta name="keywords" content={pageData.meta_keywords} />}
+
+        {/* Canonical: always /tours/ path — tells Google to index the clean URL */}
+        <link rel="canonical" href={canonicalUrl} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:image" content={pageImage} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        <meta name="twitter:image" content={pageImage} />
+
+        {/* JSON-LD Structured Data */}
+        <script type="application/ld+json">{JSON.stringify(touristTripSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
+      </Helmet>
+
       {renderTemplate()}
     </div>
   );
-}
+}

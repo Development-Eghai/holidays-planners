@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 
 export default function ContactPage() {
@@ -76,6 +77,20 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <Helmet>
+        <title>Contact Holidays Planners | Shimla, Himachal Pradesh | +91-98162-59997</title>
+        <meta name="description" content="Get in touch with Holidays Planners — Shimla's trusted travel agency. Call +91-98162-59997 or email info@holidaysplanners.com. Personalised tour planning for India." />
+        <meta name="keywords" content="contact Holidays Planners, travel agency Shimla, tour operator Himachal Pradesh, book holiday package India" />
+        <link rel="canonical" href="https://www.holidaysplanners.com/contact" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.holidaysplanners.com/contact" />
+        <meta property="og:title" content="Contact Holidays Planners | Shimla, Himachal Pradesh" />
+        <meta property="og:description" content="Get in touch with Holidays Planners. Personalised tour planning for India — call +91-98162-59997." />
+        <meta property="og:image" content="/HolidaysPlanners-Logo-HP.png" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Contact Holidays Planners | Shimla, Himachal Pradesh" />
+        <meta name="twitter:description" content="Personalised tour planning for India. Call +91-98162-59997." />
+      </Helmet>
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white py-20">
         <div className="absolute inset-0 opacity-20">

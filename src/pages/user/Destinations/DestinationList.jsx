@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { MapPin, TrendingUp, Search, X } from 'lucide-react';
 
 const API_URL = "https://api.yaadigo.com/secure/api";
@@ -175,6 +176,23 @@ const DestinationList = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>Popular Travel Destinations India 2025 | Himachal, Kashmir, Kerala &amp; More | Holidays Planners</title>
+        <meta name="description" content="Explore India's top travel destinations — Shimla, Manali, Spiti Valley, Srinagar, Munnar, Andaman &amp; more. Curated holiday packages for every budget. Trusted travel agency since 2015." />
+        <meta name="keywords" content="travel destinations India, Himachal Pradesh destinations, Shimla tourism, Manali travel, Spiti Valley, Kashmir destinations, Kerala backwaters" />
+        <link rel="canonical" href="https://www.holidaysplanners.com/destinations" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.holidaysplanners.com/destinations" />
+        <meta property="og:title" content="Popular Travel Destinations India 2025 | Holidays Planners" />
+        <meta property="og:description" content="Explore top travel destinations across India. Curated holiday packages for every budget." />
+        <meta property="og:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Popular Travel Destinations India 2025 | Holidays Planners" />
+        <meta name="twitter:description" content="Explore top travel destinations across India — best packages for every budget." />
+        <meta name="twitter:image" content="https://www.holidaysplanners.com/HolidaysPlanners-Logo-HP.png" />
+      </Helmet>
       {/* ⚠️ Injecting necessary CSS for animations ⚠️ */}
       <style>{`
         @keyframes fadeInUp {

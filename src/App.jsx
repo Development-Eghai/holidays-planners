@@ -75,7 +75,10 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
 
-          {/* --- LANDING PAGE ROUTE (Public, No Header/Footer) --- */}
+          {/* --- LANDING PAGE ROUTES (Public, No Header/Footer) --- */}
+          {/* Clean SEO-canonical URL — Google indexes this */}
+          <Route path="/tours/:slug" element={<LandingPageRenderer />} />
+          {/* Legacy /landing/ path kept for backward-compat (ad links etc.) */}
           <Route path="/landing/:slug" element={<LandingPageRenderer />} />
             {/* ✅ THANK YOU PAGE ROUTE (FIXED) */}
           <Route path="/thank-you" element={<ThankYouPageRoute />} />
