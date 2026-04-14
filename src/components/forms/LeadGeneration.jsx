@@ -16,8 +16,6 @@ const API_CONFIG = {
   API_KEY: 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ',
   DOMAIN_NAME: 'https://www.holidaysplanners.com',
 };
-const CAPTCHA_ANSWER = 13;
-
 // --- WhatsApp Icon ---
 const WhatsAppIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -57,7 +55,7 @@ export default function LeadGeneration({ isOpen, onClose }) {
     contactNumber: '',
     email: '',
     comments: '',
-    captcha: ''
+    _hp: ''
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -90,15 +88,18 @@ export default function LeadGeneration({ isOpen, onClose }) {
     setFormError(null);
     setSuccessMessage(null);
 
-    // Validate required fields
-    if (!formData.destination || !formData.departureCity || !formData.fullName || !formData.contactNumber || !formData.email || !formData.captcha) {
-      setFormError('Please fill in all required fields.');
+    // Honeypot: if a bot filled the hidden field, silently fake success
+    if (formData._hp) {
+      setSuccessMessage('Your custom trip quote request has been sent! A specialist will contact you shortly.');
+      resetForm();
+      setTimeout(() => { onClose(); setSuccessMessage(null); }, 2000);
       setIsSubmitting(false);
       return;
     }
 
-    if (parseInt(formData.captcha) !== CAPTCHA_ANSWER) {
-      setFormError('Incorrect security answer (9 + 4). Please try again.');
+    // Validate required fields
+    if (!formData.destination || !formData.departureCity || !formData.fullName || !formData.contactNumber || !formData.email) {
+      setFormError('Please fill in all required fields.');
       setIsSubmitting(false);
       return;
     }
@@ -426,34 +427,28 @@ export default function LeadGeneration({ isOpen, onClose }) {
                         />
                       </div>
 
-                      {/* CAPTCHA */}
-                      <div className={`border-2 rounded-lg p-2.5 ${formError ? 'border-red-500 bg-red-50' : 'border-indigo-200 bg-indigo-50'}`}>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Security Check *</label>
-                        <div className="flex items-center gap-2">
-                          <div className={`bg-white px-3 py-1.5 rounded-lg border-2 ${formError ? 'border-red-600 text-red-600' : 'border-indigo-600 text-indigo-600'} font-bold text-sm select-none`}>
-                            9 + 4 = ?
-                          </div>
-                          <input
-                            type="text"
-                            name="captcha"
-                            placeholder="Answer (e.g., 13)"
-                            value={formData.captcha}
-                            onChange={handleInputChange}
-                            disabled={isSubmitting}
-                            className="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50"
-                          />
-                        </div>
-                        {formError && (
-                          <motion.p
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-red-600 text-xs mt-1 flex items-center gap-1"
-                          >
-                            <AlertTriangle className="h-3 w-3" />
-                            {formError}
-                          </motion.p>
-                        )}
-                      </div>
+                      {/* Honeypot — hidden from real users, catches bots */}
+                      <input
+                        type="text"
+                        name="_hp"
+                        value={formData._hp}
+                        onChange={handleInputChange}
+                        style={{ display: 'none' }}
+                        tabIndex="-1"
+                        autoComplete="off"
+                      />
+
+                      {/* Form error */}
+                      {formError && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-red-600 text-xs flex items-center gap-1"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          {formError}
+                        </motion.p>
+                      )}
 
                       {/* Submit */}
                       <button

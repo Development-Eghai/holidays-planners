@@ -4,6 +4,10 @@
 User-agent: *
 Allow: /
 
+# Allow Google AdsBot
+User-agent: AdsBot-Google
+Allow: /
+
 # Block admin panel from all crawlers
 Disallow: /admin/
 Disallow: /admin/login

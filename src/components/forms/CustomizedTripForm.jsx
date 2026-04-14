@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Minus, Loader2, CreditCard } from 'lucide-react';
 
+// --- API CONFIGURATION ---
+const API_CONFIG = {
+  FULL_API_URL: 'https://api.yaadigo.com/secure/api/enquires/',
+  API_KEY: 'x8oxPBLwLyfyREmFRmCkATEGG1PWnp37_nVhGatKwlQ',
+  DOMAIN_NAME: 'https://www.holidaysplanners.com',
+};
+
 export default function TripInquiryModal({ 
   isOpen, 
   onClose, 
@@ -14,19 +21,14 @@ export default function TripInquiryModal({
     fullName: '',
     email: '',
     phone: '',
-    captchaInput: ''
+    _hp: ''
   });
 
   const [childAges, setChildAges] = useState([]);
   const maxChildren = 5;
-  const [enquiryCaptcha, setEnquiryCaptcha] = useState({ num1: 0, num2: 0, answer: 0 });
   const [enquiryMessage, setEnquiryMessage] = useState({ title: '', text: '' });
   const [showEnquiryMessage, setShowEnquiryMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    generateEnquiryCaptcha();
-  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,12 +40,6 @@ export default function TripInquiryModal({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
-
-  const generateEnquiryCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 5) + 5;
-    const num2 = Math.floor(Math.random() * 5) + 1;
-    setEnquiryCaptcha({ num1, num2, answer: num1 * num2 });
-  };
 
   const handleEnquiryChange = (field, value) => {
     setEnquiryData(prev => ({ ...prev, [field]: value }));
@@ -76,13 +72,10 @@ export default function TripInquiryModal({
   };
 
   const handleEnquirySubmit = async () => {
-    if (parseInt(enquiryData.captchaInput) !== enquiryCaptcha.answer) {
-      setEnquiryMessage({
-        title: 'Validation Error',
-        text: 'The security check (CAPTCHA) result is incorrect. Please try again.'
-      });
+    // Honeypot: silently fake success if a bot filled the hidden field
+    if (enquiryData._hp) {
+      setEnquiryMessage({ title: 'Inquiry Sent!', text: `Thank you, ${enquiryData.fullName}! A consultant will contact you shortly.` });
       setShowEnquiryMessage(true);
-      generateEnquiryCaptcha();
       return;
     }
 
@@ -96,45 +89,54 @@ export default function TripInquiryModal({
     }
 
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    onClose();
-    setIsSubmitting(false);
+    const apiData = {
+      domain_name: API_CONFIG.DOMAIN_NAME,
+      destination: tripName,
+      departure_city: '',
+      travel_date: enquiryData.departureDate,
+      adults: parseInt(enquiryData.adults) || 1,
+      children: childAges.length,
+      infants: 0,
+      hotel_category: '',
+      full_name: enquiryData.fullName,
+      contact_number: enquiryData.phone,
+      email: enquiryData.email,
+      additional_comments: childAges.length > 0 ? `Children ages: ${childAges.join(', ')}` : '',
+    };
 
-    const adults = parseInt(enquiryData.adults) || 0;
-    const childrenCount = childAges.length;
-    const childAgesList = childrenCount > 0 ? childAges.join(', ') : 'None';
-
-    const submissionText = `Thank you, ${enquiryData.fullName}! Your Trip Inquiry has been submitted for:
-
-**${tripName}**
-    
-A travel consultant will contact you shortly on ${enquiryData.phone} (${enquiryData.email}) to discuss your trip details.
-
---- Inquiry Summary ---
-Preferred Date: ${enquiryData.departureDate}
-Adults (12+): ${adults}
-Children (2-11): ${childrenCount}
-Children Ages: ${childAgesList}`;
-
-    setEnquiryMessage({
-      title: 'Inquiry Sent!',
-      text: submissionText
-    });
-    setShowEnquiryMessage(true);
-
-    setTimeout(() => {
-      setEnquiryData({
-        departureDate: '',
-        adults: 1,
-        fullName: '',
-        email: '',
-        phone: '',
-        captchaInput: ''
+    try {
+      const response = await fetch(API_CONFIG.FULL_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_CONFIG.API_KEY
+        },
+        body: JSON.stringify(apiData),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Submission failed with status ${response.status}.`);
+      }
+
+      setEnquiryMessage({
+        title: 'Inquiry Sent!',
+        text: `Thank you, ${enquiryData.fullName}! Your inquiry for ${tripName} has been received. A travel consultant will contact you shortly on ${enquiryData.phone}.`
+      });
+      setShowEnquiryMessage(true);
+      setEnquiryData({ departureDate: '', adults: 1, fullName: '', email: '', phone: '', _hp: '' });
       setChildAges([]);
-      generateEnquiryCaptcha();
-    }, 1000);
+      onClose();
+    } catch (error) {
+      setEnquiryMessage({
+        title: 'Submission Failed',
+        text: error.message || 'An unexpected error occurred. Please try again or call us directly.'
+      });
+      setShowEnquiryMessage(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -360,24 +362,15 @@ Children Ages: ${childAgesList}`;
                     </div>
                   </div>
 
-                  {/* CAPTCHA */}
-                  <div className="border-2 border-blue-300 p-4 rounded-lg bg-blue-50">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      4. Security Check
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <div className="px-4 py-3 bg-white border-2 border-blue-500 rounded-lg font-bold text-lg text-blue-700 shadow-sm min-w-[120px] text-center">
-                        {enquiryCaptcha.num1} × {enquiryCaptcha.num2} = ?
-                      </div>
-                      <input
-                        type="text"
-                        value={enquiryData.captchaInput}
-                        onChange={(e) => handleEnquiryChange('captchaInput', e.target.value)}
-                        placeholder="Your answer"
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition text-sm"
-                      />
-                    </div>
-                  </div>
+                  {/* Honeypot — hidden from real users, catches bots */}
+                  <input
+                    type="text"
+                    value={enquiryData._hp}
+                    onChange={(e) => handleEnquiryChange('_hp', e.target.value)}
+                    style={{ display: 'none' }}
+                    tabIndex="-1"
+                    autoComplete="off"
+                  />
 
                   {/* Submit Button */}
                   <button
