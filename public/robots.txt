@@ -1,43 +1,98 @@
 # Holidays Planners — robots.txt
 # https://www.holidaysplanners.com
 
+# Allow all crawlers for public content (mobile-friendly indexing is default)
 User-agent: *
 Allow: /
 
-# Allow Google AdsBot
+# Block query-string-only pages (prevent parameter-based duplicates and wasted crawl budget)
+# Example: /triplist?sort=price, /triplist?destination=shimla, etc.
+# Google's canonical tag handling is preferred, but this reinforces uniqueness
+Disallow: /*?
+
+# Allow Google AdsBot for ad quality checks
 User-agent: AdsBot-Google
 Allow: /
 
-# Block admin panel from all crawlers
+# Block admin panel + internal routes from all crawlers (reduce indexing noise)
 Disallow: /admin/
 Disallow: /admin/login
 Disallow: /admin/dashboard/
+Disallow: /api/
+Disallow: /private/
+Disallow: /thank-you
 
-# Block query-string-only pages that create thin duplicates
-Disallow: /blog?blogId=
+# Block development/staging from indexing (if running on subdomains)
+# Disallow: /staging/
+# Disallow: /dev/
 
-# ─── Sitemaps ──────────────────────────────────────────────────────────────
+# ─── SITEMAPS ──────────────────────────────────────────────────────────────
+# Main sitemap with all public pages
 Sitemap: https://www.holidaysplanners.com/sitemap.xml
 
-# ─── AI / LLM Crawlers ────────────────────────────────────────────────────
-# llms.txt: structured reference for AI tools (ChatGPT, Perplexity, Gemini)
-# https://www.holidaysplanners.com/llms.txt
+# ─── AI / LLM CRAWLER POLICY ───────────────────────────────────────────────
+# As of April 2026, these crawlers actively index the web for AI training.
+# We ALLOW them by default (good for brand visibility in AI systems).
+#
+# To BLOCK any, uncomment and add to Disallow section:
+#   User-agent: GPTBot
+#   Disallow: /
+#
+# Reference: https://www.shopify.com/blog/what-is-googlebots-google-extended-and-how-does-it-affect-seo
+# Note: Blocking Google-Extended does NOT affect Google Search indexing (uses Googlebot).
 
-# Allow major AI training bots — remove any you want to block
+# Allow OpenAI training crawler
 User-agent: GPTBot
 Allow: /
 
+# Allow OpenAI ChatGPT browsing (real-time)
 User-agent: ChatGPT-User
 Allow: /
 
+# Allow Google Gemini training (separate from Search indexing)
 User-agent: Google-Extended
 Allow: /
 
-User-agent: PerplexityBot
-Allow: /
-
+# Allow Anthropic Claude training
 User-agent: ClaudeBot
 Allow: /
 
+# Allow Anthropic text analysis
 User-agent: anthropic-ai
 Allow: /
+
+# Allow Perplexity AI search indexing
+User-agent: PerplexityBot
+Allow: /
+
+# Allow ByteDance/Douyin model training
+User-agent: Bytespider
+Allow: /
+
+# Allow Common Crawl (open dataset for researchers)
+User-agent: CCBot
+Allow: /
+
+# Allow Apple Siri/Spotlight indexing
+User-agent: Applebot
+Allow: /
+
+# ─── AI CRAWLER REFERENCE FILE ────────────────────────────────────────────
+# llms.txt provides structured metadata for AI systems
+# Location: https://www.holidaysplanners.com/llms.txt
+# Format: Key business info, contact, terms of access
+
+# ─── CRAWL DELAY (Optional: throttle aggressive bots) ──────────────────────
+# Uncomment if experiencing crawl budget issues with specific crawlers
+# Crawl-delay: 1
+
+# ─── REQUEST RATE (Alternative to Crawl-delay) ──────────────────────────────
+# Request-rate: 1/1s  (max 1 request per second)
+
+# ─── USER-AGENT NOTES ────────────────────────────────────────────────────
+# Priority matching order:
+# 1. Specific User-Agent (if matches exactly → follow its Disallow rules)
+# 2. Generic User-Agent: * (fallback for all others)
+#
+# More restrictive rule wins if multiple match.
+# Whitespace-only lines are allowed (don't affect parsing)

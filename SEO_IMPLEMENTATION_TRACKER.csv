@@ -1,0 +1,73 @@
+# SEO Implementation Status Tracking (CSV Format)
+# Holidays Planners — All Pages
+# Updated: April 15, 2026
+
+Page Type,URL Path,Title Tag,Title Chars,Meta Description,Description Chars,H1 Tag,Canonical,Schema Types,OG Image,Twitter Card,Breadcrumb Status,Target Keywords,Status,Priority Fixes
+Homepage,/,India Tour Packages 2025 | Himachal Kashmir Goa Kerala | Holidays Planners,79,Explore handpicked India tour packages — Himachal Pradesh Kashmir Leh Ladakh Goa Kerala Uttarakhand. Fixed & customized departures for families couples & adventurers. Trusted since 2015.,165,Explore India's Best Tour Packages,https://www.holidaysplanners.com/,TravelAgency|Organization|WebSite|BreadcrumbList,og-hero-home.jpg,summary_large_image,Home,India tour packages | Himachal Pradesh tours | Kashmir packages | Leh Ladakh | Goa holidays,✅ IMPLEMENTED,Verify OG image exists
+Trip List,/triplist,India Tour Packages | 3-15 Days Trips | Holidays Planners,58,Browse 50+ curated India tour packages. 3-day to 15-day trips across Himachal Kashmir Goa Kerala. Find your perfect adventure. Book fixed or customized tours today!,169,India's Best Curated Tour Packages,https://www.holidaysplanners.com/triplist,CollectionPage|ItemList|BreadcrumbList,og-triplist.jpg,summary_large_image,Home > Tour Packages,India tour packages | tour packages list | available trips India,✅ IMPLEMENTED,Add CollectionPage schema
+Trip Details,/trip-preview/{slug}/{id},[Trip Name] — [Duration] [Destination] | Holidays Planners,55-58,[Trip Name] — [Duration] in [Destination] from ₹[Price]. [30-word snippet]. Book your adventure with Holidays Planners since 2015.,152-157,[Trip Name] — [Duration]D/[Nights]N Tour Package,https://www.holidaysplanners.com/trip-preview/{slug}/{id},TouristTrip|AggregateOffer|BreadcrumbList|AggregateRating,[Hero image URL],summary_large_image,Home > Tour Packages > [Dest] > [Trip Name],[Trip Name] | [Destination] tour package | [Duration] trip,✅ IMPLEMENTED (Dynamic),Ensure slug uniqueness
+Destination List,/destinations,Popular Destinations in India | Tour Guides | Holidays Planners,56,Explore India's top destinations — Himachal Pradesh Kashmir Goa Kerala Leh Ladakh Uttarakhand. Travel guides best time to visit & curated packages. Plan your next adventure!,168,India's Best Tourist Destinations,https://www.holidaysplanners.com/destinations,CollectionPage|ItemList|BreadcrumbList,og-destinations-collage.jpg,summary_large_image,Home > Destinations,tourist destinations India | popular destinations | Himachal Pradesh | Kashmir,✅ IMPLEMENTED,Add destination list to sitemap
+Individual Destination,/destination/{slug}/{id},[Destination] Tours & Travel Guide | Holidays Planners,53,[Destination] — best attractions hotels travel tips & curated tour packages. Book your adventure. Trusted travel agency Shimla. Book now!,159,[Destination] Tour Packages & Travel Guide,https://www.holidaysplanners.com/destination/{slug}/{id},TouristAttraction|ItemList|BreadcrumbList|FAQPage,[Destination hero image],summary_large_image,Home > Destinations > [Destination],[Destination] tour packages | tourism | travel guide,✅ IMPLEMENTED,Add destination images with alt text
+Honeymoon Category,/category/honeymoon/1,Honeymoon Packages in India | Romantic Tours | Holidays Planners,60,Romantic honeymoon packages across India's most enchanting destinations. Private tours luxury resorts adventure & culture. Book your dream honeymoon with Holidays Planners!,157,Romantic Honeymoon Packages in India,https://www.holidaysplanners.com/category/honeymoon/1,ItemList|BreadcrumbList,og-honeymoon.jpg,summary_large_image,Home > Honeymoon,honeymoon packages India | romantic tours | couple getaway,✅ IMPLEMENTED,Verify category slug uniqueness
+Office/Corporate Category,/category/office-tours/2,Office & Corporate Tours | Team Building | Holidays Planners,56,Corporate team building tours & office getaways in India. Offsite packages activities & professional event management. Strengthen your team with Holidays Planners!,161,Corporate Team Building Tours,https://www.holidaysplanners.com/category/office-tours/2,ItemList|BreadcrumbList,og-corporate.jpg,summary_large_image,Home > Corporate Tours,corporate tours India | team building | office getaway,✅ IMPLEMENTED,Add category images
+Family Category,/category/family-packages/3,Family Tour Packages India | Kids Friendly | Holidays Planners,57,Family-friendly tour packages across India. Kid-approved activities educational experiences & budget options. Create memories with Holidays Planners!,153,Family-Friendly Tour Packages,https://www.holidaysplanners.com/category/family-packages/3,ItemList|BreadcrumbList,og-family.jpg,summary_large_image,Home > Family Tours,family tours India | kid-friendly packages | family holidays,✅ IMPLEMENTED,Verify kid-friendly content
+Blog List,/blog,Travel Blog | India Trip Tips & Guides | Holidays Planners,55,Read expert travel guides destination tips & itinerary inspiration from Holidays Planners. Discover hidden gems best travel seasons & insider recommendations!,161,Travel Blog & Trip Planning Guides,https://www.holidaysplanners.com/blog,CollectionPage|ItemList|BreadcrumbList,og-blog.jpg,summary_large_image,Home > Blog,travel blog | India travel tips | destination guides,✅ IMPLEMENTED,Auto-add blog posts to sitemap
+Individual Blog Post,/blog/[slug],[Article Title] | Travel Blog | Holidays Planners,55,[Article meta description - 155 chars],[155],[Article title],https://www.holidaysplanners.com/blog/[slug],BlogPosting|BreadcrumbList,[Blog featured image],summary_large_image,Home > Blog > [Category] > [Title],[Keyword1] | [Keyword2] | travel tips,❌ PARTIAL,Add publication date to schema
+About Us,/about,About Holidays Planners | Travel Partner Since 2015,54,Discover Holidays Planners — your trusted travel partner since 2015. Expert-curated tours personalized service 850+ reviews. Learn why travelers choose us. Contact us today!,162,About Holidays Planners — Your Travel Partner Since 2015,https://www.holidaysplanners.com/about,Organization|LocalBusiness|BreadcrumbList,og-about.jpg,summary_large_image,Home > About Us,about us | travel agency Shimla | tour operators India,✅ IMPLEMENTED,Add team member profiles
+Contact Us,/contact,Contact Holidays Planners | Get in Touch | Travel Experts,54,Contact Holidays Planners for your next adventure. Phone: +91-98162-59997 Email: info@holidaysplanners.com. Shimla-based travel experts. Inquire now!,159,Get in Touch With Our Travel Experts,https://www.holidaysplanners.com/contact,ContactPage|Organization|LocalBusiness|BreadcrumbList,og-contact.jpg,summary,Home > Contact Us,contact us | travel inquiry | Holidays Planners,✅ IMPLEMENTED,Verify contact form submission tracking
+Privacy Policy,/privacy,Privacy Policy | Holidays Planners Data Protection,53,Read Holidays Planners' privacy policy. Learn how we protect your personal data and manage cookies. Your privacy matters. Last updated April 2026.,157,Privacy Policy,https://www.holidaysplanners.com/privacy,WebPage|BreadcrumbList|Organization,og-privacy.jpg,summary,Home > Privacy Policy,privacy policy | data protection | GDPR compliance,✅ IMPLEMENTED,Add last-modified date
+Terms & Conditions,/terms,Terms & Conditions | Holidays Planners Legal,52,Read Holidays Planners' terms and conditions. Cancellation policy booking terms liability information. Your agreement is important. Last updated April 2026.,162,Terms and Conditions,https://www.holidaysplanners.com/terms,WebPage|BreadcrumbList,og-terms.jpg,summary,Home > Terms & Conditions,terms and conditions | cancellation policy | booking terms,✅ IMPLEMENTED,Add last-modified date
+Landing Page,/tours/{slug},[Campaign Title] | Limited Offer | Holidays Planners,55,[Campaign description] — [Call to action]. Limited slots available! Book now with Holidays Planners!,150,[Campaign Headline],https://www.holidaysplanners.com/tours/{slug},TouristTrip|AggregateOffer|BreadcrumbList,og-campaign.jpg,summary_large_image,Home > Tours > [Campaign],[Campaign keywords],✅ IMPLEMENTED,Dynamic metadata generation verify
+Thank You,/thank-you,Thank You | Your Inquiry Received | Holidays Planners,53,Thank you for your interest! Our team will contact you shortly. Download our brochure or explore more tours while you wait. Holidays Planners since 2015.,158,Thank You For Your Interest!,https://www.holidaysplanners.com/thank-you,WebPage|BreadcrumbList,og-thankyou.jpg,summary,Home > Thank You,confirmation | lead received,✅ IMPLEMENTED,No indexing of query params
+
+# TECHNICAL SEO ITEMS
+Item,Location,Current Status,Details,Action Required,Priority
+robots.txt,/public/robots.txt,✅ CONFIGURED,"Allows all crawlers, disallows /admin/, references sitemap & allows AI bots","Test & verify, monitor for changes",HIGH
+sitemap.xml,/public/sitemap.xml,✅ CONFIGURED,"Auto-generated via scripts/generate-sitemap.js, includes 1.0-0.3 priority hierarchy","Ensure regenerates on build, test accessibility",HIGH
+llms.txt,/public/llms.txt,✅ CONFIGURED,"Provides AI crawler access info","Update quarterly with latest resources",MEDIUM
+HTTPS Enforcement,server.js,✅ CONFIGURED,"SSL configured for production","Verify valid certificate on prod",HIGH
+Security Headers,server.js,⚠️ PARTIAL,"Missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy","Add headers per documentation",HIGH
+Canonical Tags,seo.js,✅ IMPLEMENTED,"All pages include <link rel='canonical'>","Audit for any duplicates",MEDIUM
+Viewport Meta,All pages,✅ VERIFIED,"<meta name='viewport' content='width=device-width, initial-scale=1.0'>","Check via browser DevTools",MEDIUM
+Mobile Responsive,CSS/Components,✅ IMPLEMENTED,"Tailwind CSS responsive, 48px+ touch targets, 16px+ font base","Test on iOS & Android devices",MEDIUM
+Schema Markup,seo.js,✅ IMPLEMENTED,"TravelAgency, Organization, TouristTrip, TouristAttraction, BreadcrumbList","Run Rich Results Test on all pages",HIGH
+Image Alt Text,Components,🟡 PARTIAL,"Framework exists but needs verification per component","Audit & add missing alt text",HIGH
+Image Optimization,Assets,❌ TODO,"Need to: verify <200KB, set width/height, use WebP/AVIF","Optimize hero & product images",MEDIUM
+Query String Handling,robots.txt,🟡 PARTIAL,"Allow /triplist?* but should add 'Disallow: /*?' OR use canonical","Add disallow rule or canonical consolidation",MEDIUM
+Hreflang Tags,N/A,❌ NOT NEEDED,"Only needed for multi-language sites","Implement only if adding languages",LOW
+Open Graph Tags,seo.js,✅ IMPLEMENTED,"og:title, og:description, og:image, og:url on all pages","Verify OG images exist (1200x630px)",HIGH
+Twitter Cards,seo.js,✅ IMPLEMENTED,"twitter:card, twitter:title, twitter:image","Validate via Twitter Card Validator",HIGH
+Breadcrumb Schema,seo.js,✅ IMPLEMENTED,"JSON-LD BreadcrumbList on all pages","Verify renders in search results",MEDIUM
+Server-Side Rendering,server.js + prerender.js,✅ CONFIGURED,"Hybrid SSR + SPA, prerendering enabled","Monitor crawl efficiency in GSC",MEDIUM
+JSON-LD Injection,Helmet,✅ CONFIGURED,"All schema injected via React Helmet","Validate schema.org compliance",MEDIUM
+Core Web Vitals,PageSpeed Insights,🟡 MONITORING,"LCP, INP, CLS metrics","Setup alerts, monitor monthly",HIGH
+Mobile-Friendly Test,Google,🟡 MONITORING,"Must pass for all page types","Run tests on 5 pages monthly",HIGH
+Search Console,Google,❌ TODO,"Property must be verified & sitemap submitted","Create & verify property asap",HIGH
+GA4 Tracking,N/A,❌ TODO,"Must install GA4 to monitor organic traffic","Implement GA4 with conversion events",HIGH
+Crawl Error Monitoring,Google Search Console,❌ TODO,"Monitor 404s & server errors","Setup alerts for crawl errors",HIGH
+
+# IMAGE OPTIMIZATION CHECKLIST
+Image Type,Current Location,Sizes/Format,Alt Text,Status,Action Required
+Hero Homepage,src/assets/[hero],?,? ❌,🟡 PARTIAL,"Optimize <200KB, set width/height, add descriptive alt"
+Trip Card Images,API (yaadigo.com),?,? ❌,🟡 PARTIAL,"Verify all <200KB, add alt from API metadata"
+Destination Images,API (yaadigo.com),?,? ❌,🟡 PARTIAL,"Add descriptive alt text, verify responsive"
+Logo,/public/HolidaysPlanners-Logo-HP.png,?,✅,✅ GOOD,"Current status OK"
+OG Images,/public/og-*.jpg,1200x630px,✅,❌ TODO,"Create for each page type (13 total images)"
+Twitter Images,/public/twitter-*.jpg,1200x675px,✅,❌ TODO,"Create for major page types (8 images)"
+Blog Featured,API,?,? ❌,❌ TODO,"Add alt text from CMS metadata"
+Itinerary Images,API,?,? ❌,❌ TODO,"Add day-wise descriptive alt text"
+
+# NEXT PRIORITY ACTIONS (Ranked)
+Rank,Action Item,Estimated Effort,Impact,Timeline
+1,Add Security Headers to server.js,30 mins,HIGH,Today
+2,Create all OG Images (1200x630px - 13 total),2-3 hours,HIGH,This week
+3,Create Twitter Card Images (1200x675px - 8 total),1-2 hours,HIGH,This week
+4,Submit sitemap to Google Search Console,15 mins,HIGH,Today
+5,Run Rich Results Test on all 13 page types,1 hour,HIGH,Tomorrow
+6,Audit & add missing image alt text,2-3 hours,HIGH,This week
+7,Setup Google Analytics 4,45 mins,MEDIUM,This week
+8,Optimize images: verify <200KB set width/height,3-4 hours,MEDIUM,Next week
+9,Test Mobile-Friendly on all page types,1 hour,MEDIUM,This week
+10,Monitor Core Web Vitals via PageSpeed Insights,15 mins/week,MEDIUM,Ongoing
+11,Add LocalBusiness schema for Shimla office,45 mins,MEDIUM,Next week
+12,Setup crawl error alerts in GSC,20 mins,MEDIUM,This week

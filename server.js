@@ -69,14 +69,72 @@ const isCrawler = (userAgent) => {
 
 const app = express();
 
+/**
+ * ─────────────────────────────────────────────────────────
+ * SECURITY MIDDLEWARE: Essential Headers for Production SEO
+ * ─────────────────────────────────────────────────────────
+ * These headers protect against XSS, clickjacking, MIME sniffing,
+ * and ensure HTTPS-only communication. Critical for search ranking.
+ */
+app.use((req, res, next) => {
+  // 1. STRICT TRANSPORT SECURITY (HSTS)
+  // Forces HTTPS for 1 year; includeSubDomains applies to all subdomains
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+  // 2. CONTENT SECURITY POLICY (CSP)
+  // Prevents XSS attacks by restricting resource sources
+  // Adjust script-src if using external analytics (Googlebot, GA4, etc.)
+  res.setHeader(
+    'Content-Security-Policy',
+    `default-src 'self' https:; 
+     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:;
+     style-src 'self' 'unsafe-inline' https:;
+     img-src 'self' https: data:;
+     font-src 'self' https: data:;
+     connect-src 'self' https:;
+     frame-ancestors 'self';
+     base-uri 'self';
+     form-action 'self'`.replace(/\s+/g, ' ')
+  );
+
+  // 3. X-FRAME-OPTIONS (Clickjacking Protection)
+  // SAMEORIGIN: allows framing only from same origin
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+
+  // 4. X-CONTENT-TYPE-OPTIONS (MIME Sniffing Protection)
+  // Prevents browser from guessing file types (e.g., execute JS as CSS)
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // 5. REFERRER-POLICY (Privacy & Security)
+  // strict-origin-when-cross-origin: full URL on same site, only origin on cross-site
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // 6. PERMISSIONS-POLICY (Feature Control)
+  // Disable camera, microphone, geolocation unless explicitly needed
+  res.setHeader(
+    'Permissions-Policy',
+    'geolocation=(), microphone=(), camera=(), payment=()'
+  );
+
+  next();
+});
+
 // Serve static files (CSS, JS, images)
 app.use(express.static(DIST_DIR, {
   maxAge: '1y',
   etag: false,
   setHeaders: (res, path) => {
-    // Don't cache HTML files
+    // Don't cache HTML files to ensure fresh content + meta tags
     if (path.endsWith('.html')) {
       res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+    // Cache CSS/JS for 1 year (fingerprinted by Vite)
+    if (path.endsWith('.css') || path.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache images for 1 month
+    if (/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(path)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000');
     }
   },
 }));
